@@ -12,7 +12,36 @@
           "package_name": "com.ashwathai.tradelab"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "475129425714-si7d3nlgoh691b6l4d0730kl8cd771ie.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ashwathai.tradelab",
+            "certificate_hash": "2c3693e6956ed48aa80db3a4d127f096f66c83d2"
+          }
+        },
+        {
+          "client_id": "475129425714-tqseu06sp76sg3rvpe8g1npj4uvnt7pa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ashwathai.tradelab",
+            "certificate_hash": "b286c7333ef8442379ccd2fca9d7adf6b7153ce7"
+          }
+        },
+        {
+          "client_id": "475129425714-vrhbmm7kg0lncc7ga9rrq2024vb2imki.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ashwathai.tradelab",
+            "certificate_hash": "4e0dbe637e86310a35b79cd3d0f010f647dd3ae9"
+          }
+        },
+        {
+          "client_id": "475129425714-isqb8eg5opba2n1f7v2pkuie5min95g8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCb_CIJDEsXGYYSPqYEQKC3CgeEbLidnBs"
@@ -20,7 +49,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "475129425714-isqb8eg5opba2n1f7v2pkuie5min95g8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

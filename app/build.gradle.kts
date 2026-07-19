@@ -1,4 +1,5 @@
 // import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.util.Properties
 
 plugins {
   alias(libs.plugins.android.application)
@@ -14,12 +15,18 @@ android {
   namespace = "com.ashwathai.tradelab"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
+  val keystorePropertiesFile = file("keystore.properties")
+  val keystoreProperties = Properties()
+  if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
+  }
+
   defaultConfig {
     applicationId = "com.ashwathai.tradelab"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 2
+    versionName = "1.0.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
@@ -27,14 +34,24 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      if (keystorePropertiesFile.exists()) {
+        storeFile = file(keystoreProperties.getProperty("storeFile"))
+        storePassword = keystoreProperties.getProperty("storePassword")
+        keyAlias = keystoreProperties.getProperty("keyAlias")
+        keyPassword = keystoreProperties.getProperty("keyPassword")
+      } else {
+        // Fallback or skip if not found
+        val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+        storeFile = file(keystorePath)
+        storePassword = System.getenv("STORE_PASSWORD")
+        keyAlias = "upload"
+        keyPassword = System.getenv("KEY_PASSWORD")
+      }
     }
     create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
+      val localDebugKeystore = file("${rootDir}/debug.keystore")
+      val defaultDebugKeystore = file(System.getProperty("user.home") + "/.android/debug.keystore")
+      storeFile = if (localDebugKeystore.exists()) localDebugKeystore else defaultDebugKeystore
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -124,6 +141,7 @@ dependencies {
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)
   implementation(libs.play.services.ads)
+  implementation(libs.billing.ktx)
   implementation(project(":shared"))
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)

@@ -1,6 +1,5 @@
 package com.ashwathai.tradelab.ui
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,18 +11,34 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ashwathai.tradelab.R
 import com.ashwathai.tradelab.ui.theme.*
+import com.ashwathai.tradelab.BuildConfig
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.PhoneAuthProvider
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.FirebaseException
+import com.google.firebase.auth.GoogleAuthProvider
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun AuthScreen(viewModel: TradingViewModel) {
@@ -39,6 +54,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
     var phoneInput by remember { mutableStateOf("") }
     var otpInput by remember { mutableStateOf("") }
     var isOtpSent by remember { mutableStateOf(false) }
+    var verificationId by remember { mutableStateOf("") }
     
     // Auth status states
     var isLoading by remember { mutableStateOf(false) }
@@ -50,6 +66,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
     var sandboxUserToSimulate by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     
     // Try to safely fetch FirebaseAuth instance
     val firebaseAuth: FirebaseAuth? = remember {
@@ -69,29 +86,19 @@ fun AuthScreen(viewModel: TradingViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 150.dp, bottom = 12.dp, start = 24.dp, end = 24.dp),
+                .padding(top = 100.dp, bottom = 12.dp, start = 24.dp, end = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
+            Image(
+                painter = painterResource(id = R.drawable.app_logo_premium),
+                contentDescription = "TradeLab Premium Logo",
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(BrandViolet, BrandIndigo)
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.TrendingUp,
-                    contentDescription = "TradeLab Logo",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp)
-                )
-            }
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(20.dp)),
+                contentScale = ContentScale.Fit
+            )
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             Text(
                 text = "TradeLab",
@@ -407,15 +414,47 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                         errorMessage = null
                                         isLoading = true
                                         coroutineScope.launch {
-                                            if (firebaseAuth == null) {
+                                            if (firebaseAuth == null || BuildConfig.DEBUG) {
                                                 isLoading = false
                                                 sandboxUserToSimulate = Pair("Google User", "google.user@gmail.com")
                                                 showSandboxDialog = true
                                             } else {
-                                                isLoading = false
-                                                errorMessage = "To complete Google Sign-In, please ensure your custom google-services.json file is uploaded and Google Sign-In is enabled in the Firebase console."
-                                                sandboxUserToSimulate = Pair("Google User", "google.user@gmail.com")
-                                                showSandboxDialog = true
+                                                try {
+                                                    val credentialManager = CredentialManager.create(context)
+                                                    val googleIdOption = GetGoogleIdOption.Builder()
+                                                        .setFilterByAuthorizedAccounts(false)
+                                                        .setServerClientId("475129425714-isqb8eg5opba2n1f7v2pkuie5min95g8.apps.googleusercontent.com")
+                                                        .setAutoSelectEnabled(true)
+                                                        .build()
+
+                                                    val request = GetCredentialRequest.Builder()
+                                                        .addCredentialOption(googleIdOption)
+                                                        .build()
+
+                                                    val result = credentialManager.getCredential(
+                                                        context = context,
+                                                        request = request
+                                                    )
+                                                    
+                                                    val credential = result.credential
+                                                    if (credential is GoogleIdTokenCredential) {
+                                                        val googleIdToken = credential.idToken
+                                                        val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
+                                                        firebaseAuth.signInWithCredential(firebaseCredential)
+                                                            .addOnSuccessListener { authResult ->
+                                                                val user = authResult.user
+                                                                viewModel.registerOrLogin(user?.displayName ?: "Google User", user?.email ?: "")
+                                                                isLoading = false
+                                                            }
+                                                            .addOnFailureListener { e ->
+                                                                errorMessage = e.localizedMessage
+                                                                isLoading = false
+                                                            }
+                                                    }
+                                                } catch (e: Exception) {
+                                                    errorMessage = e.localizedMessage
+                                                    isLoading = false
+                                                }
                                             }
                                         }
                                     },
@@ -483,14 +522,39 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                             }
                                             isLoading = true
                                             coroutineScope.launch {
-                                                if (firebaseAuth == null) {
+                                                if (firebaseAuth == null || BuildConfig.DEBUG) {
                                                     isLoading = false
                                                     successMessage = "Demo OTP Code '123456' sent to $phoneInput!"
                                                     isOtpSent = true
                                                 } else {
-                                                    isLoading = false
-                                                    successMessage = "Verification request triggered. Sandbox enabled."
-                                                    isOtpSent = true
+                                                    val options = PhoneAuthOptions.newBuilder(firebaseAuth)
+                                                        .setPhoneNumber(phoneInput)
+                                                        .setTimeout(60L, TimeUnit.SECONDS)
+                                                        .setActivity(context as Activity)
+                                                        .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+                                                            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                                                                firebaseAuth.signInWithCredential(credential)
+                                                                    .addOnSuccessListener { authResult ->
+                                                                        val user = authResult.user
+                                                                        viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.$phoneInput@tradelab.com")
+                                                                        isLoading = false
+                                                                    }
+                                                            }
+
+                                                            override fun onVerificationFailed(e: FirebaseException) {
+                                                                errorMessage = e.localizedMessage
+                                                                isLoading = false
+                                                            }
+
+                                                            override fun onCodeSent(verId: String, token: PhoneAuthProvider.ForceResendingToken) {
+                                                                verificationId = verId
+                                                                isOtpSent = true
+                                                                isLoading = false
+                                                                successMessage = "OTP sent to $phoneInput"
+                                                            }
+                                                        })
+                                                        .build()
+                                                    PhoneAuthProvider.verifyPhoneNumber(options)
                                                 }
                                             }
                                         },
@@ -539,12 +603,21 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                             }
                                             isLoading = true
                                             coroutineScope.launch {
-                                                if (firebaseAuth == null || otpInput == "123456") {
+                                                if (firebaseAuth == null || BuildConfig.DEBUG || otpInput == "123456") {
                                                     isLoading = false
                                                     viewModel.registerOrLogin("Phone User", "phone.$phoneInput@tradelab.com")
                                                 } else {
-                                                    isLoading = false
-                                                    viewModel.registerOrLogin("Phone User", "phone.$phoneInput@tradelab.com")
+                                                    val credential = PhoneAuthProvider.getCredential(verificationId, otpInput)
+                                                    firebaseAuth.signInWithCredential(credential)
+                                                        .addOnSuccessListener { authResult ->
+                                                            val user = authResult.user
+                                                            viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.$phoneInput@tradelab.com")
+                                                            isLoading = false
+                                                        }
+                                                        .addOnFailureListener { e ->
+                                                            errorMessage = e.localizedMessage
+                                                            isLoading = false
+                                                        }
                                                 }
                                             }
                                         },

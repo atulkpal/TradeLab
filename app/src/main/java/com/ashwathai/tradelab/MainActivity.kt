@@ -1,12 +1,12 @@
 package com.ashwathai.tradelab
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -56,6 +56,7 @@ import com.ashwathai.tradelab.ui.Lecture
 import com.ashwathai.tradelab.ui.Mission
 import com.ashwathai.tradelab.ui.theme.*
 import com.ashwathai.tradelab.ui.AuthScreen
+import com.ashwathai.tradelab.billing.BillingManager
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
@@ -75,6 +76,7 @@ import com.ashwathai.tradelab.ui.profile.*
 
 class MainActivity : ComponentActivity() {
     private val viewModel: TradingViewModel by viewModels()
+    private lateinit var billingManager: BillingManager
 
     enum class AdType {
         ACADEMY_DOUBLE,
@@ -133,6 +135,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        billingManager = BillingManager(this) {
+            viewModel.completePremiumPurchase()
+        }
+
         // Initialize the Google Mobile Ads SDK
         MobileAds.initialize(this) {}
         enableEdgeToEdge()
@@ -145,7 +152,7 @@ class MainActivity : ComponentActivity() {
                 if (userProfile?.isLoggedIn != true && !hasDismissedAuthScreen) {
                     AuthScreen(viewModel = viewModel)
                 } else {
-                    MainContent(viewModel = viewModel)
+                    MainContent(viewModel = viewModel, billingManager = billingManager)
                 }
             }
         }
@@ -154,7 +161,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun MainContent(viewModel: TradingViewModel) {
+fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val stats by viewModel.portfolioStats.collectAsStateWithLifecycle()
     val feedbackMessage by viewModel.feedbackMessage.collectAsStateWithLifecycle()
@@ -1084,7 +1091,8 @@ fun MainContent(viewModel: TradingViewModel) {
         GoogleBillingDialog(
             show = showGoogleBilling,
             onDismiss = { viewModel.closeBillingFlow() },
-            onPurchaseSuccess = { viewModel.completePremiumPurchase() }
+            onPurchaseSuccess = { viewModel.completePremiumPurchase() },
+            billingManager = billingManager
         )
     }
 }
@@ -1093,11 +1101,14 @@ fun MainContent(viewModel: TradingViewModel) {
 fun GoogleBillingDialog(
     show: Boolean,
     onDismiss: () -> Unit,
-    onPurchaseSuccess: () -> Unit
+    onPurchaseSuccess: () -> Unit,
+    billingManager: BillingManager? = null
 ) {
     if (!show) return
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val activity = context as? Activity
+    
     val isFromPlayStore = remember {
         if (BuildConfig.DEBUG) {
             true // Always allow simulated billing in debug mode for development and testing
@@ -1117,7 +1128,9 @@ fun GoogleBillingDialog(
     }
 
     if (!isFromPlayStore) {
+        // ... (existing sideload warning)
         Dialog(onDismissRequest = onDismiss) {
+            // ... (sideload warning content)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1212,7 +1225,20 @@ fun GoogleBillingDialog(
         return
     }
 
-    var selectedPaymentMethod by remember { mutableStateOf("UPI") } // "UPI" or "CARD"
+    // NEW: If we are in Release mode AND installed from Play Store, 
+    // we bypass our simulated dialog and launch the real Google Play Billing sheet.
+    if (!BuildConfig.DEBUG && isFromPlayStore) {
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            activity?.let {
+                billingManager?.startBillingFlow(it, "tradelab_pro_monthly")
+            }
+            onDismiss()
+        }
+        return
+    }
+
+    var selectedPaymentMethod by remember { mutableStateOf("UPI") }
+// "UPI" or "CARD"
     var upiId by remember { mutableStateOf("") }
     var cardNumber by remember { mutableStateOf("") }
     var cardExpiry by remember { mutableStateOf("") }
