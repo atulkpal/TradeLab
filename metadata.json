@@ -1,0 +1,6 @@
+{
+  "name": "TradeLab",
+  "description": "An offline-first, realistic paper trading platform from Ashwath AI to practice trading, test strategies, and build investing confidence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

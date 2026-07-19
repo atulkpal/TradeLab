@@ -1,0 +1,154 @@
+[
+  {
+    "id": 1,
+    "title": "Level 1: What is a Stock?",
+    "topic": "Equities Terminology",
+    "rewardAmt": 5000.0,
+    "concept": "A stock represents fractional ownership in a business. When a company flourishes, the share value increases, and they might distribute cash back as dividends.",
+    "question": "What does buying a stock represent?",
+    "options": [
+      "A loan that the company must repay with fixed interest",
+      "A unit of fractional ownership in the company",
+      "A contract guaranteeing you get free products from the company"
+    ],
+    "correctIndex": 1,
+    "lectures": [
+      {
+        "title": "Lecture 1.1: Fractional Ownership",
+        "content": "A stock (or share) represents a unit of fractional ownership in a company. When you purchase a stock, you become a part-owner of that business. If a company has 1,000 shares outstanding and you buy 10, you own exactly 1% of the company."
+      },
+      {
+        "title": "Lecture 1.2: Capital Appreciation",
+        "content": "As the business grows, earns higher profits, and expands its market footprint, other investors are willing to pay more for each share. This causes the stock price to rise, which is known as capital appreciation."
+      },
+      {
+        "title": "Lecture 1.3: Dividend Cash Flow",
+        "content": "Many mature companies distribute a portion of their net profits back to shareholders in the form of cash payments called dividends. This provides a steady income stream in addition to any stock price gains."
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Level 2: Brokers & Exchanges",
+    "topic": "Market Infrastructure",
+    "rewardAmt": 5000.0,
+    "concept": "Exchanges are marketplaces where stock prices are matched, and Brokers are regulated intermediaries that pass your client orders securely to the exchange.",
+    "question": "What is the primary role of a stock broker?",
+    "options": [
+      "To guarantee that every stock you buy goes up in value",
+      "To act as a regulated intermediary sending your orders to the exchange",
+      "To print new shares when the company runs out of them"
+    ],
+    "correctIndex": 1,
+    "lectures": [
+      {
+        "title": "Lecture 2.1: The Stock Exchange",
+        "content": "An exchange (like NYSE, NASDAQ, NSE, or BSE) is a highly regulated, centralized marketplace where buyers and sellers are matched. Stock exchanges publish real-time stock prices and ensure trade settlements are handled safely."
+      },
+      {
+        "title": "Lecture 2.2: The Regulated Broker",
+        "content": "Individual retail investors cannot buy shares directly from the exchange. You need a broker—a certified, licensed, and heavily regulated firm that provides trading terminals, processes client orders, and transmits them directly to the exchange."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Level 3: Order Types",
+    "topic": "Advanced Executions",
+    "rewardAmt": 10000.0,
+    "concept": "Market orders buy/sell instantly, while Limit orders specify maximum/minimum prices. GTT (Good Till Triggered) orders stay active until a designated price support is matched.",
+    "question": "Which order type is ideal for waiting patiently to buy a stock at a lower support price?",
+    "options": [
+      "Market Order",
+      "GTT or Limit Order",
+      "Margin Intraday Order"
+    ],
+    "correctIndex": 1,
+    "lectures": [
+      {
+        "title": "Lecture 3.1: Market Orders vs. Limit Orders",
+        "content": "A Market Order instructs your broker to buy or sell a stock immediately at the best available current price. While instant, you might buy at a higher price than expected during volatile sessions. A Limit Order specifies the exact maximum price you are willing to pay, ensuring price precision."
+      },
+      {
+        "title": "Lecture 3.2: GTT (Good Till Triggered)",
+        "content": "Standard limit orders expire at the end of the trading day. GTT orders remain active in the broker's system for weeks or months, automatically turning into active orders only when the stock hits your desired target price."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Level 4: Position Sizing",
+    "topic": "Risk Mitigation",
+    "rewardAmt": 10000.0,
+    "concept": "Position sizing means limiting how much of your total capital is allocated to any single trade to prevent catastrophic losses.",
+    "question": "If your total capital is ₹25,000, what is the maximum disciplined allocation for a single stock trade?",
+    "options": [
+      "₹15,000 to ₹25,000 (60% to 100%)",
+      "₹2,500 to ₹3,750 (10% to 15%)",
+      "Exactly ₹0 (You should never buy anything)"
+    ],
+    "correctIndex": 1,
+    "lectures": [
+      {
+        "title": "Lecture 4.1: The Danger of Going 'All-In'",
+        "content": "Many beginners commit a fatal error: allocating 50% to 100% of their capital into a single stock. If that company faces a negative surprise and crashes 30%, half of their total wealth is vaporized. Professional traders never let a single trade compromise their survival."
+      },
+      {
+        "title": "Lecture 4.2: The 10-15% Allocation Rule",
+        "content": "Disciplined investors enforce a maximum position sizing rule, limiting any single asset to 10-15% of their total investment portfolio. Even if that specific asset drops significantly, the overall portfolio suffers only a minor, easily recoverable setback."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Level 5: Diversification",
+    "topic": "Portfolio Health",
+    "rewardAmt": 10000.0,
+    "concept": "Diversification means distributing your cash across distinct stocks, sectors, and asset classes to spread risk.",
+    "question": "Why do retail investors use diversification?",
+    "options": [
+      "To completely avoid paying taxes on stock returns",
+      "To protect overall capital from crashing if a single company or sector sinks",
+      "To increase the speed of order matching at the exchange"
+    ],
+    "correctIndex": 1,
+    "lectures": [
+      {
+        "title": "Lecture 5.1: Sector Correlation",
+        "content": "If you buy shares in five different technology companies, your portfolio is not truly diversified. If a regulatory setback hits the tech industry, all your holdings will drop together. True diversification means owning businesses that react differently to economic events."
+      },
+      {
+        "title": "Lecture 5.2: Spreading the Assets",
+        "content": "A healthy portfolio includes a mix of large-cap stable companies, defensive sectors (like healthcare or consumer staples), and emerging growth companies. This ensures that a single catastrophic failure in one company or sector will not destroy your net worth."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Level 6: Technical Basics",
+    "topic": "Chart Interpretation",
+    "rewardAmt": 15000.0,
+    "concept": "A candlestick chart displays Open, Close, High, and Low prices. A hammer candlestick at a support level suggests buyers rejected lower prices, hinting at a bullish trend reversal.",
+    "question": "What does a candlestick with a small upper body and a long lower shadow (hammer) at support suggest?",
+    "options": [
+      "Sellers have completely dominated and price will drop to zero",
+      "Buyers rejected lower prices, suggesting a potential trend reversal",
+      "The broker has disconnected from the stock exchange"
+    ],
+    "correctIndex": 1,
+    "lectures": [
+      {
+        "title": "Lecture 6.1: Understanding Candlesticks",
+        "content": "Each candle on a chart represents price action over a specific timeframe (e.g., 1 day). The solid 'body' shows the range between the open and close prices, while the thin 'shadows' (wicks) indicate the absolute high and low prices reached."
+      },
+      {
+        "title": "Lecture 6.2: Support and Resistance",
+        "content": "Support is a price level where buyers historically step in and stop a stock from falling further. Resistance is a level where selling pressure usually caps price advances. Identifying these zones helps you make disciplined entry and exit decisions."
+      },
+      {
+        "title": "Lecture 6.3: Bullish Reversal Signals",
+        "content": "A 'hammer' candlestick has a small body at the top with a very long lower wick. When this appears near major support, it proves that sellers tried to push prices down, but aggressive buyers stepped in and drove the price back up. This is a common technical signal for a bullish trend reversal."
+      }
+    ]
+  }
+]

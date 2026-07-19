@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "475129425714",
+    "project_id": "tradelab-4f858",
+    "storage_bucket": "tradelab-4f858.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:475129425714:android:ae3991f8d9354e0740712b",
+        "android_client_info": {
+          "package_name": "com.ashwathai.tradelab"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCb_CIJDEsXGYYSPqYEQKC3CgeEbLidnBs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

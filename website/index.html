@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Lab — Sophisticated Paper Trading Simulator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-[#090D16] text-slate-100 font-['Plus_Jakarta_Sans'] h-screen overflow-hidden flex flex-col antialiased">
+
+    <!-- Top Header Bar -->
+    <header class="border-b border-slate-800/80 bg-[#0D1527]/60 backdrop-blur-md px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-none">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <span class="font-['Space_Grotesk'] font-bold text-lg text-white">TL</span>
+            </div>
+            <div>
+                <h1 class="font-['Space_Grotesk'] font-bold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">Trade Lab</h1>
+                <p class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">BY ASHWATH AI</p>
+            </div>
+        </div>
+        
+        <!-- Live status and Global Controls -->
+        <div class="flex flex-wrap items-center gap-4 text-xs">
+
+            <!-- Market Mode Status -->
+            <div class="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-lg px-3 py-2">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span id="market-status-text" class="font-medium text-emerald-400">Simulated Market Live</span>
+            </div>
+
+            <!-- Brokerage Credits Pill -->
+            <div id="brokerage-shield-pill" class="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-lg px-3 py-2 cursor-pointer hover:border-cyan-500/30 transition-all">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span>Shield: <strong id="brokerage-credits-value" class="text-cyan-400 font-mono">300</strong> Cr</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation & Application Panels -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- Navigation Rail (Sidebar) -->
+        <nav class="w-full md:w-64 border-r border-slate-800/80 bg-[#0D1527]/30 p-4 flex flex-row md:flex-col gap-2 overflow-x-auto flex-none">
+            <button data-tab="portfolio" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <span class="hidden md:inline">Portfolio Desk</span>
+            </button>
+            <button data-tab="watchlist" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                <span class="hidden md:inline">Watchlist Desk</span>
+            </button>
+            <button data-tab="academy" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                <span class="hidden md:inline">Academy Hub</span>
+            </button>
+            <button data-tab="profile" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span class="hidden md:inline">Investor Profile</span>
+            </button>
+            <button data-tab="ai-hub" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-indigo-400 hover:bg-indigo-950/20 border border-transparent hover:border-indigo-500/20">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span class="hidden md:inline">Gemini AI Audit</span>
+            </button>
+
+            <!-- Mission Status Widget -->
+            <div class="hidden md:block mt-8 p-4 rounded-xl border border-slate-800 bg-[#0D1527]/20">
+                <h3 class="font-['Space_Grotesk'] text-xs font-bold tracking-wider text-slate-400 uppercase mb-3">Daily Missions</h3>
+                <div id="missions-container" class="space-y-3">
+                    <!-- Dynamic missions go here -->
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dynamic Screen Content Area -->
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto h-full">
+            
+            <!-- PORTFOLIO PANEL -->
+            <section id="panel-portfolio" class="tab-panel space-y-6">
+                <!-- Aggregate Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/30 backdrop-blur-md">
+                        <p class="text-xs text-slate-400 font-semibold tracking-wide uppercase">Portfolio Net Worth</p>
+                        <h2 id="portfolio-net-worth" class="font-['Space_Grotesk'] font-bold text-3xl text-white mt-1 font-mono">₹10,000.00</h2>
+                        <div id="portfolio-change-badge" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full mt-2 bg-emerald-500/10 text-emerald-400">
+                            +0.00%
+                        </div>
+                    </div>
+                    <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/30 backdrop-blur-md">
+                        <p class="text-xs text-slate-400 font-semibold tracking-wide uppercase">Cash Balance</p>
+                        <h2 id="portfolio-cash" class="font-['Space_Grotesk'] font-bold text-3xl text-white mt-1 font-mono">₹10,000.00</h2>
+                        <p class="text-[10px] text-slate-500 mt-2">Available to execute trades</p>
+                    </div>
+                    <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/30 backdrop-blur-md">
+                        <p class="text-xs text-slate-400 font-semibold tracking-wide uppercase">Holdings Market Value</p>
+                        <h2 id="portfolio-holdings" class="font-['Space_Grotesk'] font-bold text-3xl text-white mt-1 font-mono">₹0.00</h2>
+                        <p class="text-[10px] text-slate-500 mt-2">Value of your active holdings</p>
+                    </div>
+                    <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/30 backdrop-blur-md">
+                        <p class="text-xs text-slate-400 font-semibold tracking-wide uppercase">Current Risk Profile</p>
+                        <h2 id="portfolio-risk" class="font-['Space_Grotesk'] font-bold text-2xl text-cyan-400 mt-1">Moderate</h2>
+                        <p class="text-[10px] text-slate-500 mt-3">Calibrated on Profile Screen</p>
+                    </div>
+                </div>
+
+                <!-- Active Holdings Table -->
+                <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10">
+                    <h3 class="font-['Space_Grotesk'] font-bold text-lg text-slate-100 mb-4 flex items-center gap-2">
+                        <span>Active Holdings Portfolio</span>
+                        <span id="holdings-count" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-md font-mono font-normal">0</span>
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                                    <th class="pb-3 pl-2">Asset</th>
+                                    <th class="pb-3 text-right">Shares</th>
+                                    <th class="pb-3 text-right">Avg Purchase Price</th>
+                                    <th class="pb-3 text-right">Current Price</th>
+                                    <th class="pb-3 text-right">Market Value</th>
+                                    <th class="pb-3 text-right pr-2">Profit / Loss</th>
+                                </tr>
+                            </thead>
+                            <tbody id="holdings-table-body" class="divide-y divide-slate-800/50 text-sm font-medium">
+                                <!-- Dynamic holdings go here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- GTT / Pending Limit Orders -->
+                    <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10 flex flex-col">
+                        <h3 class="font-['Space_Grotesk'] font-bold text-lg text-slate-100 mb-4 flex items-center justify-between">
+                            <span>Pending Orders (Limit / Stop-Loss / GTT)</span>
+                            <span id="pending-count" class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-md font-mono">0</span>
+                        </h3>
+                        <div class="overflow-y-auto flex-1 max-h-[300px]">
+                            <div id="pending-orders-container" class="space-y-3">
+                                <!-- Dynamic pending orders go here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction History Logs -->
+                    <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10 flex flex-col">
+                        <h3 class="font-['Space_Grotesk'] font-bold text-lg text-slate-100 mb-4">Historic Transaction Logs</h3>
+                        <div class="overflow-y-auto flex-1 max-h-[300px]">
+                            <div id="transactions-container" class="space-y-3">
+                                <!-- Dynamic transactions go here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- WATCHLIST PANEL (CORE TRADING DESK) -->
+            <section id="panel-watchlist" class="tab-panel hidden space-y-6">
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <!-- Left Sidebar - Stocks Selection -->
+                    <div class="w-full lg:w-80 flex flex-col gap-4">
+                        <div class="card p-4 rounded-2xl border border-slate-800 bg-[#0D1527]/30 backdrop-blur-md">
+                            <div class="relative">
+                                <input id="stock-search" type="text" placeholder="Search Symbol or Company..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-all">
+                                <svg class="absolute right-3 top-3 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                        </div>
+                        <div class="card p-4 rounded-2xl border border-slate-800 bg-[#0D1527]/10 flex-1 overflow-y-auto max-h-[500px]">
+                            <h3 class="font-['Space_Grotesk'] text-xs font-bold tracking-wider text-slate-400 uppercase mb-3 px-2">Watchlist Stocks</h3>
+                            <div id="watchlist-stocks-container" class="space-y-2">
+                                <!-- Dynamic stock list goes here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Central Workstation - Live Chart and Order Desk -->
+                    <div class="flex-1 flex flex-col gap-6">
+                        <!-- Chart Workspace -->
+                        <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10 flex flex-col relative overflow-hidden">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div id="chart-stock-icon" class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg font-bold text-cyan-400">AAPL</div>
+                                    <div>
+                                        <h2 id="chart-stock-name" class="font-['Space_Grotesk'] font-bold text-xl text-white">Apple Inc.</h2>
+                                        <p id="chart-stock-symbol" class="text-xs text-slate-500 uppercase">AAPL • US Equity</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <h2 id="chart-stock-price" class="font-['Space_Grotesk'] font-bold text-3xl text-white font-mono">₹15,140.03</h2>
+                                    <span id="chart-stock-change" class="text-xs font-bold text-emerald-400 font-mono mt-1 block">+1.25%</span>
+                                </div>
+                            </div>
+
+                            <!-- Indicator Controls Row -->
+                            <div class="flex flex-wrap items-center gap-2 border-t border-b border-slate-800/80 py-3 mb-4 text-xs">
+                                <span class="text-slate-400 font-medium">Technical Overlays:</span>
+                                <button id="btn-overlay-sma" class="px-3 py-1.5 rounded-lg border border-slate-800 hover:border-amber-500/50 bg-slate-900/60 font-semibold transition-all hover:text-slate-200">SMA-5 Overlay</button>
+                                <button id="btn-overlay-ema" class="px-3 py-1.5 rounded-lg border border-slate-800 hover:border-fuchsia-500/50 bg-slate-900/60 font-semibold transition-all hover:text-slate-200">EMA-5 Overlay</button>
+                                <div class="h-4 w-px bg-slate-800 mx-2"></div>
+                                <button id="btn-overlay-rsi" class="px-3 py-1.5 rounded-lg border border-slate-800 hover:border-indigo-500/50 bg-slate-900/60 font-semibold transition-all hover:text-slate-200">RSI Indicator</button>
+                            </div>
+
+                            <!-- High / Low stats -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium border-b border-slate-800/50 pb-4 mb-4">
+                                <div><span class="text-slate-500 block uppercase tracking-wider text-[10px]">Previous Close</span> <strong id="val-prev-close" class="text-slate-300 font-mono">₹0.00</strong></div>
+                                <div><span class="text-slate-500 block uppercase tracking-wider text-[10px]">Day High</span> <strong id="val-day-high" class="text-emerald-400 font-mono">₹0.00</strong></div>
+                                <div><span class="text-slate-500 block uppercase tracking-wider text-[10px]">Day Low</span> <strong id="val-day-low" class="text-rose-400 font-mono">₹0.00</strong></div>
+                                <div><span class="text-slate-500 block uppercase tracking-wider text-[10px]">Asset Class</span> <strong id="val-asset-class" class="text-cyan-400">Foreign Equity</strong></div>
+                            </div>
+
+                            <!-- SVG Chart Canvas Area -->
+                            <div class="relative w-full h-64 bg-slate-950/80 rounded-xl border border-slate-800/80 p-2 overflow-hidden flex flex-col justify-end">
+                                <svg id="price-vector-chart" class="w-full h-full" preserveAspectRatio="none">
+                                    <!-- Dynamic SVG chart gets injected here -->
+                                </svg>
+                            </div>
+
+                            <!-- RSI Secondary Chart Area -->
+                            <div id="rsi-chart-container" class="hidden mt-4 relative w-full h-24 bg-slate-950/80 rounded-xl border border-slate-800/80 p-2 overflow-hidden">
+                                <div class="absolute left-2 top-1 text-[10px] text-slate-500 uppercase font-semibold">RSI (14)</div>
+                                <svg id="rsi-vector-chart" class="w-full h-full" preserveAspectRatio="none">
+                                    <!-- Dynamic RSI SVG gets injected here -->
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Order Ticket and Position Rating -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Order Entry Form -->
+                            <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10 flex flex-col">
+                                <h3 class="font-['Space_Grotesk'] font-bold text-lg text-slate-100 mb-4">Order Execution Ticket</h3>
+                                
+                                <div class="flex border-b border-slate-800 mb-4 text-xs">
+                                    <button data-order-type="Market" class="order-type-btn flex-1 pb-3 text-center border-b-2 border-cyan-500 text-cyan-400 font-semibold">Market</button>
+                                    <button data-order-type="Limit" class="order-type-btn flex-1 pb-3 text-center border-b-2 border-transparent text-slate-400 font-semibold hover:text-slate-200">Limit</button>
+                                    <button data-order-type="Stop-Loss" class="order-type-btn flex-1 pb-3 text-center border-b-2 border-transparent text-slate-400 font-semibold hover:text-slate-200">Stop-Loss</button>
+                                    <button data-order-type="GTT" class="order-type-btn flex-1 pb-3 text-center border-b-2 border-transparent text-slate-400 font-semibold hover:text-slate-200">Take-Profit (GTT)</button>
+                                </div>
+
+                                <div class="space-y-4 flex-1">
+                                    <!-- Shares quantity input -->
+                                    <div>
+                                        <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Shares Quantity</label>
+                                        <input id="order-shares-input" type="number" min="0.01" step="any" placeholder="Enter number of shares..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 font-mono">
+                                    </div>
+
+                                    <!-- Trigger price input (shown for non-market) -->
+                                    <div id="trigger-price-input-wrapper" class="hidden">
+                                        <label id="trigger-price-label" class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Trigger Execution Price</label>
+                                        <div class="relative">
+                                            <span id="trigger-currency-symbol" class="absolute left-4 top-3 text-slate-500 text-sm font-semibold font-mono">₹</span>
+                                            <input id="order-trigger-input" type="number" min="0.01" step="any" placeholder="Enter trigger price..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 font-mono">
+                                        </div>
+                                    </div>
+
+                                    <!-- Commission/Fee Breakdown -->
+                                    <div class="bg-slate-900/60 rounded-xl border border-slate-800 p-4 space-y-2 text-xs font-medium text-slate-400">
+                                        <div class="flex justify-between"><span>Subtotal Asset Cost:</span> <span id="summary-subtotal" class="text-slate-200 font-mono">₹0.00</span></div>
+                                        <div class="flex justify-between"><span>Brokerage Commission:</span> <span id="summary-brokerage" class="text-slate-200 font-mono">₹20.00</span></div>
+                                        <div class="flex justify-between border-t border-slate-800/50 pt-2 font-bold">
+                                            <span class="text-slate-300">Total Order Capital:</span> 
+                                            <span id="summary-total" class="text-cyan-400 font-mono">₹0.00</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Buy & Sell Actions Row -->
+                                    <div class="grid grid-cols-2 gap-4 pt-2">
+                                        <button id="order-buy-btn" class="py-3.5 rounded-xl font-bold bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 shadow-lg shadow-emerald-500/10 transition-all text-sm">PLACE BUY ORDER</button>
+                                        <button id="order-sell-btn" class="py-3.5 rounded-xl font-bold bg-rose-500 text-white hover:bg-rose-600 active:scale-95 shadow-lg shadow-rose-500/10 transition-all text-sm">PLACE SELL ORDER</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Position Sizing / Psych Audit Screen -->
+                            <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10 flex flex-col justify-between">
+                                <h3 class="font-['Space_Grotesk'] font-bold text-lg text-slate-100 mb-2">Real-Time Risk & Allocation Audit</h3>
+                                <p class="text-xs text-slate-400 mb-4 font-medium leading-relaxed">Trade Lab enforces healthy retail habits. To prevent fantasy gambling, our sizing audit gauges your trade allocation against your overall net worth.</p>
+                                
+                                <div id="audit-placeholder" class="flex-1 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-xl p-8 text-center text-slate-500">
+                                    <svg class="w-10 h-10 mb-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                    <p class="text-xs font-semibold">Enter a trade quantity on the left to generate a real-time risk assessment.</p>
+                                </div>
+
+                                <div id="audit-results-card" class="hidden flex-1 bg-slate-900/60 rounded-xl border border-slate-800 p-5 space-y-4 text-xs font-medium">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-400">Position Allocation Size:</span>
+                                        <span id="audit-alloc-pct" class="font-bold text-slate-200 font-mono">0.00%</span>
+                                    </div>
+                                    
+                                    <!-- Sizing Meter Bar -->
+                                    <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div id="audit-alloc-bar" class="h-full bg-cyan-500 rounded-full" style="width: 0%"></div>
+                                    </div>
+
+                                    <div class="space-y-3">
+                                        <!-- Score badges -->
+                                        <div class="flex gap-2">
+                                            <span id="audit-badge-size" class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Sizing: Excellent</span>
+                                            <span id="audit-badge-type" class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Order type: Disciplined</span>
+                                        </div>
+                                        
+                                        <!-- Advice columns -->
+                                        <div>
+                                            <p class="text-[10px] uppercase font-bold text-slate-500 mb-1">Sizing Diagnostics</p>
+                                            <p id="audit-text-size" class="text-slate-300 leading-relaxed"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-[10px] uppercase font-bold text-slate-500 mb-1">Execution Diagnostics</p>
+                                            <p id="audit-text-type" class="text-slate-300 leading-relaxed"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ACADEMY HUB PANEL -->
+            <section id="panel-academy" class="tab-panel hidden space-y-6">
+                <!-- Academy Stats Banner -->
+                <div class="card p-6 rounded-3xl border border-slate-800 bg-gradient-to-tr from-[#0D1527] to-[#122244] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="space-y-2 max-w-lg">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Learn-to-Earn Program</span>
+                        <h2 class="font-['Space_Grotesk'] font-bold text-2xl md:text-3xl text-white">Earn Virtual Capital for Quizzes!</h2>
+                        <p class="text-xs text-slate-400 leading-relaxed font-medium">To prevent reckless trading, Trade Lab lets you "earn" additional virtual starting capital by finishing interactive quiz modules on position sizing, risk management, and chart basics.</p>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl text-center md:min-w-[180px] backdrop-blur-md">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Completed Modules</span>
+                        <h1 id="academy-completed-ratio" class="font-['Space_Grotesk'] font-bold text-4xl text-cyan-400 mt-1">0/6</h1>
+                        <p class="text-[9px] text-slate-500 mt-2">Finish all to graduate</p>
+                    </div>
+                </div>
+
+                <!-- Academy Levels Grid -->
+                <div id="academy-levels-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic level modules go here -->
+                </div>
+            </section>
+
+            <!-- PROFILE PANEL -->
+            <section id="panel-profile" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left profile side / details -->
+                    <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10 flex flex-col items-center text-center justify-between gap-6">
+                        <div class="space-y-4 w-full">
+                            <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-400 to-indigo-600 flex items-center justify-center font-bold text-3xl shadow-xl shadow-cyan-500/10 mx-auto text-white">U</div>
+                            <div>
+                                <h3 id="profile-user-name" class="font-['Space_Grotesk'] font-bold text-xl text-white">Retail Pioneer</h3>
+                                <p id="profile-user-email" class="text-xs text-slate-500 mt-1">atulkpal@gmail.com</p>
+                            </div>
+                            <div class="flex items-center justify-center gap-2">
+                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Standard Sandbox</span>
+                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Free Tier</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Controls (Bankruptcy emergency recharges) -->
+                        <div class="border-t border-slate-800 pt-6 w-full space-y-3">
+                            <button id="btn-emergency-recharge" class="w-full py-3 rounded-xl font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all text-xs">EMERGENCY BANKRUPTCY RECHARGE (+₹10,000)</button>
+                            <button id="btn-reset-portfolio" class="w-full py-3 rounded-xl font-semibold bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800 transition-all text-xs">RESET PORTFOLIO TO DEFAULTS</button>
+                        </div>
+                    </div>
+
+                    <!-- Right Profiler Questionnaire -->
+                    <div class="lg:col-span-2 card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10">
+                        <h2 class="font-['Space_Grotesk'] font-bold text-xl text-slate-100 mb-2">60-Second Realistic Investor Profiler</h2>
+                        <p class="text-xs text-slate-400 mb-6 font-medium leading-relaxed">Retail brokerages are not video games. Answer this brief profiler to evaluate your monthly savings, capital limits, and trading timeframe to align the simulator to your real-world habits.</p>
+                        
+                        <!-- Profiler Steps Content -->
+                        <div id="profiler-quiz-container" class="space-y-6">
+                            <!-- Step 1 -->
+                            <div class="profiler-step" data-step="1">
+                                <h3 class="font-semibold text-sm text-slate-300 mb-3 flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs flex items-center justify-center font-bold font-mono">1</span>
+                                    <span>What is your actual real-world monthly savings or investing capacity?</span>
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <button data-val="₹500 - Micro Sizer" class="step-opt-btn p-4 rounded-xl border border-slate-800 hover:border-cyan-500 text-left bg-slate-900/60 font-semibold text-xs text-slate-300 transition-all">₹500 / month<span class="block font-normal text-[10px] text-slate-500 mt-1">Starting portfolio ₹1,000</span></button>
+                                    <button data-val="₹5,000 - Disciplined Investor" class="step-opt-btn p-4 rounded-xl border border-cyan-500/20 text-left bg-cyan-500/5 font-semibold text-xs text-cyan-400 transition-all">₹5,000 / month<span class="block font-normal text-[10px] text-slate-400 mt-1">Starting portfolio ₹10,000</span></button>
+                                    <button data-val="₹50,000 - Professional Core" class="step-opt-btn p-4 rounded-xl border border-slate-800 hover:border-cyan-500 text-left bg-slate-900/60 font-semibold text-xs text-slate-300 transition-all">₹50,000+ / month<span class="block font-normal text-[10px] text-slate-500 mt-1">Starting portfolio ₹1,00,000</span></button>
+                                </div>
+                            </div>
+
+                            <!-- Step 2 -->
+                            <div class="profiler-step" data-step="2">
+                                <h3 class="font-semibold text-sm text-slate-300 mb-3 flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs flex items-center justify-center font-bold font-mono">2</span>
+                                    <span>What is your primary investment goal?</span>
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <button data-val="Defensive" class="step-opt-btn p-4 rounded-xl border border-slate-800 hover:border-cyan-500 text-left bg-slate-900/60 font-semibold text-xs text-slate-300 transition-all">Wealth Preservation<span class="block font-normal text-[10px] text-slate-500 mt-1">Conservative, avoid big drawdowns</span></button>
+                                    <button data-val="Moderate" class="step-opt-btn p-4 rounded-xl border border-cyan-500/20 text-left bg-cyan-500/5 font-semibold text-xs text-cyan-400 transition-all">Steady Compounding<span class="block font-normal text-[10px] text-slate-400 mt-1">Balanced growth & risk</span></button>
+                                    <button data-val="Aggressive" class="step-opt-btn p-4 rounded-xl border border-slate-800 hover:border-cyan-500 text-left bg-slate-900/60 font-semibold text-xs text-slate-300 transition-all">Hyper Compounding<span class="block font-normal text-[10px] text-slate-500 mt-1">High risk, target maximal gains</span></button>
+                                </div>
+                            </div>
+
+                            <!-- Step 3 -->
+                            <div class="profiler-step" data-step="3">
+                                <h3 class="font-semibold text-sm text-slate-300 mb-3 flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs flex items-center justify-center font-bold font-mono">3</span>
+                                    <span>How would you react if a solid blue-chip holding fell 15% in a single week?</span>
+                                </h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <button data-val="Conservative" class="step-opt-btn p-4 rounded-xl border border-slate-800 hover:border-cyan-500 text-left bg-slate-900/60 font-semibold text-xs text-slate-300 transition-all">Panic Sell Immediately<span class="block font-normal text-[10px] text-slate-500 mt-1">Accept the loss to avoid further crashes</span></button>
+                                    <button data-val="Balanced" class="step-opt-btn p-4 rounded-xl border border-slate-800 hover:border-cyan-500 text-left bg-slate-900/60 font-semibold text-xs text-slate-300 transition-all">Do Nothing / Hold Patiently<span class="block font-normal text-[10px] text-slate-500 mt-1">Wait for company fundamentals to recover</span></button>
+                                    <button data-val="Aggressive" class="step-opt-btn p-4 rounded-xl border border-cyan-500/20 text-left bg-cyan-500/5 font-semibold text-xs text-cyan-400 transition-all">Buy More at a Discount<span class="block font-normal text-[10px] text-slate-400 mt-1">Acquire more shares at lower cost basis</span></button>
+                                </div>
+                            </div>
+
+                            <!-- Submit row -->
+                            <div class="pt-4 border-t border-slate-800 flex justify-end">
+                                <button id="btn-submit-profiler" class="px-6 py-3 rounded-xl font-bold bg-cyan-500 text-white hover:bg-cyan-600 transition-all text-xs shadow-lg shadow-cyan-500/10">SUBMIT CALIBRATION SCHEMA</button>
+                            </div>
+                        </div>
+
+                        <!-- Calibration Result Card -->
+                        <div id="profiler-results-card" class="hidden bg-slate-900/60 border border-slate-800 rounded-xl p-5 mt-6 space-y-4">
+                            <div class="flex items-center gap-3">
+                                <div class="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] uppercase font-bold text-slate-500 tracking-wider">Calibration Profile Locked</span>
+                                    <h4 id="profiler-locked-title" class="font-['Space_Grotesk'] font-bold text-base text-emerald-400 mt-0.5">Balanced Long-Term Investor</h4>
+                                </div>
+                            </div>
+                            <p id="profiler-locked-desc" class="text-xs text-slate-300 leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- GEMINI AI STRATEGY HUB -->
+            <section id="panel-ai-hub" class="tab-panel hidden space-y-6">
+                <!-- Gemini Banner -->
+                <div class="card p-6 rounded-3xl border border-indigo-900/40 bg-gradient-to-tr from-[#0F102B] to-[#17144D] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="space-y-2 max-w-xl">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Gemini Powered</span>
+                        <h2 class="font-['Space_Grotesk'] font-bold text-2xl md:text-3xl text-white">Ashwathey AI Strategy Hub</h2>
+                        <p class="text-xs text-indigo-200/80 leading-relaxed font-medium">Ashwathey doesn't just read charts—she audits your psychological biases. By parsing your live transaction logs and position holding times, Gemini uncovers cognitive traps like FOMO, Revenge Trading, or Sunk-Cost Fallacy.</p>
+                    </div>
+                    <div class="text-center md:min-w-[150px] space-y-2">
+                        <div class="h-14 w-14 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto animate-pulse">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <span class="text-[9px] uppercase font-bold text-indigo-400 tracking-wider block">Diagnostics Available</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left AI Configuration & Trigger -->
+                    <div class="card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10 space-y-5">
+                        <h3 class="font-['Space_Grotesk'] font-bold text-lg text-slate-100">Advisor Controls</h3>
+                        
+                        <!-- Optional API Key -->
+                        <div class="space-y-2">
+                            <label class="text-[10px] uppercase font-bold text-slate-400 block">Personal Gemini API Key (Optional)</label>
+                            <input id="ai-api-key" type="password" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500">
+                            <p class="text-[9px] text-slate-500 leading-relaxed">Leave blank to run our high-fidelity on-device behavioral diagnostics emulation.</p>
+                        </div>
+
+                        <div class="bg-slate-900/60 rounded-xl border border-slate-800 p-4 space-y-2 text-xs font-medium text-slate-400">
+                            <div class="flex justify-between"><span>Audit Target:</span> <span class="text-slate-200">Local Holdings</span></div>
+                            <div class="flex justify-between"><span>Audit Scope:</span> <span class="text-slate-200">Behavioral Biases</span></div>
+                            <div class="flex justify-between"><span>Audit Cost:</span> <span class="text-slate-200">Free Sandbox</span></div>
+                        </div>
+
+                        <button id="btn-trigger-ai-audit" class="w-full py-4 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-lg shadow-indigo-600/20 transition-all text-xs flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                            <span>GENERATE AI BEHAVIORAL DIAGNOSIS</span>
+                        </button>
+                    </div>
+
+                    <!-- Right Diagnostics Display -->
+                    <div class="lg:col-span-2 card p-6 rounded-2xl border border-slate-800 bg-[#0D1527]/10 flex flex-col justify-between min-h-[350px]">
+                        <h3 class="font-['Space_Grotesk'] font-bold text-lg text-slate-100 border-b border-slate-800/80 pb-3 mb-4">Diagnostics Terminal Output</h3>
+                        
+                        <div id="ai-output-terminal" class="flex-1 overflow-y-auto max-h-[350px] bg-slate-950 rounded-xl border border-slate-800/80 p-5 font-mono text-xs leading-relaxed text-slate-400">
+                            <!-- Terminal default text -->
+                            <p class="text-cyan-400"># Trade Lab AI Strategy Hub Terminal initialized successfully.</p>
+                            <p class="mt-1"># Waiting for audit request signal...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- REWARDED VIDEO AD MODAL OVERLAY (SIMULATED AD) -->
+    <div id="rewarded-ad-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-6 hidden">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center space-y-6 relative overflow-hidden">
+            <!-- Simulated Video Element -->
+            <div class="w-full aspect-video rounded-xl bg-slate-950 border border-slate-800 flex flex-col items-center justify-center p-4 relative">
+                <span class="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 bg-slate-900/80 rounded border border-slate-800 text-slate-400 uppercase tracking-wider">Simulated Ad</span>
+                
+                <div class="animate-bounce h-12 w-12 bg-gradient-to-tr from-cyan-400 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl mb-4">A</div>
+                <h4 class="font-['Space_Grotesk'] font-bold text-sm text-slate-200">Ashwath AI Products Sandbox</h4>
+                <p class="text-[10px] text-slate-500 mt-1 max-w-[250px]">Building modern, secure, offline-first personal financial simulators.</p>
+
+                <!-- Countdown overlay -->
+                <div class="absolute bottom-3 left-3 flex items-center gap-2 bg-slate-950/80 px-2.5 py-1 rounded text-[10px] text-slate-400 border border-slate-800">
+                    <span id="ad-timer-countdown" class="font-bold text-cyan-400 font-mono">5</span>
+                    <span>seconds remaining</span>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="font-['Space_Grotesk'] font-bold text-lg text-white">Shielding Commission Fees...</h3>
+                <p class="text-xs text-slate-400 leading-relaxed font-medium">Enjoying Trade Lab? Close this sandbox commercial to credit your Brokerage Shield wallet with <strong>+100 credits</strong>, automatically waiving exchange transaction fees!</p>
+            </div>
+
+            <!-- Ad Close button (disabled until timer finishes) -->
+            <button id="btn-close-ad" disabled class="w-full py-3 rounded-xl font-bold bg-slate-800 text-slate-500 cursor-not-allowed text-xs transition-all">WAITING FOR SPONSOR SPOTLIGHT (5s)</button>
+        </div>
+    </div>
+
+    <!-- GENERAL DIALOGUES & TOASTS -->
+    <div id="toast-notification" class="fixed bottom-6 right-6 px-5 py-3.5 rounded-xl border border-slate-800 bg-[#0D1527] shadow-xl text-xs font-semibold flex items-center gap-3 transition-all transform translate-y-20 opacity-0 z-50">
+        <!-- Injected via JavaScript -->
+    </div>
+
+    <!-- Dynamic JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>

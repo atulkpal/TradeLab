@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "title": "Mission 1: The Practice Frontier",
+    "desc": "Execute your first simulator buy order in the Watchlist Desk.",
+    "reward": "+₹500 Virtual Cash",
+    "identifier": "has_traded",
+    "rewardAmt": 500.0
+  },
+  {
+    "id": 2,
+    "title": "Mission 2: Theory Pioneer",
+    "desc": "Pass at least 3 risk modules in the Academy Hub.",
+    "reward": "+₹1,000 Virtual Cash",
+    "identifier": "completed_3_modules",
+    "rewardAmt": 1000.0
+  },
+  {
+    "id": 3,
+    "title": "Mission 3: Discipline Shield",
+    "desc": "Complete the Realistic Investor Profiler on the Profile screen.",
+    "reward": "+₹1,500 Virtual Cash",
+    "identifier": "has_calibrated",
+    "rewardAmt": 1500.0
+  }
+]
