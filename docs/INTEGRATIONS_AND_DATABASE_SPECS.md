@@ -74,19 +74,20 @@ Trade Lab uses Firebase for secure user registration, email-password authenticat
 ### A. Authentication Providers
 To operate successfully, configure the following inside your **Firebase Console**:
 1.  **Email/Password Provider:** Enable inside the **Authentication -> Sign-in Method** tab.
-2.  **Anonymous Authentication (Optional fallback):** For frictionless user onboarding if requested by business requirements.
+2.  **Google Sign-In:** Uses the modern **Credential Manager API**. Requires Web Client ID and SHA-1 registration.
+3.  **Phone Authentication:** Enabled for SMS OTP verification.
 
-### B. Exception-Guarded Initialization Code (`AuthScreen.kt`)
-The application implements a safe, non-blocking check that isolates Firebase Auth. If Google Play Services is missing or the app has not been packaged with the `google-services.json` config, the app automatically activates a local, robust **Sandbox Simulation Mode** (Sandbox Mode) so users can still trade and complete quizzes offline.
+### B. Production Authentication Implementation
+The app uses a hybrid logic in `AuthScreen.kt` to ensure seamless development and secure production:
+*   **Debug builds:** Trigger a **Sandbox Simulation Dialog** for instant UI verification without real OTPs.
+*   **Release builds:** Trigger the **Real SDKs** (Credential Manager for Google, PhoneAuthProvider for SMS).
 
 ```kotlin
-// Safe check inside Composable UI
-val firebaseAuth: FirebaseAuth? = remember {
-    try {
-        FirebaseAuth.getInstance()
-    } catch (e: Exception) {
-        null
-    }
+// Hybrid toggle example
+if (firebaseAuth == null || BuildConfig.DEBUG) {
+    // Show Simulation Dialog
+} else {
+    // Launch Real SDK Flow
 }
 ```
 
@@ -214,6 +215,25 @@ The database holds 9 unique table entities mapped directly from `Entities.kt`:
 
 ---
 
-## 4. How Local Database Connects to Firebase
-1.  **State Synchronicity:** On login/registration, the application uses `viewModel.registerOrLogin(userName, userEmail)`. If Firebase Auth returns a successful token, the profile data is written to the local Room database (`user_profile` table), binding it to the user's secure account ID.
-2.  **Backup Integration Path:** Future engineering teams can easily extend the synchronization process inside `TradingRepository.kt` by writing Room DAOs to listen to local changes and mirror the SQL transactions to a remote **Firestore or Firebase Realtime Database** back-end schema using the user's `userEmail` as the root document path.
+## 4. Google Play Billing Integration
+
+Trade Lab implements the **Google Play Billing SDK (v7.1.1+)** to manage premium subscriptions and digital entitlements.
+
+### A. Subscription Configuration
+*   **Target Product ID:** `tradelab_pro_monthly`
+*   **Manager Class:** `com.ashwathai.tradelab.billing.BillingManager`
+
+### B. Billing Lifecycle
+1.  **Initialization:** The `BillingManager` is instantiated in `MainActivity` and automatically establishes a connection to Google Play.
+2.  **Product Query:** The app queries `queryProductDetails` to fetch the latest localized pricing and trial information.
+3.  **Purchase Flow:** In **Release builds**, `billingManager.startBillingFlow()` launches the official Google Play sheet. In **Debug builds**, the app displays a high-fidelity **Simulated Billing Dialog** with mock UPI/Card inputs.
+4.  **Entitlement Granting:** Upon a successful `PURCHASED` response (or mock success), the app calls `viewModel.completePremiumPurchase()` which updates the local `user_profile.isPremium` flag.
+5.  **Acknowledgement:** Real purchases are acknowledged via `acknowledgePurchase` within 3 days to prevent automatic refunds.
+
+### C. Pro Entitlements Map
+| Feature | Entitlement Check |
+| :--- | :--- |
+| **Zero Brokerage** | `if (isPremium) // Waive 20 credit fee` |
+| **F&O Desk** | `if (isPremium) // Unlock Derivatives tab` |
+| **AI Advisor** | `if (isPremium) // Unlimited Gemini queries` |
+| **Watchlists** | `if (isPremium) // Support up to 5 renamable sheets` |

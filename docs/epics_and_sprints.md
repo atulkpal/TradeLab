@@ -146,10 +146,10 @@ Support multiple persistent watchlists, user registration gating, and premium AI
 *   [x] Provide ViewModel states for current active watchlist selection and renaming.
 *   [x] Create UI for Watchlist Screen with a dropdown/tab system to switch watchlists, a dialog to rename lists, and quick add/remove.
 
-### Sprint 7.2: Registration Gate & Login Simulation
+### Sprint 7.2: Registration Gate & Production Auth
 *   [x] Add action counter in local storage or database to track "trial actions" (e.g., executing trades, creating watchlists).
 *   [x] Block further core actions after 5-10 trial attempts with an aesthetic registration screen.
-*   [x] Store simulated user credentials in Room/Preferences to prepare for cross-platform cloud sync (KMP setup).
+*   [x] **Production SDK Integration:** Replaced login simulation with real Firebase Authentication (Google Sign-In via Credential Manager & Phone SMS Auth) for release builds.
 
 ### Sprint 7.3: Paywall Gating & AI Analysis Hub
 *   [x] Design an interactive premium paywall overlay highlighting locked features (e.g., "Talk to AI", Gemini portfolio diagnostics).
@@ -211,7 +211,7 @@ Develop a robust, offline-capable derivative simulation engine based on underlyi
 
 ### Sprint 9.2: Strict Educational Level Locks & Monetization Paywalls
 *   [x] Lock the entire F&O and Commodity trading section behind the Academy level gate. Users must complete and pass the "Equity Basics" curriculum to unlock F&O.
-*   [x] Implement a Premium Paywall screen for F&O: once unlocked academically, accessing F&O trading requires a "Trade Lab Pro" premium subscription or a paywall pass.
+*   [x] **Google Play Billing Integration:** Implemented the real Google Play Billing SDK for subscription purchases in production builds while maintaining high-fidelity simulation in debug mode.
 *   [x] Create additional paywall lockouts for advanced premium tiers: Unlimited AI Behavioral Diagnostics, customized multi-watchlist profiles (more than 2), and advanced indicator suites (SMA/EMA/RSI combos).
 
 ### Sprint 9.3: Ad-Supported Premium "Taste-Tests" (Rewarded Trial Tokens)

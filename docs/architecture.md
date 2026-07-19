@@ -37,6 +37,14 @@ The current app utilizes a localized Clean MVVM structure divided into three dis
 │                   DATA PERSISTENCE LAYER               │
 │ [Room SQLite database (Entities, DAOs, Migrations)]    │
 └────────────────────────────────────────────────────────┘
+
+### D. Billing & Monetization Layer (`com.ashwathai.tradelab.billing`)
+*   **BillingManager:** A lifecycle-aware component that interfaces with the **Google Play Billing SDK**.
+    *   Handles connection to the Google Play Store.
+    *   Queries for available subscription products (e.g., `tradelab_pro_monthly`).
+    *   Launches the official Google Play purchase sheet.
+    *   Acknowledges purchases to prevent automatic refunds.
+    *   **Hybrid Logic:** Seamlessly switches between a high-fidelity simulation in Debug mode and the real SDK in Release mode.
 ```
 
 ### A. Data Persistence Layer (`com.ashwathai.tradelab.data`)
