@@ -34,6 +34,7 @@ To avoid searching blindly, here is exactly where the core logic resides:
 │   │   │   └── TradingRepository.kt         # Data-access repository managing trade executions
 │   │   └── ui/                              # User Interface
 │   │       ├── TradingViewModel.kt          # UI state machine and business logic
+│   │       ├── di/                          # Hilt Dependency Injection Modules
 │   │       └── theme/                       # Color, Type, and Theme configurations
 │   └── src/test/                            # Local JVM & Robolectric Tests
 │       └── java/com/ashwathai/tradelab/      # Tests verifying UI states and robustness
@@ -41,13 +42,17 @@ To avoid searching blindly, here is exactly where the core logic resides:
 
 ---
 
-## 3. What Has Been Done (MVP Feature Complete)
-The **Phase 1 MVP** has been successfully built, linted, and verified:
-1.  **Local Database Schema (Room):** Structured local tables initialized with mock Indian equity data (e.g., RELIANCE, TCS, INFOSYS, HDFCBANK).
-2.  **Unidirectional UI Engine:** Centralized `TradingViewModel` managing states for watchlist, portfolio aggregate values, active holdings, and market prices.
-3.  **Dynamic Simulation Canvas:** Interactive price fluctuation simulator that dynamically renders animated stock charts using Android's native `Canvas`.
-4.  **Buy/Sell Order Ticket:** Complete transactional validation verifying cash-on-hand before execution.
-5.  **Psychological Profiler:** A 60-second questionnaire on the Profile screen that aligns virtual capital sizes to real-world budgets to build realistic trading habits.
+## 3. What Has Been Done (Phase 1 & 2 Foundations)
+The **Architectural Modernization** has been successfully verified:
+1.  **Local Database Schema (Room):** Structured local tables initialized with mock Indian equity data (e.g., RELIANCE, TCS, INFOSYS, HDFCBANK). Version 9 supports persistent UI preferences.
+2.  **Hilt Dependency Injection:** Fully decoupled the app using Hilt. All components use constructor injection, resolving static singleton bottlenecks.
+3.  **Steered Anchored Simulation:** Implemented a realistic price engine where stocks "wiggle" locally but gravitate (5% vector) toward real-world Yahoo Finance anchors.
+4.  **Indian Market Realism:** Simulation respects NSE/BSE holidays and strictly stops wiggling at 3:30 PM IST (MCX 11:30 PM).
+5.  **Ultra-Dense UI & Swipe Navigation:**
+    *   `HorizontalPager` integration allowing fluid swipes between tabs.
+    *   Collapsible search lens and "vanishing" tickers to maximize data density.
+6.  **Psychological Profiler:** A 60-second questionnaire on the Profile screen that aligns virtual capital sizes to real-world budgets to build realistic trading habits.
+7.  **Production Auth & Diagnostics:** Firebase Auth (Google/Phone) with robust Logcat-based diagnostics for production environment configuration.
 
 ---
 
@@ -91,4 +96,6 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 1.  **Spec-First Modification:** Before implementing a new feature or modifying existing interfaces, update the target epic/sprint task in `docs/epics_and_sprints.md` or the design details in `docs/architecture.md` to show the proposed design.
 2.  **Review & Handshake:** Present the spec changes to the user for feedback. 
 3.  **Surgical Execution:** Once agreed, implement the feature, write corresponding unit/integration tests, and mark the task as complete (`[x]`) in the documentation.
-4.  **No Dead-Ends:** Never add non-functional UI placeholders. Every visual affordance must connect to an active feature or remain omitted.
+4.  **Mandatory Testing Rule:** Always add or update corresponding unit tests whenever new functionality is implemented or modified. Every PR/change should include verification logic.
+5.  **Background Tasks Rule:** Infinite loops or periodic background tasks must NEVER be placed in a `ViewModel`'s `init` block. They must be moved to an explicit `startBackgroundTasks()` function called by the Activity. This prevents the "Never-Idle" deadlock that hangs Android tests.
+6.  **No Dead-Ends:** Never add non-functional UI placeholders. Every visual affordance must connect to an active feature or remain omitted.

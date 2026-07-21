@@ -215,55 +215,19 @@ fun CommoditiesScreen(
             }
         }
     } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-        ) {
-            // Title & Concept Header
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+        // Check if Unlocked
+        val hasAccess = isUnlocked || isPremium
+
+        if (!hasAccess) {
+            // Ad-Wall Paywall Screen (Centered vertically for consistency)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(BrandViolet.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.TrendingUp,
-                        contentDescription = "Commodities Icon",
-                        tint = BrandViolet,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = "COMMODITIES DESK",
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Simulated MCX & COMEX Indices",
-                        color = TextSubtle,
-                        fontSize = 12.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Check if Unlocked
-            val hasAccess = isUnlocked || isPremium
-
-            if (!hasAccess) {
-                // Ad-Wall Paywall Screen
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -394,8 +358,17 @@ fun CommoditiesScreen(
                         }
                     }
                 }
-            } else {
-                // Commodities Desk UI
+            }
+        } else {
+            // Commodities Desk UI (Unlocked)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp)
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 // Sub tab row
                 Row(
                     modifier = Modifier
@@ -608,11 +581,8 @@ fun CommoditiesScreen(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(30.dp))
             }
-
-            Spacer(modifier = Modifier.height(30.dp))
         }
     }
 }
-
-

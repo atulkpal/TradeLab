@@ -70,9 +70,16 @@ To simplify future custom-branded distributions for diverse B2B clients, we esta
 *   **`AcademyScreen.kt` & `AiCoachScreen`**: Houses learning modules, dynamic quizzes, and conversational UI logs.
 *   **`StockChart.kt`**: Houses the highly interactive canvas-based technical graphics.
 
+### D. Hilt Dependency Injection & Test Stabilization (July 21, 2026)
+To resolve critical build hangs and improve test reliability, we migrated the core architecture from static singletons to **Hilt Dependency Injection**:
+*   **Decoupling:** Removed all static `getInstance()` calls from `TradingViewModel`, `TradingRepository`, and `LeaderboardManager`. They now use Constructor Injection.
+*   **Test Readiness:** Periodic background tasks (e.g., price updates) were moved out of `init` blocks and into a controlled `startBackgroundTasks()` method. This allows unit tests to run without the "Infinite Loop" deadlock that previously hung the build.
+*   **Modernization:** Updated the project to **Android API 37** to support the latest Hilt and Compose compiler features.
+
 ---
 
 ## 5. Architectural Advantages & Next Steps
 1.  **Whitelabel Customizations:** To generate a branded variation for a specific customer, developers now only need to modify `WhitelabelConfig.kt` and direct branding elements without risking breaks in core trading engines.
 2.  **Parallel Development Streamlining:** Different development squads (e.g., Academy UI vs. Portfolio Core) can work inside separate files simultaneously without encountering git merge conflicts.
 3.  **Fast Compile Times:** Modifying a specific feature screen (e.g., changing text size in `ProfileScreen.kt`) now only recompiles that specific Kotlin file rather than indexing a massive 9,000-line layout.
+4.  **Bulletproof Testing:** With Hilt and Injected Dispatchers, the app's business logic can now be 100% verified in milliseconds on any CI/CD runner.

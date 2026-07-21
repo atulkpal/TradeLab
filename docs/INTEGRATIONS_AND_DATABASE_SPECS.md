@@ -101,26 +101,27 @@ coroutineScope.launch {
         sandboxUserToSimulate = Pair(nameInput.ifBlank { emailInput.substringBefore("@") }, emailInput)
         showSandboxDialog = true
     } else {
+        // Real Firebase Auth with robust error handling
         try {
-            if (isRegisterMode) {
-                firebaseAuth.createUserWithEmailAndPassword(emailInput, passwordInput)
-                    .addOnSuccessListener { authResult ->
-                        val displayName = nameInput.ifBlank { emailInput.substringBefore("@") }
-                        viewModel.registerOrLogin(displayName, emailInput)
-                    }
-            } else {
-                firebaseAuth.signInWithEmailAndPassword(emailInput, passwordInput)
-                    .addOnSuccessListener { authResult ->
-                        val displayName = authResult.user?.displayName ?: emailInput.substringBefore("@")
-                        viewModel.registerOrLogin(displayName, emailInput)
-                    }
-            }
+            // Logic for Email, Google (Credential Manager), and Phone
         } catch (e: Exception) {
-            errorMessage = e.localizedMessage ?: "Authentication operation failed."
+            android.util.Log.e("AuthScreen", "Login failed", e)
+            errorMessage = e.localizedMessage
         }
     }
 }
 ```
+
+### D. Production Troubleshooting & Diagnostics
+The `AuthScreen` is equipped with enhanced diagnostic logging to identify production-only failures (e.g., when signed with Play Store keys).
+*   **Logcat Tag:** `AuthScreen`
+*   **Error Catching:** Specific handling for `GetCredentialCancellationException` (Google Sign-In) and `FirebaseException` (OTP).
+*   **SHA-1 Hint:** If an "App not authorized" error occurs, the UI prompts the developer to check the Firebase Console's SHA-1 configuration for signed release builds.
+
+### E. Session Management (Logout)
+Users can terminate their session via the **Profile Screen**.
+*   **Method:** `viewModel.logout()`
+*   **Action:** Clears the `isLoggedIn` flag in the local `user_profile` table and returns the user to the `AuthScreen` instantly.
 
 ---
 
@@ -129,7 +130,7 @@ coroutineScope.launch {
 Trade Lab stores all local transactions, watchlists, active options portfolios, custom indices, and quiz histories on the device using a high-performance **Room Database Engine** styled with modern Kotlin Coroutines (`Flow`).
 
 *   **Database Class Location:** `com.ashwathai.tradelab.data.AppDatabase`
-*   **Initialization:** `Room.databaseBuilder(context, AppDatabase::class.java, "tradelab_database")`
+*   **Initialization (Hilt):** Provided via `DatabaseModule.kt`. Uses `Room.databaseBuilder(context, AppDatabase::class.java, "paper_trader_db")`.
 
 ### Database Table Schemas & Properties
 

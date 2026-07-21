@@ -15,13 +15,19 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
 data class SearchResult(
     val symbol: String,
     val name: String,
     val exchange: String
 )
 
-class TradingRepository(private val database: AppDatabase) {
+@Singleton
+class TradingRepository @Inject constructor(
+    private val database: AppDatabase
+) {
 
     companion object {
         val INDIAN_TICKERS = listOf(
@@ -433,6 +439,26 @@ class TradingRepository(private val database: AppDatabase) {
         }
     }
 
+    // Indian Market Holidays for 2026 (NSE/BSE)
+    // Format: "YYYY-MM-DD"
+    private val INDIAN_MARKET_HOLIDAYS = setOf(
+        "2026-01-26", "2026-03-06", "2026-03-27", "2026-04-14", "2026-05-01", 
+        "2026-05-22", "2026-08-15", "2026-10-02", "2026-10-21", "2026-11-12", 
+        "2026-12-25",
+        "2027-01-26", "2027-03-22", "2027-03-26", "2027-04-01", "2027-04-14",
+        "2027-05-01", "2027-08-15", "2027-10-02", "2027-10-09", "2027-11-01",
+        "2027-12-25"
+    )
+
+    private fun isIndianMarketHoliday(calendar: Calendar): Boolean {
+        val dateStr = String.format("%04d-%02d-%02d", 
+            calendar.get(Calendar.YEAR), 
+            calendar.get(Calendar.MONTH) + 1, 
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        return INDIAN_MARKET_HOLIDAYS.contains(dateStr)
+    }
+
     // Determine if the market for a symbol is open based on its actual exchange hours
     fun isMarketOpen(symbol: String): Boolean {
         if (isSimulatedMode) {
@@ -446,11 +472,16 @@ class TradingRepository(private val database: AppDatabase) {
             symbol
         }
         val uppercaseSymbol = cleanSymbol.uppercase().trim()
+        
+        // Crypto is open 24/7
         if (uppercaseSymbol.contains("BTC") || uppercaseSymbol.contains("ETH") || uppercaseSymbol.endsWith("-USD")) {
-            return true // Crypto is open 24/7
+            return true
         }
 
-        val isIndianStock = uppercaseSymbol.endsWith(".NS") || INDIAN_TICKERS.contains(uppercaseSymbol)
+        val isIndianStock = uppercaseSymbol.endsWith(".NS") || 
+                           uppercaseSymbol.endsWith(".BO") || 
+                           uppercaseSymbol.startsWith("MCX_") ||
+                           INDIAN_TICKERS.contains(uppercaseSymbol)
 
         val tz = if (isIndianStock) {
             TimeZone.getTimeZone("Asia/Kolkata")
@@ -466,13 +497,23 @@ class TradingRepository(private val database: AppDatabase) {
             return false
         }
 
+        // Check for Indian Market Holidays
+        if (isIndianStock && isIndianMarketHoliday(calendar)) {
+            return false
+        }
+
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
         val totalMinutes = hour * 60 + minute
 
         return if (isIndianStock) {
-            // Indian Market: 9:15 AM (555 mins) to 3:30 PM (930 mins)
-            totalMinutes in 555..930
+            if (uppercaseSymbol.startsWith("MCX_")) {
+                // MCX: 9:00 AM to 11:30 PM (or 11:55 PM)
+                totalMinutes in 540..1410
+            } else {
+                // Indian Equities: 9:15 AM (555 mins) to 3:30 PM (930 mins)
+                totalMinutes in 555..930
+            }
         } else {
             // US Market: 9:30 AM (570 mins) to 4:00 PM (960 mins)
             totalMinutes in 570..960
@@ -653,27 +694,23 @@ class TradingRepository(private val database: AppDatabase) {
     }
 
     // Update all stock prices from Yahoo Finance API
+    // Refactored for Steered Simulation: Updates targetPrice instead of currentPrice
     suspend fun updateAllPricesFromYahoo() = withContext(Dispatchers.IO) {
         val prices = stockPriceDao.getAllStockPricesFlow().firstOrNull() ?: return@withContext
-        val updatedList = mutableListOf<StockPrice>()
         
         val deferreds = prices.map { stock ->
             async {
-                fetchLiveDelayedPrice(stock.symbol)
+                val updated = fetchLiveDelayedPrice(stock.symbol)
+                if (updated != null) {
+                    // Update only the anchor (targetPrice)
+                    stockPriceDao.updateTargetPrice(stock.symbol, updated.currentPrice)
+                }
             }
         }
         
-        deferreds.forEach { deferred ->
-            val updated = deferred.await()
-            if (updated != null) {
-                updatedList.add(updated)
-            }
-        }
+        deferreds.forEach { it.await() }
         
-        if (updatedList.isNotEmpty()) {
-            stockPriceDao.insertStockPrices(updatedList)
-            matchPendingOrders()
-        }
+        // Match pending orders based on the NEW steering-derived prices happens in simulateMarketTick
     }
 
     fun calculateOptionPremium(
@@ -706,12 +743,32 @@ class TradingRepository(private val database: AppDatabase) {
             it.symbol.contains("_CE_") || it.symbol.contains("_PE_")
         }
 
-        // 2. Fluctuate standard tickers
+        // 2. Fluctuate standard tickers with "Steering / Anchored" logic
         val updatedStandardPrices = standardStocks.map { stock ->
-            // Random change between -2.5% and +2.5%
-            val pctChange = (Random.nextDouble() * 5.0) - 2.5
-            val delta = stock.currentPrice * (pctChange / 100.0)
-            val newPrice = (stock.currentPrice + delta).coerceAtLeast(0.01)
+            // In Live mode, only wiggle if the market is actually open
+            if (!isSimulatedMode && !isMarketOpen(stock.symbol)) {
+                return@map stock
+            }
+
+            // A. Random Noise (Reduced variance for premium feel)
+            // Random change between -0.4% and +0.4%
+            val noisePct = (Random.nextDouble() * 0.8) - 0.4
+            val noiseDelta = stock.currentPrice * (noisePct / 100.0)
+
+            // B. Steering / Gravity Drift
+            // Gently nudge the price towards the real-world Anchor (targetPrice)
+            // We move 5% of the distance to the target on every tick
+            val driftDelta = if (stock.targetPrice != null) {
+                (stock.targetPrice - stock.currentPrice) * 0.05
+            } else {
+                // Pure Simulation Fallback: If no anchor, apply a small organic drift
+                // to prevent the stock from becoming too static.
+                val organicDriftPct = (Random.nextDouble() * 0.2) - 0.1 // -0.1% to +0.1%
+                stock.currentPrice * (organicDriftPct / 100.0)
+            }
+
+            // Final tick calculation
+            val newPrice = (stock.currentPrice + noiseDelta + driftDelta).coerceAtLeast(0.01)
 
             // Update history list (comma-separated, max 12 points for smooth canvas drawing)
             val historyPoints = stock.historyData.split(",").toMutableList()
@@ -745,6 +802,10 @@ class TradingRepository(private val database: AppDatabase) {
             val underlyingSymbol = parts[0]
             val strikePrice = parts.getOrNull(1)?.toDoubleOrNull() ?: 100.0
 
+            if (!isSimulatedMode && !isMarketOpen(underlyingSymbol)) {
+                return@map option
+            }
+
             val underlyingStock = updatedStandardPrices.find { it.symbol == underlyingSymbol }
             val underlyingPrice = underlyingStock?.currentPrice ?: strikePrice
 
@@ -774,6 +835,10 @@ class TradingRepository(private val database: AppDatabase) {
         val allUpdated = updatedStandardPrices + updatedOptionPrices
         stockPriceDao.insertStockPrices(allUpdated)
         matchPendingOrders()
+    }
+
+    suspend fun setWatchlistCompactMode(compact: Boolean) = withContext(Dispatchers.IO) {
+        userProfileDao.updateWatchlistCompactMode(compact)
     }
 
     // Match Pending Orders
@@ -888,15 +953,31 @@ class TradingRepository(private val database: AppDatabase) {
     }
 
     suspend fun registerOrLogin(userName: String, userEmail: String) = withContext(Dispatchers.IO) {
-        val profile = userProfileDao.getUserProfile() ?: return@withContext
-        userProfileDao.insertProfile(
-            profile.copy(
-                isLoggedIn = true,
-                userName = userName,
-                userEmail = userEmail,
-                trialActionsCount = 0
+        val existingProfile = userProfileDao.getUserProfile()
+        if (existingProfile == null) {
+            // Force create a profile if it doesn't exist (prevents race condition on first launch)
+            userProfileDao.insertProfile(
+                UserProfile(
+                    id = 1,
+                    cash = 25000.0,
+                    startingCash = 25000.0,
+                    riskPreference = "Moderate",
+                    isLoggedIn = true,
+                    userName = userName,
+                    userEmail = userEmail,
+                    trialActionsCount = 0
+                )
             )
-        )
+        } else {
+            userProfileDao.insertProfile(
+                existingProfile.copy(
+                    isLoggedIn = true,
+                    userName = userName,
+                    userEmail = userEmail,
+                    trialActionsCount = 0
+                )
+            )
+        }
     }
 
     suspend fun purchasePremium() = withContext(Dispatchers.IO) {
@@ -980,5 +1061,9 @@ class TradingRepository(private val database: AppDatabase) {
             historyData = existing?.historyData ?: "$premium,$premium"
         )
         stockPriceDao.insertStockPrices(listOf(newStockPrice))
+    }
+
+    suspend fun acceptSimDisclaimer() = withContext(Dispatchers.IO) {
+        userProfileDao.updateSimDisclaimer(true)
     }
 }

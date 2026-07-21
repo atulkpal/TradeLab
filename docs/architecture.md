@@ -45,6 +45,12 @@ The current app utilizes a localized Clean MVVM structure divided into three dis
     *   Launches the official Google Play purchase sheet.
     *   Acknowledges purchases to prevent automatic refunds.
     *   **Hybrid Logic:** Seamlessly switches between a high-fidelity simulation in Debug mode and the real SDK in Release mode.
+
+### E. Authentication & Session Management (`com.ashwathai.tradelab.ui.AuthScreen`)
+*   **Firebase Integration:** Utilizes Firebase for Google, Phone, and Email authentication.
+*   **Session Lifecycle:** The user's session is managed by the `isLoggedIn` flag in the `UserProfile` entity. 
+*   **Logout Flow:** A formal `logout()` function in the `TradingViewModel` clears the session and returns the user to the `AuthScreen`.
+*   **Production Diagnostics:** Robust error logging and exception handling (via `android.util.Log`) identify configuration issues (e.g., SHA-1 mismatches) directly in Logcat.
 ```
 
 ### A. Data Persistence Layer (`com.ashwathai.tradelab.data`)
@@ -159,7 +165,9 @@ To simplify future whitelabel configurations, the UI layer under `com.ashwathai.
 ## 4. Architectural Best Practices for Future Agents
 
 When adding new code or editing existing structures, you **must** adhere to these architectural rules:
-1.  **Framework Quarantine:** Keep Kotlin files in `com.ashwathai.tradelab.data` completely free of references to Android system frameworks (e.g., `android.content.Context`, Android Views). Use constructor injection for dependencies.
-2.  **Explicit Coroutine Scopes:** Always leverage structured concurrency. Perform database transactions inside the repository layer using `withContext(Dispatchers.IO)` to prevent UI freezing.
-3.  **No Direct SQLite Calls:** All database transactions must go through a Room DAO. Write clean SQL statements using uppercase SQL keywords (e.g., `SELECT`, `INSERT`, `WHERE`) to keep queries clean and understandable.
-4.  **Compose State Decoupling:** Composable screens must remain state-agnostic. Pass simple values (e.g., standard numbers, strings, or data classes) and lambdas for actions down to layout elements. Keep business logic and state evaluation nested in the ViewModels.
+1.  **Dependency Injection (Hilt):** Components MUST use constructor injection. Avoid using static singletons (e.g., `getInstance()`) inside business logic or ViewModels. All dependencies (Database, DAOs, Firestore, Repositories) must be provided via Hilt modules in the `di` package.
+2.  **Framework Quarantine:** Keep Kotlin files in `com.ashwathai.tradelab.data` completely free of references to Android system frameworks (e.g., `android.util.Log`, Android Views). Inject a `Context` only if absolutely necessary using `@ApplicationContext`.
+3.  **Background Task Management:** Never place infinite `while(true)` loops or periodic background timers inside a `ViewModel`'s `init` block. Move these to an explicit `startBackgroundTasks()` function. This prevents test runners from hanging while waiting for the app to become "idle."
+4.  **Explicit Coroutine Scopes & Dispatchers:** Always inject Coroutine Dispatchers (`@IoDispatcher`, `@DefaultDispatcher`) instead of hardcoding `Dispatchers.IO`. This allows tests to substitute them with `StandardTestDispatcher` for deterministic behavior.
+5.  **No Direct SQLite Calls:** All database transactions must go through a Room DAO. Write clean SQL statements using uppercase SQL keywords (e.g., `SELECT`, `INSERT`, `WHERE`) to keep queries clean and understandable.
+6.  **Compose State Decoupling:** Composable screens must remain state-agnostic. Pass simple values (e.g., standard numbers, strings, or data classes) and lambdas for actions down to layout elements. Keep business logic and state evaluation nested in the ViewModels.

@@ -17,7 +17,7 @@ import androidx.room.RoomDatabase
         PendingOrder::class,
         AppNotification::class
     ],
-    version = 6,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

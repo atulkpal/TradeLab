@@ -336,6 +336,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                                 isLoading = false
                                                             }
                                                             .addOnFailureListener { e ->
+                                                                android.util.Log.e("AuthScreen", "Email registration failed", e)
                                                                 errorMessage = e.localizedMessage ?: "Registration failed."
                                                                 isLoading = false
                                                             }
@@ -347,11 +348,13 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                                 isLoading = false
                                                             }
                                                             .addOnFailureListener { e ->
+                                                                android.util.Log.e("AuthScreen", "Email sign-in failed", e)
                                                                 errorMessage = e.localizedMessage ?: "Sign-In failed."
                                                                 isLoading = false
                                                             }
                                                     }
                                                 } catch (e: Exception) {
+                                                    android.util.Log.e("AuthScreen", "Email auth exception", e)
                                                     errorMessage = e.localizedMessage ?: "Authentication operation failed."
                                                     isLoading = false
                                                 }
@@ -447,12 +450,28 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                                 isLoading = false
                                                             }
                                                             .addOnFailureListener { e ->
-                                                                errorMessage = e.localizedMessage
+                                                                android.util.Log.e("AuthScreen", "Firebase Auth with Google failed", e)
+                                                                errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
                                                                 isLoading = false
                                                             }
+                                                    } else {
+                                                        errorMessage = "Unexpected credential type returned."
+                                                        isLoading = false
                                                     }
                                                 } catch (e: Exception) {
-                                                    errorMessage = e.localizedMessage
+                                                    android.util.Log.e("AuthScreen", "Google Sign-In Exception", e)
+                                                    // Handle cancellation or other errors
+                                                    errorMessage = when (e) {
+                                                        is androidx.credentials.exceptions.GetCredentialCancellationException -> {
+                                                            "Sign-in cancelled by user."
+                                                        }
+                                                        is androidx.credentials.exceptions.GetCredentialException -> {
+                                                            "Google account selection failed (${e.type})."
+                                                        }
+                                                        else -> {
+                                                            e.localizedMessage ?: "Google Sign-In failed."
+                                                        }
+                                                    }
                                                     isLoading = false
                                                 }
                                             }
@@ -538,11 +557,26 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                                         val user = authResult.user
                                                                         viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.$phoneInput@tradelab.com")
                                                                         isLoading = false
+                                                                        successMessage = "Automatic verification successful!"
+                                                                    }
+                                                                    .addOnFailureListener { e ->
+                                                                        errorMessage = "Sign-In Failed: ${e.localizedMessage}"
+                                                                        isLoading = false
                                                                     }
                                                             }
 
                                                             override fun onVerificationFailed(e: FirebaseException) {
-                                                                errorMessage = e.localizedMessage
+                                                                android.util.Log.e("AuthScreen", "Phone Auth Verification Failed", e)
+                                                                // Provide descriptive error messages for production
+                                                                errorMessage = when (e) {
+                                                                    is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Invalid phone number format."
+                                                                    is com.google.firebase.FirebaseTooManyRequestsException -> "Too many requests. Please try again later."
+                                                                    else -> "Verification failed: ${e.message}"
+                                                                }
+                                                                // Hint about SHA-1 if it's a common production failure
+                                                                if (errorMessage?.contains("app not authorized", ignoreCase = true) == true) {
+                                                                    errorMessage += " (Check Firebase SHA-1 configuration)"
+                                                                }
                                                                 isLoading = false
                                                             }
 
@@ -615,7 +649,8 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                             isLoading = false
                                                         }
                                                         .addOnFailureListener { e ->
-                                                            errorMessage = e.localizedMessage
+                                                            android.util.Log.e("AuthScreen", "OTP Sign-In Failed", e)
+                                                            errorMessage = "OTP Failed: ${e.localizedMessage}"
                                                             isLoading = false
                                                         }
                                                 }

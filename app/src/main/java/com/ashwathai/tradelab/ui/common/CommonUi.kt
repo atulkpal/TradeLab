@@ -84,55 +84,33 @@ fun DataModeToggle(
             modifier = Modifier
                 .clip(RoundedCornerShape(18.dp))
                 .background(if (!isSimulatedMode) AccentGreen.copy(alpha = 0.2f) else Color.Transparent)
-                .border(1.dp, if (!isSimulatedMode) AccentGreen else Color.Transparent, RoundedCornerShape(18.dp))
                 .clickable { onToggle(false) }
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "L",
-                    color = if (!isSimulatedMode) AccentGreen else TextMuted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Live",
-                    color = if (!isSimulatedMode) Color.White else TextMuted,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            Text(
+                text = "LIVE",
+                color = if (!isSimulatedMode) AccentGreen else TextMuted,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
-
-        Spacer(modifier = Modifier.width(4.dp))
 
         // Simulated Button (S)
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(18.dp))
                 .background(if (isSimulatedMode) BrandViolet.copy(alpha = 0.2f) else Color.Transparent)
-                .border(1.dp, if (isSimulatedMode) BrandViolet else Color.Transparent, RoundedCornerShape(18.dp))
                 .clickable { onToggle(true) }
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "S",
-                    color = if (isSimulatedMode) BrandViolet else TextMuted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Simulated",
-                    color = if (isSimulatedMode) Color.White else TextMuted,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            Text(
+                text = "SIM",
+                color = if (isSimulatedMode) BrandViolet else TextMuted,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -143,7 +121,8 @@ fun HeaderBar(
     title: String,
     riskLevel: String,
     isSimulatedMode: Boolean = true,
-    onToggleSimulated: (Boolean) -> Unit = {}
+    onToggleSimulated: (Boolean) -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {}
 ) {
     val avatarGradient = remember(riskLevel) {
         when (riskLevel) {
@@ -156,11 +135,12 @@ fun HeaderBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .height(64.dp) // Fixed height to prevent vertical jitter between tabs
+            .padding(horizontal = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        // Left: Title and Metadata
+        Column(modifier = Modifier.weight(1.5f)) { // Increased weight for title
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -168,51 +148,74 @@ fun HeaderBar(
                 Text(
                     text = title,
                     color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = (-0.5).sp
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.5).sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false) // Allow title to take only what it needs
                 )
                 if (BuildConfig.DEBUG) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
                             .background(AccentRose.copy(alpha = 0.15f))
-                            .border(1.dp, AccentRose.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                            .border(0.5.dp, AccentRose.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 4.dp, vertical = 1.dp)
                     ) {
                         Text(
-                            text = "DEV APP",
+                            text = "DEV",
                             color = AccentRose,
                             fontSize = 7.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
             }
             Text(
-                text = "PAPER ACCOUNT • $riskLevel Risk",
+                text = "PAPER • $riskLevel Risk",
                 color = TextMuted,
-                fontSize = 11.sp,
+                fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
-                letterSpacing = 1.5.sp
+                letterSpacing = 0.8.sp
             )
         }
-        
-        Spacer(modifier = Modifier.width(12.dp))
 
+        // Center: Data Mode Toggle (Developer-only)
         if (BuildConfig.DEBUG) {
-            DataModeToggle(
-                isSimulatedMode = isSimulatedMode,
-                onToggle = onToggleSimulated
-            )
-        } else {
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(avatarGradient)
-                    .border(1.dp, Color(0xFF222222), CircleShape)
-            )
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                DataModeToggle(
+                    isSimulatedMode = isSimulatedMode,
+                    onToggle = onToggleSimulated
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+
+        // Right: Actions (Extreme Right) and Avatar
+        Row(
+            modifier = Modifier.weight(1f), // Reduced weight
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+            actions()
+            
+            if (!BuildConfig.DEBUG) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(avatarGradient)
+                        .border(1.dp, Color(0xFF222222), CircleShape)
+                )
+            }
         }
     }
 }
@@ -220,7 +223,14 @@ fun HeaderBar(
 
 data class TabItem(val name: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
-
+val MainTabs = listOf(
+    TabItem("Portfolio", Icons.Default.Home),
+    TabItem("Watchlist", Icons.Default.FormatListBulleted),
+    TabItem("Commodities", Icons.Default.TrendingUp),
+    TabItem("F&O", Icons.Default.Analytics),
+    TabItem("Academy", Icons.Default.School),
+    TabItem("Profile", Icons.Default.Person)
+)
 
 @Composable
 fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
@@ -238,16 +248,7 @@ fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val tabs = listOf(
-                TabItem("Portfolio", Icons.Default.Home),
-                TabItem("Watchlist", Icons.Default.FormatListBulleted),
-                TabItem("Commodities", Icons.Default.TrendingUp),
-                TabItem("F&O", Icons.Default.Analytics),
-                TabItem("Academy", Icons.Default.School),
-                TabItem("Profile", Icons.Default.Person)
-            )
-
-            tabs.forEach { tab ->
+            MainTabs.forEach { tab ->
                 val isSelected = currentTab == tab.name
                 val tintColor = if (isSelected) BrandViolet else Color.White.copy(alpha = 0.4f)
 

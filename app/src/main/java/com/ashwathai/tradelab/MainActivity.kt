@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.pager.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -74,6 +75,9 @@ import com.ashwathai.tradelab.ui.derivatives.*
 import com.ashwathai.tradelab.ui.commodities.*
 import com.ashwathai.tradelab.ui.profile.*
 
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: TradingViewModel by viewModels()
     private lateinit var billingManager: BillingManager
@@ -142,6 +146,10 @@ class MainActivity : ComponentActivity() {
 
         // Initialize the Google Mobile Ads SDK
         MobileAds.initialize(this) {}
+        
+        // Start periodic price updates and simulations
+        viewModel.startBackgroundTasks()
+
         enableEdgeToEdge()
         setContent {
             val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
@@ -164,6 +172,7 @@ class MainActivity : ComponentActivity() {
 fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val stats by viewModel.portfolioStats.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val feedbackMessage by viewModel.feedbackMessage.collectAsStateWithLifecycle()
     val postTradeRating by viewModel.postTradeRating.collectAsStateWithLifecycle()
     val showRegistrationGate by viewModel.showRegistrationGate.collectAsStateWithLifecycle()
@@ -191,6 +200,26 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
     }
 
     val focusManager = LocalFocusManager.current
+    val pagerState = rememberPagerState(
+        initialPage = MainTabs.indexOfFirst { it.name == currentTab }.coerceAtLeast(0),
+        pageCount = { MainTabs.size }
+    )
+
+    // Sync ViewModel tab -> Pager (when tab changed via BottomNav or code)
+    LaunchedEffect(currentTab) {
+        val targetPage = MainTabs.indexOfFirst { it.name == currentTab }
+        if (targetPage != -1 && pagerState.currentPage != targetPage && !pagerState.isScrollInProgress) {
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
+
+    // Sync Pager -> ViewModel tab (when tab changed via Swipe)
+    LaunchedEffect(pagerState.settledPage) {
+        val tabName = MainTabs[pagerState.settledPage].name
+        if (currentTab != tabName) {
+            viewModel.selectTab(tabName)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -231,16 +260,35 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                     },
                     riskLevel = stats.riskLevel,
                     isSimulatedMode = isSimulatedMode,
-                    onToggleSimulated = { viewModel.toggleSimulationMode(it) }
+                    onToggleSimulated = { viewModel.toggleSimulationMode(it) },
+                    actions = {
+                        if (currentTab == "Watchlist") {
+                            val isSearchVisible by viewModel.isWatchlistSearchVisible.collectAsStateWithLifecycle()
+                            IconButton(
+                                onClick = { viewModel.toggleWatchlistSearch() },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = if (isSearchVisible) BrandViolet else Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 )
 
-                // Dynamic view based on active tab
-                Box(
+                // Dynamic view based on active tab with Horizontal Pager
+                HorizontalPager(
+                    state = pagerState,
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxWidth()
-                ) {
-                    when (currentTab) {
+                        .fillMaxWidth(),
+                    beyondViewportPageCount = MainTabs.size,
+                    userScrollEnabled = true 
+                ) { page ->
+                    when (MainTabs[page].name) {
                         "Portfolio" -> PortfolioScreen(
                             viewModel = viewModel,
                             stats = stats,
@@ -278,16 +326,6 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             viewModel = viewModel,
                             stats = stats
                         )
-                        else -> {
-                            PortfolioScreen(
-                                viewModel = viewModel,
-                                stats = stats,
-                                onTickerClick = { symbol ->
-                                    viewModel.selectStock(symbol)
-                                    showTradeSheet = true
-                                }
-                            )
-                        }
                     }
                 }
             }
@@ -1093,6 +1131,11 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
             onDismiss = { viewModel.closeBillingFlow() },
             onPurchaseSuccess = { viewModel.completePremiumPurchase() },
             billingManager = billingManager
+        )
+
+        SimulationDisclaimerDialog(
+            show = userProfile != null && !userProfile!!.hasAcceptedSimDisclaimer,
+            onAccept = { viewModel.acceptSimulationDisclaimer() }
         )
     }
 }

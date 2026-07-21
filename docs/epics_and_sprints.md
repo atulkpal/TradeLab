@@ -35,6 +35,8 @@ This document defines the development roadmap for **Trade Lab**. It breaks down 
                                 ▼
  ┌─────────────────────────────────────────────────────────────┐
  │  EPIC 10: Codebase Modularization & Refactoring [100% COMP.]│
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 11: Architectural Modernization & Hilt DI [100% COMP.]│
  └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -264,6 +266,31 @@ Deconstruct the monolithic 9,000+ line `MainActivity.kt` into a highly decoupled
 *   [x] Refactor `MainActivity.kt` to act as a slim router hosting only the `MainActivity` activity class and the core `TradeLabApp` bottom navigation shell.
 *   [x] Create a whitelabel features configuration toggle class (`WhitelabelConfig.kt`) enabling fast runtime or compile-time whitelabel features masking (e.g., enable/disable options trading, toggle academy access).
 *   [x] Perform comprehensive local JVM compilation and lint checks to ensure all imported packages compile flawlessly.
+
+---
+
+## Epic 11: Architectural Modernization & Hilt DI (Status: 🟢 Complete)
+Transition the app to modern dependency injection patterns to improve testability, solve build hangs, and prepare for future scale.
+
+### Sprint 11.1: Hilt Dependency Injection Integration
+*   [x] Configure Hilt Gradle plugins and add KSP-based dependencies to the project.
+*   [x] Establish `TradeLabApplication` as the Hilt app entry point.
+*   [x] Create DI modules (`DatabaseModule`, `FirebaseModule`, `DispatcherModule`) for global resource management.
+*   [x] Refactor `TradingViewModel`, `TradingRepository`, and `LeaderboardManager` for constructor injection, removing all static singleton calls (`getInstance()`).
+
+### Sprint 11.2: Test Stabilization & Idleness Deadlock Fix
+*   [x] Diagnose and resolve the "never-idle" deadlock hanging the build by moving infinite `while(true)` loops out of the `init` block to `startBackgroundTasks()`.
+*   [x] Modernize `TradingViewModelTest` and `LeaderboardManagerTest` to use direct constructor injection with mocks, resulting in millisecond execution times.
+*   [x] Establish "Mandatory Testing" and "No Infinite Loops in Init" architectural rules to prevent regression.
+
+### Sprint 11.4: Authentication Stabilization & Diagnostics
+*   [x] Implement robust error diagnostics for Google Sign-In and Phone Auth.
+*   [x] Add explicit `Sign Out` flow and button on the Profile screen.
+*   [x] Ensure loading state safety in `AuthScreen` to prevent UI hangs during cancelled logins.
+
+### Sprint 11.3: SDK & Framework Modernization
+*   [x] Update project to **Android API 37** to support the latest Hilt and Lifecycle features.
+*   [x] Stabilize `MainActivityLaunchTest` using Hilt-compatible mocking strategies.
 
 
 

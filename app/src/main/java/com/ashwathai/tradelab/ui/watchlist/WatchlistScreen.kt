@@ -72,6 +72,7 @@ fun HomeScreen(viewModel: TradingViewModel, stats: PortfolioStats) {
     val watchlistNames by viewModel.watchlistNames.collectAsStateWithLifecycle()
     val selectedWatchlistId by viewModel.selectedWatchlistId.collectAsStateWithLifecycle()
     val stockPrices by viewModel.stockPrices.collectAsStateWithLifecycle()
+    val isCompactMode by viewModel.isWatchlistCompactMode.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
     var showRenameDialog by remember { mutableStateOf(false) }
@@ -191,15 +192,30 @@ fun HomeScreen(viewModel: TradingViewModel, stats: PortfolioStats) {
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.2.sp
             )
-            Text(
-                text = "View All Tickers",
-                color = BrandViolet,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable {
-                    viewModel.selectTab("Trade")
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { viewModel.toggleWatchlistCompactMode() },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isCompactMode) Icons.Default.ViewStream else Icons.Default.DensityMedium,
+                        contentDescription = "Toggle Compact Mode",
+                        tint = BrandViolet,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
-            )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "View All",
+                    color = BrandViolet,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clickable {
+                        viewModel.selectTab("Trade")
+                    }
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -292,6 +308,7 @@ fun HomeScreen(viewModel: TradingViewModel, stats: PortfolioStats) {
                 WatchlistStockRow(
                     stock = stock,
                     currency = stats.currency,
+                    isCompact = isCompactMode,
                     onClick = {
                         viewModel.selectStock(stock.symbol)
                         viewModel.selectTab("Trade")
@@ -347,84 +364,135 @@ fun HomeScreen(viewModel: TradingViewModel, stats: PortfolioStats) {
 
 
 @Composable
-fun WatchlistStockRow(stock: StockPrice, currency: String, onClick: () -> Unit) {
+fun WatchlistStockRow(
+    stock: StockPrice, 
+    currency: String, 
+    isCompact: Boolean = false,
+    onRemoveClick: (() -> Unit)? = null,
+    onClick: () -> Unit
+) {
     val isPositive = stock.dailyChangePct >= 0
     val trendColor = if (isPositive) AccentGreen else AccentRose
+
+    val rowPadding = if (isCompact) 8.dp else 16.dp
+    val rowCorners = if (isCompact) 12.dp else 18.dp
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .padding(vertical = if (isCompact) 2.dp else 6.dp)
+            .clip(RoundedCornerShape(rowCorners))
             .background(DarkSurfaceElevated)
-            .border(1.dp, DarkBorderElevated, RoundedCornerShape(18.dp))
+            .border(1.dp, DarkBorderElevated, RoundedCornerShape(rowCorners))
             .clickable { onClick() }
-            .padding(16.dp),
+            .padding(rowPadding),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1.5f)
+            modifier = Modifier.weight(if (isCompact) 1.2f else 1.5f)
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .size(if (isCompact) 32.dp else 36.dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(Color.White.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = stock.symbol,
+                    text = stock.symbol.take(if (isCompact) 4 else 8),
                     color = Color.White,
-                    fontSize = 11.sp,
+                    fontSize = if (isCompact) 9.sp else 11.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text(
-                    text = stock.companyName,
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "${stock.symbol} • ${formatCurrency(stock.currentPrice, currency)}",
-                    color = TextSubtle,
-                    fontSize = 11.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stock.symbol,
+                        color = Color.White,
+                        fontSize = if (isCompact) 14.sp else 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (isCompact) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color.White.copy(alpha = 0.05f))
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                        ) {
+                            Text(text = "NSE", color = TextSubtle, fontSize = 7.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                
+                if (!isCompact) {
+                    Text(
+                        text = stock.companyName,
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${stock.symbol} • ${formatCurrency(stock.currentPrice, currency)}",
+                        color = TextSubtle,
+                        fontSize = 11.sp
+                    )
+                }
             }
         }
 
-        // Live Vector Line Chart in the center
+        // Live Vector Line Chart - Present in both modes!
         StockLineChart(
             pricesString = stock.historyData,
             isPositive = isPositive,
             modifier = Modifier
-                .width(70.dp)
-                .height(28.dp)
+                .width(if (isCompact) 60.dp else 70.dp)
+                .height(if (isCompact) 24.dp else 28.dp)
                 .padding(horizontal = 4.dp)
         )
 
-        Column(
-            horizontalAlignment = Alignment.End,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End,
             modifier = Modifier.weight(1f)
         ) {
-            Text(
-                text = formatCurrency(stock.currentPrice, currency),
-                color = Color.White,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "${if (isPositive) "+" else ""}${String.format("%.2f", stock.dailyChangePct)}%",
-                color = trendColor,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = formatCurrency(stock.currentPrice, currency),
+                    color = Color.White,
+                    fontSize = if (isCompact) 13.sp else 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${if (isPositive) "+" else ""}${String.format("%.2f", stock.dailyChangePct)}%",
+                    color = trendColor,
+                    fontSize = if (isCompact) 10.sp else 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            if (onRemoveClick != null) {
+                Spacer(modifier = Modifier.width(if (isCompact) 6.dp else 12.dp))
+                IconButton(
+                    onClick = onRemoveClick,
+                    modifier = Modifier.size(if (isCompact) 28.dp else 36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Remove Ticker",
+                        tint = TextMuted,
+                        modifier = Modifier.size(if (isCompact) 14.dp else 16.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -440,10 +508,13 @@ fun WatchlistScreen(
     val watchlistNames by viewModel.watchlistNames.collectAsStateWithLifecycle()
     val selectedWatchlistId by viewModel.selectedWatchlistId.collectAsStateWithLifecycle()
     val stockPrices by viewModel.stockPrices.collectAsStateWithLifecycle()
+    val isCompactMode by viewModel.isWatchlistCompactMode.collectAsStateWithLifecycle()
 
     val watchlistSearchQuery by viewModel.watchlistSearchQuery.collectAsStateWithLifecycle()
     val watchlistAutocompleteResults by viewModel.watchlistAutocompleteResults.collectAsStateWithLifecycle()
     val isWatchlistSearching by viewModel.isWatchlistSearching.collectAsStateWithLifecycle()
+    val isWatchlistSearchVisible by viewModel.isWatchlistSearchVisible.collectAsStateWithLifecycle()
+    val isSimulatedMode by viewModel.isSimulatedMode.collectAsStateWithLifecycle()
 
     var showRenameDialog by remember { mutableStateOf(false) }
     var renameInput by remember { mutableStateOf("") }
@@ -465,245 +536,58 @@ fun WatchlistScreen(
             .fillMaxSize()
             .padding(horizontal = 20.dp)
     ) {
-        // 1. SMART SEARCH BAR TO ADD TICKERS
-        Text(
-            text = "SEARCH & ADD TICKERS",
-            color = TextMuted,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-        )
-
-        OutlinedTextField(
-            value = watchlistSearchQuery,
-            onValueChange = { viewModel.setWatchlistSearchQuery(it) },
-            placeholder = { Text("Search symbol (e.g. RELIANCE, TCS, Apple)", color = TextMuted, fontSize = 12.sp) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = TextSubtle, modifier = Modifier.size(18.dp)) },
-            trailingIcon = {
-                if (isWatchlistSearching) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = BrandViolet, strokeWidth = 2.dp)
-                } else if (watchlistSearchQuery.isNotEmpty()) {
-                    IconButton(onClick = { viewModel.setWatchlistSearchQuery("") }, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = TextSubtle, modifier = Modifier.size(14.dp))
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .height(52.dp)
-                .align(Alignment.CenterHorizontally)
-                .testTag("watchlist_search_input"),
-            shape = RoundedCornerShape(26.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = DarkSurface,
-                unfocusedContainerColor = DarkSurface,
-                focusedBorderColor = BrandViolet,
-                unfocusedBorderColor = DarkBorder,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
-            ),
-            singleLine = true
-        )
-
-        // Dropdown Search Results
-        if (watchlistSearchQuery.isNotEmpty()) {
-            val filtered = stockPrices.filter {
-                it.symbol.contains(watchlistSearchQuery, ignoreCase = true) ||
-                        it.companyName.contains(watchlistSearchQuery, ignoreCase = true)
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .zIndex(10f),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
-                border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))
-            ) {
-                Column {
-                    // Local Matches
-                    if (filtered.isNotEmpty()) {
-                        Text(
-                            text = "AVAILABLE LOCAL SECURITIES",
-                            color = TextMuted,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                        filtered.forEach { stock ->
-                            val isAdded = watchlistItems.any { it.symbol == stock.symbol }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        viewModel.selectWatchlist(selectedWatchlistId)
-                                        viewModel.toggleWatchlistV2(stock.symbol)
-                                        viewModel.setWatchlistSearchQuery("") // Reset search
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(stock.symbol, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Text(stock.companyName, color = TextMuted, fontSize = 11.sp)
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = formatCurrency(stock.currentPrice, stats.currency),
-                                        color = Color.White,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.padding(end = 8.dp)
-                                    )
-                                    Icon(
-                                        imageVector = if (isAdded) Icons.Default.Check else Icons.Default.Add,
-                                        tint = if (isAdded) BrandViolet else AccentYellow,
-                                        contentDescription = "Add"
-                                    )
-                                }
-                            }
-                            HorizontalDivider(color = DarkBorder, thickness = 0.5.dp)
-                        }
-                    }
-
-                    // Live Online Results (Yahoo Search Autocomplete API)
-                    Text(
-                        text = "LIVE ONLINE SUGGESTIONS (NSE/BSE & GLOBAL)",
-                        color = TextMuted,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-
-                    if (isWatchlistSearching && watchlistAutocompleteResults.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = BrandViolet, modifier = Modifier.size(20.dp))
-                        }
-                    } else if (watchlistAutocompleteResults.isEmpty() && filtered.isEmpty()) {
-                        Text(
-                            text = "No tickers found online for '$watchlistSearchQuery'",
-                            color = TextMuted,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    } else {
-                        val limitResults = watchlistAutocompleteResults.take(6)
-                        limitResults.forEach { item ->
-                            val isAdded = watchlistItems.any { it.symbol == item.symbol }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        viewModel.injectLiveStock(symbol = item.symbol, addToWatchlistId = selectedWatchlistId)
-                                        viewModel.setWatchlistSearchQuery("")
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(item.symbol, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(BrandViolet.copy(alpha = 0.2f))
-                                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                text = item.exchange,
-                                                color = BrandViolet,
-                                                fontSize = 8.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                    Text(item.name, color = TextMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Live Tap",
-                                        color = AccentYellow,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.padding(end = 8.dp)
-                                    )
-                                    Icon(
-                                        imageVector = if (isAdded) Icons.Default.Check else Icons.Default.Add,
-                                        tint = if (isAdded) BrandViolet else AccentYellow,
-                                        contentDescription = "Add Live"
-                                    )
-                                }
-                            }
-                            HorizontalDivider(color = DarkBorder, thickness = 0.5.dp)
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // 2. SHEETS SWITCHER (Multi-Watchlist Tabs) with Rename & "+"
+        // 1. DENSE SHEETS SWITCHER (Multi-Watchlist Tabs) - AT THE TOP
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             LazyRow(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items(watchlistNames) { wl ->
                     val isSelected = wl.id == selectedWatchlistId
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(10.dp))
                             .background(if (isSelected) BrandViolet.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.03f))
                             .border(
                                 1.dp,
                                 if (isSelected) BrandViolet else Color.White.copy(alpha = 0.08f),
-                                RoundedCornerShape(12.dp)
+                                RoundedCornerShape(10.dp)
                             )
                             .clickable { viewModel.selectWatchlist(wl.id) }
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = wl.name,
                                 color = if (isSelected) BrandViolet else Color.White.copy(alpha = 0.6f),
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            // Simple edit icon for renaming
+                            Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Default.Edit,
-                                contentDescription = "Rename Watchlist",
+                                contentDescription = "Rename",
                                 tint = if (isSelected) BrandViolet else TextMuted,
                                 modifier = Modifier
-                                    .size(11.dp)
+                                    .size(10.dp)
                                     .clickable {
                                         watchlistToRename = wl.id
                                         renameInput = wl.name
                                         showRenameDialog = true
                                     }
                             )
-                            if (wl.id > 1) { // Custom list delete option
-                                Spacer(modifier = Modifier.width(6.dp))
+                            if (wl.id > 1) {
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Watchlist",
+                                    contentDescription = "Delete",
                                     tint = AccentRose.copy(alpha = 0.8f),
                                     modifier = Modifier
-                                        .size(11.dp)
+                                        .size(10.dp)
                                         .clickable {
                                             viewModel.deleteWatchlist(wl.id)
                                         }
@@ -714,9 +598,8 @@ fun WatchlistScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
-            // Add Watchlist "+" Action Button (Up to 10 sheets with Pro/Ad walls)
             if (watchlistNames.size < 10) {
                 IconButton(
                     onClick = {
@@ -744,7 +627,7 @@ fun WatchlistScreen(
                         }
                     },
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(30.dp)
                         .background(BrandViolet.copy(alpha = 0.1f), CircleShape)
                         .border(1.dp, BrandViolet.copy(alpha = 0.3f), CircleShape)
                 ) {
@@ -752,62 +635,217 @@ fun WatchlistScreen(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Add Watchlist",
                         tint = BrandViolet,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 3. POPULAR TICKERS SUGGESTION CHIPS
-        Text(
-            text = "TAP POPULAR TICKERS TO ADD",
-            color = TextMuted,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            modifier = Modifier.padding(bottom = 6.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // 2. COLLAPSIBLE SEARCH OVERLAY (Inlined)
+        AnimatedVisibility(
+            visible = isWatchlistSearchVisible,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
         ) {
-            val populars = listOf("TATASTEEL", "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "ITC", "TATAMOTORS")
-            populars.forEach { symbol ->
-                val isPresent = watchlistItems.any { it.symbol == symbol }
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isPresent) BrandViolet.copy(alpha = 0.15f) else DarkSurface)
-                        .border(1.dp, if (isPresent) BrandViolet else DarkBorder, RoundedCornerShape(8.dp))
-                        .clickable {
-                            viewModel.toggleWatchlistV2(symbol)
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                OutlinedTextField(
+                    value = watchlistSearchQuery,
+                    onValueChange = { viewModel.setWatchlistSearchQuery(it) },
+                    placeholder = { Text("Search and add tickers...", color = TextMuted, fontSize = 12.sp) },
+                    trailingIcon = {
+                        if (isWatchlistSearching) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = BrandViolet, strokeWidth = 2.dp)
+                        } else if (watchlistSearchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.setWatchlistSearchQuery("") }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear", tint = TextSubtle, modifier = Modifier.size(14.dp))
+                            }
                         }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "+ $symbol",
-                        color = if (isPresent) BrandViolet else Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("watchlist_search_input"),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = DarkSurface,
+                        unfocusedContainerColor = DarkSurface,
+                        focusedBorderColor = BrandViolet,
+                        unfocusedBorderColor = DarkBorder,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    singleLine = true
+                )
+
+                // Search Results Dropdown
+                if (watchlistSearchQuery.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .zIndex(20f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
+                        border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))
+                    ) {
+                        Column {
+                            val filtered = stockPrices.filter {
+                                it.symbol.contains(watchlistSearchQuery, ignoreCase = true) ||
+                                        it.companyName.contains(watchlistSearchQuery, ignoreCase = true)
+                            }
+
+                            if (filtered.isNotEmpty()) {
+                                filtered.take(4).forEach { stock ->
+                                    val isAdded = watchlistItems.any { it.symbol == stock.symbol }
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                viewModel.toggleWatchlistV2(stock.symbol)
+                                                viewModel.setWatchlistSearchQuery("") 
+                                            }
+                                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(stock.symbol, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                            Text(stock.companyName, color = TextMuted, fontSize = 10.sp)
+                                        }
+                                        Icon(
+                                            imageVector = if (isAdded) Icons.Default.Check else Icons.Default.Add,
+                                            tint = if (isAdded) BrandViolet else AccentYellow,
+                                            modifier = Modifier.size(16.dp),
+                                            contentDescription = "Add"
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            if (watchlistAutocompleteResults.isNotEmpty()) {
+                                Text(
+                                    text = "GLOBAL SUGGESTIONS",
+                                    color = TextMuted,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                )
+                                watchlistAutocompleteResults.take(3).forEach { result ->
+                                    val isAdded = watchlistItems.any { it.symbol == result.symbol }
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                viewModel.injectLiveStock(symbol = result.symbol, addToWatchlistId = selectedWatchlistId)
+                                                viewModel.setWatchlistSearchQuery("")
+                                            }
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(result.symbol, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                            Text("${result.name} • ${result.exchange}", color = TextMuted, fontSize = 10.sp)
+                                        }
+                                        Icon(
+                                            imageVector = if (isAdded) Icons.Default.Check else Icons.Default.Add,
+                                            tint = if (isAdded) BrandViolet else AccentYellow,
+                                            modifier = Modifier.size(16.dp),
+                                            contentDescription = "Add Live"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // 3. DYNAMIC POPULAR TICKERS - ONLY IF LIST IS SMALL (< 5 items)
+        if (watchlistItems.size < 5 && !isWatchlistSearchVisible) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "ADD:",
+                    color = TextMuted,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                val populars = listOf("TATASTEEL", "RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN")
+                populars.forEach { symbol ->
+                    val isPresent = watchlistItems.any { it.symbol == symbol }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isPresent) BrandViolet.copy(alpha = 0.15f) else DarkSurface)
+                            .border(1.dp, if (isPresent) BrandViolet else DarkBorder, RoundedCornerShape(8.dp))
+                            .clickable { viewModel.toggleWatchlistV2(symbol) }
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "+ $symbol",
+                            color = if (isPresent) BrandViolet else Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+        }
 
-        // 4. WATCHLIST TICKERS LIST
-        Text(
-            text = "WATCHLIST ITEMS (${watchlistItems.size} / 50)",
-            color = TextMuted,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+        // 4. TICKER LIST HEADER (Compact)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "TICKERS (${watchlistItems.size})",
+                    color = TextMuted,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                
+                // Show "Market Closed" hint if in Live mode and market is actually closed
+                val anyIndianTicker = watchlistItems.any { viewModel.isIndianStockSymbol(it.symbol) }
+                if (!isSimulatedMode && anyIndianTicker && !viewModel.isMarketOpen("RELIANCE.NS")) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(AccentRose.copy(alpha = 0.15f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "MARKET CLOSED",
+                            color = AccentRose,
+                            fontSize = 7.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+            }
+            
+            IconButton(
+                onClick = { viewModel.toggleWatchlistCompactMode() },
+                modifier = Modifier.size(20.dp)
+            ) {
+                Icon(
+                    imageVector = if (isCompactMode) Icons.Default.ViewStream else Icons.Default.DensityMedium,
+                    contentDescription = "View Mode",
+                    tint = BrandViolet,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
 
         if (watchlistItems.isEmpty()) {
             Box(
@@ -831,7 +869,7 @@ fun WatchlistScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Search tickers above or tap quick suggestions to build your custom practices!",
+                        text = "Tap the search icon in the title bar to add your first ticker!",
                         color = TextSubtle,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
@@ -842,83 +880,18 @@ fun WatchlistScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(if (isCompactMode) 6.dp else 10.dp)
             ) {
                 items(watchlistItems) { item ->
                     val stock = stockPrices.find { it.symbol == item.symbol }
                     stock?.let { s ->
-                        val isUp = s.dailyChangePct >= 0
-                        val trendColor = if (isUp) AccentGreen else AccentRose
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(DarkSurface)
-                                .border(1.dp, DarkBorder, RoundedCornerShape(16.dp))
-                                .clickable { onTickerClick(s.symbol) }
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = s.symbol,
-                                        color = Color.White,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(Color.White.copy(alpha = 0.05f))
-                                            .padding(horizontal = 4.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(text = "NSE", color = TextSubtle, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                                Text(
-                                    text = s.companyName,
-                                    color = TextMuted,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.widthIn(max = 180.dp),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = formatCurrency(s.currentPrice, stats.currency),
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = "${if (isUp) "+" else ""}${String.format("%.2f", s.dailyChangePct)}%",
-                                        color = trendColor,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                // Quick delete Action to remove
-                                IconButton(
-                                    onClick = { viewModel.toggleWatchlistV2(s.symbol) },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Remove Ticker",
-                                        tint = TextMuted,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
+                        WatchlistStockRow(
+                            stock = s,
+                            currency = stats.currency,
+                            isCompact = isCompactMode,
+                            onRemoveClick = { viewModel.toggleWatchlistV2(s.symbol) },
+                            onClick = { onTickerClick(s.symbol) }
+                        )
                     }
                 }
             }

@@ -1253,6 +1253,24 @@ fun ProfileScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Logout Button
+        OutlinedButton(
+            onClick = { viewModel.logout() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .testTag("profile_logout_button"),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, AccentRose.copy(alpha = 0.5f)),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentRose)
+        ) {
+            Icon(Icons.Default.Logout, contentDescription = "Sign Out", modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Sign Out", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        }
+
         Spacer(modifier = Modifier.height(30.dp))
 
         // Developer note at the bottom of the profile screen

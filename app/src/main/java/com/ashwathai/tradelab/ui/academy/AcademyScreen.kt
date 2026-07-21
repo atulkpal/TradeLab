@@ -433,6 +433,7 @@ fun AcademyScreen(
                 }
             }
         } else if (activeSubTab == "Leaderboard") {
+            val globalLeaders by viewModel.globalLeaderboard.collectAsStateWithLifecycle()
             val completedSet = remember(stats.completedLevels) {
                 stats.completedLevels.split(",").filter { it.isNotBlank() }.toSet()
             }
@@ -482,22 +483,19 @@ fun AcademyScreen(
                     }
                 }
 
-                val leaders = listOf(
-                    Triple("👑 TradeLab Bot", "50,000 XP", "Rank #1"),
-                    Triple("You (Trader)", "$userScore XP", when(completedSet.size) {
-                        0 -> "Rank #15"
-                        1, 2 -> "Rank #8"
-                        3, 4 -> "Rank #4"
-                        else -> "Rank #2"
-                    }),
-                    Triple("Vikram (Tech Investor)", "8,500 XP", "Rank #3"),
-                    Triple("Nisha (Risk Architect)", "6,200 XP", "Rank #5"),
-                    Triple("Rahul (Sizer Expert)", "4,100 XP", "Rank #9")
-                ).sortedByDescending { it.second.replace(",", "").replace(" XP", "").toIntOrNull() ?: 0 }
+                // If global leaders are empty, show local placeholder for better UX
+                val displayLeaders = if (globalLeaders.isEmpty()) {
+                    listOf(
+                        LeaderboardEntry("bot", "👑 TradeLab Bot", 50000, 1000000.0, "Rank #1"),
+                        LeaderboardEntry("you", "You (Trader)", userScore, stats.totalValue, "Rank #2")
+                    )
+                } else {
+                    globalLeaders
+                }
 
-                leaders.forEachIndexed { index, leader ->
-                    val isUser = leader.first.contains("You")
-                    val isKing = leader.first.contains("👑 TradeLab") && !isUser
+                displayLeaders.forEachIndexed { index, leader ->
+                    val isUser = leader.userId == (stats.completedLevels /* Using this as a proxy for UID if email is empty */) || leader.userName.contains("You") || leader.userId == viewModel.userProfile.value?.userEmail
+                    val isKing = leader.userName.contains("👑 TradeLab") && !isUser
                     
                     Card(
                         modifier = Modifier
@@ -527,7 +525,7 @@ fun AcademyScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = leader.first,
+                                    text = leader.userName,
                                     color = if (isUser) BrandViolet else if (isKing) AccentYellow else Color.White,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
@@ -535,13 +533,13 @@ fun AcademyScreen(
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
-                                    text = leader.second,
+                                    text = "${String.format("%,d", leader.xp)} XP",
                                     color = Color.White,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = leader.third,
+                                    text = leader.rank.ifBlank { "Rank #${index + 1}" },
                                     color = TextSubtle,
                                     fontSize = 10.sp
                                 )
@@ -549,7 +547,6 @@ fun AcademyScreen(
                         }
                     }
                 }
-                
                 Spacer(modifier = Modifier.height(40.dp))
             }
         } else {

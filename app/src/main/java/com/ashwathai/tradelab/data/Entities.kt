@@ -21,7 +21,9 @@ data class UserProfile(
     val indicatorsUnlockedUntil: Long = 0L,
     val aiAuditCredits: Int = 3,
     val fnoTokens: Int = 0,
-    val portfolioResetsCount: Int = 0
+    val portfolioResetsCount: Int = 0,
+    val hasAcceptedSimDisclaimer: Boolean = false,
+    val isWatchlistCompactMode: Boolean = false
 )
 
 @Entity(tableName = "holdings")
@@ -55,7 +57,8 @@ data class StockPrice(
     val previousClose: Double,
     val highPrice: Double,
     val lowPrice: Double,
-    val historyData: String // Comma-separated list of historical prices (e.g. "180.1,181.2,183.0,...") for line chart
+    val historyData: String, // Comma-separated list of historical prices (e.g. "180.1,181.2,183.0,...") for line chart
+    val targetPrice: Double? = null // The real-world "Anchor" price we steer towards
 )
 
 @Entity(tableName = "watchlist_names")

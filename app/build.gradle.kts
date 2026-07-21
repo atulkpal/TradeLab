@@ -9,11 +9,12 @@ plugins {
   alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets)
   alias(libs.plugins.google.services)
+  alias(libs.plugins.hilt)
 }
 
 android {
   namespace = "com.ashwathai.tradelab"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+  compileSdk = 37
 
   val keystorePropertiesFile = file("keystore.properties")
   val keystoreProperties = Properties()
@@ -24,7 +25,7 @@ android {
   defaultConfig {
     applicationId = "com.ashwathai.tradelab"
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 37
     versionCode = 2
     versionName = "1.0.0"
 
@@ -123,7 +124,7 @@ dependencies {
   implementation(libs.converter.moshi)
   // implementation(libs.firebase.ai)
   // Uncomment to use Firestore:
-  // implementation(libs.firebase.firestore)
+  implementation(libs.firebase.firestore)
 
   // Firebase Auth with Google Sign-In requires all of the following to be uncommented together.
   // If you are using Firebase Auth with other providers (e.g. Email/Password), you may only need
@@ -142,6 +143,11 @@ dependencies {
   implementation(libs.retrofit)
   implementation(libs.play.services.ads)
   implementation(libs.billing.ktx)
+
+  implementation(libs.hilt.android)
+  "ksp"(libs.hilt.compiler)
+  implementation(libs.hilt.navigation.compose)
+
   implementation(project(":shared"))
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
@@ -152,6 +158,8 @@ dependencies {
   testImplementation(libs.roborazzi)
   testImplementation(libs.roborazzi.compose)
   testImplementation(libs.roborazzi.junit.rule)
+  testImplementation(libs.mockk)
+  testImplementation(libs.turbine)
   androidTestImplementation(platform(libs.androidx.compose.bom))
   androidTestImplementation(libs.androidx.compose.ui.test.junit4)
   androidTestImplementation(libs.androidx.espresso.core)

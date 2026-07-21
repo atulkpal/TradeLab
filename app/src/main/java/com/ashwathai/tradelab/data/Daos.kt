@@ -13,6 +13,12 @@ interface UserProfileDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProfile(profile: UserProfile)
+
+    @Query("UPDATE user_profile SET hasAcceptedSimDisclaimer = :accepted WHERE id = 1")
+    suspend fun updateSimDisclaimer(accepted: Boolean)
+
+    @Query("UPDATE user_profile SET isWatchlistCompactMode = :isCompact WHERE id = 1")
+    suspend fun updateWatchlistCompactMode(isCompact: Boolean)
 }
 
 @Dao
@@ -70,6 +76,9 @@ interface StockPriceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStockPrices(prices: List<StockPrice>)
+
+    @Query("UPDATE stock_prices SET targetPrice = :targetPrice WHERE symbol = :symbol")
+    suspend fun updateTargetPrice(symbol: String, targetPrice: Double?)
 }
 
 @Dao

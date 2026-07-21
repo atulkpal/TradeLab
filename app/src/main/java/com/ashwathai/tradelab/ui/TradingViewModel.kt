@@ -14,11 +14,25 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class TradingViewModel(application: Application) : AndroidViewModel(application) {
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-    private val database = AppDatabase.getDatabase(application)
-    private val repository = TradingRepository(database)
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.ashwathai.tradelab.di.DefaultDispatcher
+import com.ashwathai.tradelab.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
+
+@HiltViewModel
+@OptIn(ExperimentalCoroutinesApi::class)
+class TradingViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val repository: TradingRepository,
+    private val leaderboardManager: LeaderboardManager,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+) : ViewModel() {
 
     // Dynamic Academy & Missions data from JSON
     private val _quizModules = MutableStateFlow<List<QuizModule>>(emptyList())
@@ -141,6 +155,13 @@ class TradingViewModel(application: Application) : AndroidViewModel(application)
     private val _confettiTrigger = MutableStateFlow<Long>(0L)
     val confettiTrigger: StateFlow<Long> = _confettiTrigger.asStateFlow()
 
+    val isWatchlistCompactMode: StateFlow<Boolean> = userProfile
+        .map { it?.isWatchlistCompactMode ?: false }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val _isWatchlistSearchVisible = MutableStateFlow(false)
+    val isWatchlistSearchVisible: StateFlow<Boolean> = _isWatchlistSearchVisible.asStateFlow()
+
     // Order flow custom states
     private val _orderType = MutableStateFlow("Market") // Market, Limit, GTT
     val orderType: StateFlow<String> = _orderType.asStateFlow()
@@ -165,6 +186,14 @@ class TradingViewModel(application: Application) : AndroidViewModel(application)
 
     private val _postTradeRating = MutableStateFlow<TradeRating?>(null)
     val postTradeRating: StateFlow<TradeRating?> = _postTradeRating.asStateFlow()
+
+    // Global Leaderboard Flow
+    val globalLeaderboard: StateFlow<List<LeaderboardEntry>> = leaderboardManager.getTopUsersFlow()
+        .catch { e -> 
+            android.util.Log.e("TradingViewModel", "Error in globalLeaderboard flow", e)
+            emit(emptyList()) 
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Derived State: The selected StockPrice details
     val selectedStock: StateFlow<StockPrice?> = combine(stockPrices, _selectedStockSymbol) { prices, symbol ->
@@ -213,8 +242,35 @@ class TradingViewModel(application: Application) : AndroidViewModel(application)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PortfolioStats())
 
     init {
+        // Synchronize repository mode state with ViewModel state
+        repository.isSimulatedMode = _isSimulatedMode.value
+
+        // Initialize values on app launch
+        viewModelScope.launch(ioDispatcher) {
+            repository.initializeDataIfEmpty()
+            repository.updateCurrency("INR")
+            
+            // Immediate initial fetch of live delayed prices
+            try {
+                repository.updateAllPricesFromYahoo()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        loadAcademyAndMissionsData()
+
+        // Sync stats to Firestore whenever they change significantly
+        viewModelScope.launch(ioDispatcher) {
+            portfolioStats.collect { stats ->
+                syncStatsToFirestore(stats)
+            }
+        }
+    }
+
+    fun startBackgroundTasks() {
         // Check commodities unlock expiration periodically
-        viewModelScope.launch {
+        viewModelScope.launch(defaultDispatcher) {
             while (true) {
                 kotlinx.coroutines.delay(5000)
                 commoditiesUnlockTime?.let { unlockTime ->
@@ -227,24 +283,8 @@ class TradingViewModel(application: Application) : AndroidViewModel(application)
             }
         }
 
-        // Synchronize repository mode state with ViewModel state
-        repository.isSimulatedMode = _isSimulatedMode.value
-
-        // Initialize values on app launch
-        viewModelScope.launch {
-            repository.initializeDataIfEmpty()
-            repository.updateCurrency("INR")
-            
-            // Immediate initial fetch of live delayed prices
-            try {
-                repository.updateAllPricesFromYahoo()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
         // Coroutine for live delayed price updates (Yahoo Finance API) every 15 seconds
-        viewModelScope.launch {
+        viewModelScope.launch(defaultDispatcher) {
             while (true) {
                 if (!_isSimulatedMode.value) {
                     try {
@@ -258,25 +298,36 @@ class TradingViewModel(application: Application) : AndroidViewModel(application)
         }
 
         // Coroutine for simulated price tick generation (prices fluctuate dynamically) every 2 seconds
-        viewModelScope.launch {
+        // Decoupled: Always run the simulation loop to provide live "wiggles"
+        // In Live mode, it steers towards the real-world Anchor (targetPrice).
+        viewModelScope.launch(defaultDispatcher) {
             while (true) {
-                if (_isSimulatedMode.value) {
-                    try {
-                        repository.simulateMarketTick()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                try {
+                    repository.simulateMarketTick()
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
                 kotlinx.coroutines.delay(2000)
             }
         }
+    }
 
-        loadAcademyAndMissionsData()
+    private fun syncStatsToFirestore(stats: PortfolioStats) {
+        val email = userProfile.value?.userEmail ?: return
+        val name = userProfile.value?.userName ?: "Trader"
+        if (email.isBlank()) return
+
+        val completedSet = stats.completedLevels.split(",").filter { it.isNotBlank() }.toSet()
+        val xp = completedSet.size * 1000 + 1500
+        
+        viewModelScope.launch {
+            leaderboardManager.syncUserStats(email, name, xp, stats.totalValue)
+        }
     }
 
     private fun loadAcademyAndMissionsData() {
         try {
-            val assetManager = getApplication<Application>().assets
+            val assetManager = context.assets
             val moshiInstance = Moshi.Builder()
                 .addLast(KotlinJsonAdapterFactory())
                 .build()
@@ -316,16 +367,18 @@ class TradingViewModel(application: Application) : AndroidViewModel(application)
         return repository.isMarketOpen(symbol)
     }
 
-    // Toggle between Live and Simulated modes
+        // Toggle between Live and Simulated modes
     fun toggleSimulationMode(enabled: Boolean) {
         _isSimulatedMode.value = enabled
         repository.isSimulatedMode = enabled
-        viewModelScope.launch {
+        viewModelScope.launch(ioDispatcher) {
             try {
-                if (enabled) {
-                    repository.simulateMarketTick()
-                } else {
+                if (!enabled) {
+                    // Fetch fresh Anchors immediately when switching to Live
                     repository.updateAllPricesFromYahoo()
+                } else {
+                    // Trigger a simulation tick immediately when switching to Simulated
+                    repository.simulateMarketTick()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -782,6 +835,25 @@ class TradingViewModel(application: Application) : AndroidViewModel(application)
 
     fun openProBenefits() {
         _showProBenefits.value = true
+    }
+
+    fun acceptSimulationDisclaimer() {
+        viewModelScope.launch {
+            repository.acceptSimDisclaimer()
+        }
+    }
+
+    fun toggleWatchlistCompactMode() {
+        viewModelScope.launch {
+            repository.setWatchlistCompactMode(!isWatchlistCompactMode.value)
+        }
+    }
+
+    fun toggleWatchlistSearch() {
+        _isWatchlistSearchVisible.value = !_isWatchlistSearchVisible.value
+        if (!_isWatchlistSearchVisible.value) {
+            _watchlistSearchQuery.value = ""
+        }
     }
 
     fun closeProBenefits() {
