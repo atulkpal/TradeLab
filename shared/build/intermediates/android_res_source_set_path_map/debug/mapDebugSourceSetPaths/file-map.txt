@@ -1,0 +1,10 @@
+com.ashwathai.tradelab.shared-pngs-0 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\build\generated\res\pngs\debug
+com.ashwathai.tradelab.shared-updated_navigation_xml-1 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\build\generated\updated_navigation_xml\debug
+com.ashwathai.tradelab.shared-mergeDebugResources-2 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\build\intermediates\incremental\debug\mergeDebugResources\merged.dir
+com.ashwathai.tradelab.shared-mergeDebugResources-3 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\build\intermediates\incremental\debug\mergeDebugResources\stripped.dir
+com.ashwathai.tradelab.shared-debug-4 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\build\intermediates\merged_res\debug\mergeDebugResources
+com.ashwathai.tradelab.shared-debug-5 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\build\intermediates\packaged_res\debug\packageDebugResources
+com.ashwathai.tradelab.shared-androidDebug-6 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\src\androidDebug\res
+com.ashwathai.tradelab.shared-androidMain-7 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\src\androidMain\res
+com.ashwathai.tradelab.shared-debug-8 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\src\debug\res
+com.ashwathai.tradelab.shared-main-9 C:\Users\Atul\AndroidStudioProjects\TradeLab\shared\src\main\res

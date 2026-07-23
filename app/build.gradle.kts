@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets)
   alias(libs.plugins.google.services)
+  id("com.google.firebase.crashlytics")
   alias(libs.plugins.hilt)
 }
 
@@ -26,8 +27,8 @@ android {
     applicationId = "com.ashwathai.tradelab"
     minSdk = 24
     targetSdk = 37
-    versionCode = 2
-    versionName = "1.0.0"
+    versionCode = 3
+    versionName = "1.1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
@@ -68,7 +69,7 @@ android {
       manifestPlaceholders["admobApplicationId"] = "ca-app-pub-4153575596488132~8287049082"
     }
     debug {
-      signingConfig = signingConfigs.getByName("debugConfig")
+      signingConfig = signingConfigs.getByName("release")
       manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
     }
   }
@@ -86,6 +87,32 @@ android {
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
+// AUTOMATED ARTIFACT RENAMING - POST-BUILD TASK (ROBUST & CONFIG CACHE FRIENDLY)
+tasks.whenTaskAdded {
+  if ((name.startsWith("assemble") || name.startsWith("bundle")) && (name.endsWith("Release") || name.endsWith("Debug"))) {
+    val isApk = name.startsWith("assemble")
+    val type = name.removePrefix("assemble").removePrefix("bundle").replaceFirstChar { it.lowercase() }
+    
+    // Capture values outside doLast for Configuration Cache compatibility
+    val buildDirProvider = project.layout.buildDirectory
+    val androidExt = project.extensions.getByName("android") as com.android.build.gradle.AppExtension
+    val vName = androidExt.defaultConfig.versionName ?: "unknown"
+    val vCode = androidExt.defaultConfig.versionCode ?: 0
+    
+    doLast {
+      val ext = if (isApk) "apk" else "aab"
+      val folder = if (isApk) "apk" else "bundle"
+      val outputDir = buildDirProvider.dir("outputs/$folder/$type").get().asFile
+      
+      val oldFile = File(outputDir, "app-$type.$ext")
+      if (oldFile.exists()) {
+        val newFile = File(outputDir, "app-$type-v-$vName-vc-$vCode.$ext")
+        oldFile.renameTo(newFile)
+      }
+    }
+  }
+}
+
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
 // to match the convention used in Web projects.
 secrets {
@@ -100,6 +127,9 @@ secrets {
 dependencies {
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
+  implementation("com.google.firebase:firebase-analytics")
+  implementation("com.google.firebase:firebase-crashlytics")
+  implementation("com.google.firebase:firebase-messaging")
   // implementation(libs.accompanist.permissions)
   implementation(libs.androidx.activity.compose)
   // implementation(libs.androidx.camera.camera2)

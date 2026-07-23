@@ -19,6 +19,9 @@ interface UserProfileDao {
 
     @Query("UPDATE user_profile SET isWatchlistCompactMode = :isCompact WHERE id = 1")
     suspend fun updateWatchlistCompactMode(isCompact: Boolean)
+
+    @Query("UPDATE user_profile SET shouldShowShieldDialog = :show WHERE id = 1")
+    suspend fun updateShieldDialogPreference(show: Boolean)
 }
 
 @Dao
@@ -79,6 +82,9 @@ interface StockPriceDao {
 
     @Query("UPDATE stock_prices SET targetPrice = :targetPrice WHERE symbol = :symbol")
     suspend fun updateTargetPrice(symbol: String, targetPrice: Double?)
+
+    @Query("UPDATE stock_prices SET sentimentBias = :bias WHERE symbol = :symbol")
+    suspend fun updateStockSentimentBias(symbol: String, bias: Double)
 }
 
 @Dao
@@ -139,4 +145,31 @@ interface AppNotificationDao {
 
     @Query("DELETE FROM app_notifications")
     suspend fun clearAll()
+}
+
+@Dao
+interface MarketNewsDao {
+    @Query("SELECT * FROM market_news WHERE symbol = :symbol ORDER BY timestamp DESC")
+    fun getNewsBySymbolFlow(symbol: String): Flow<List<MarketNews>>
+
+    @Query("SELECT * FROM market_news ORDER BY timestamp DESC LIMIT :limit")
+    fun getLatestNewsFlow(limit: Int): Flow<List<MarketNews>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNews(news: List<MarketNews>)
+
+    @Query("DELETE FROM market_news WHERE timestamp < :expiryTimestamp")
+    suspend fun deleteOldNews(expiryTimestamp: Long)
+}
+
+@Dao
+interface AccountSnapshotDao {
+    @Query("SELECT * FROM account_snapshots ORDER BY timestamp ASC")
+    fun getAllSnapshotsFlow(): Flow<List<AccountSnapshot>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSnapshot(snapshot: AccountSnapshot)
+
+    @Query("DELETE FROM account_snapshots WHERE timestamp < :expiryTimestamp")
+    suspend fun deleteOldSnapshots(expiryTimestamp: Long)
 }

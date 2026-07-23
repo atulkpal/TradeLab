@@ -1,1168 +1,713 @@
 package com.ashwathai.tradelab.ui.portfolio
 
 import com.ashwathai.tradelab.MainActivity
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.zIndex
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.geometry.Size
-import kotlin.math.roundToInt
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ashwathai.tradelab.BuildConfig
 import com.ashwathai.tradelab.data.*
-import kotlinx.coroutines.launch
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
-import com.ashwathai.tradelab.ui.QuizModule
-import com.ashwathai.tradelab.ui.Lecture
-import com.ashwathai.tradelab.ui.Mission
-import com.ashwathai.tradelab.ui.theme.*
-import com.ashwathai.tradelab.ui.AuthScreen
-import com.ashwathai.tradelab.BuildConfig
+import com.ashwathai.tradelab.ui.charts.StockLineChart
 import com.ashwathai.tradelab.ui.common.*
-import com.ashwathai.tradelab.ui.charts.*
-import com.ashwathai.tradelab.ui.portfolio.*
-import com.ashwathai.tradelab.ui.watchlist.*
-import com.ashwathai.tradelab.ui.academy.*
-import com.ashwathai.tradelab.ui.derivatives.*
-import com.ashwathai.tradelab.ui.commodities.*
-import com.ashwathai.tradelab.ui.profile.*
+import com.ashwathai.tradelab.ui.theme.*
+import com.ashwathai.tradelab.ui.derivatives.GreeksDiagnosticsBox
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun PortfolioScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
+    latestNews: List<MarketNews>,
     onTickerClick: (String) -> Unit
 ) {
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val userLeague by viewModel.userLeague.collectAsStateWithLifecycle()
+    val xpToNextLeague by viewModel.xpToNextLeague.collectAsStateWithLifecycle()
     val holdings by viewModel.holdings.collectAsStateWithLifecycle()
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
     val stockPrices by viewModel.stockPrices.collectAsStateWithLifecycle()
+    val topGainers by viewModel.topGainers.collectAsStateWithLifecycle()
+    val topLosers by viewModel.topLosers.collectAsStateWithLifecycle()
+    val accountSnapshots by viewModel.accountSnapshots.collectAsStateWithLifecycle()
+    
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val graphicsLayer = rememberGraphicsLayer()
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
 
-    var activeSubTab by remember { mutableStateOf("Holdings") } // "Holdings" or "Positions"
+    var activeSubTab by remember { mutableStateOf("Holdings") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp)
-    ) {
-        // 1. Account value display
-        Card(
+    // Docking Footer logic: appears when main account card scrolls past
+    val showDockedFooter = scrollState.value > 450
+
+    Box(modifier = Modifier.fillMaxSize().background(DarkBg)) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-                .testTag("portfolio_account_card"),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
-            border = BorderStroke(1.dp, DarkBorder)
+                .fillMaxSize()
+                .verticalScroll(scrollState)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // 0. Breaking News (Internalized)
+            BreakingNewsTicker(latestNews = latestNews)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 1. Market Dashboard (Movers)
+            MarketDashboardWidget(topGainers, topLosers)
+            
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 2. Account Card - ULTRA DENSE
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .testTag("portfolio_account_card"),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                border = BorderStroke(1.dp, DarkBorder)
             ) {
-                Text(
-                    text = "TOTAL ACCOUNT VALUE",
-                    color = TextSubtle,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                Column(
+                    modifier = Modifier.padding(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("TOTAL PORTFOLIO VALUE", color = TextSubtle, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = userLeague.uppercase(),
+                                    color = when(userLeague) {
+                                        "Diamond" -> Color(0xFFB9F2FF)
+                                        "Platinum" -> Color(0xFFE5E4E2)
+                                        "Gold" -> AccentYellow
+                                        "Silver" -> Color(0xFFC0C0C0)
+                                        else -> Color(0xFFCD7F32)
+                                    },
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black
+                                )
+                                if (xpToNextLeague > 0) {
+                                    Text(" • $xpToNextLeague XP", color = TextMuted, fontSize = 8.sp)
+                                }
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            userProfile?.let { profile ->
+                                Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(AccentRose.copy(alpha = 0.1f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Whatshot, null, tint = AccentRose, modifier = Modifier.size(12.dp))
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(profile.dailyStreak.toString(), color = AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                            IconButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        try {
+                                            val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
+                                            val shareText = "I turned my portfolio into ${formatCurrency(stats.totalValue, stats.currency)}! 🔥"
+                                            ShareUtils.shareImage(context, bitmap, shareText)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                            viewModel.showFeedback("Error: ${e.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Share, null, tint = BrandViolet, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
                     Text(
                         text = formatCurrency(stats.totalValue, stats.currency),
                         color = Color.White,
-                        fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-1).sp
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
                     
-                    val isProfit = stats.totalPnL >= 0
-                    val badgeBg = if (isProfit) AccentGreenDark else AccentRoseDark
-                    val badgeText = if (isProfit) AccentGreen else AccentRose
-                    val sign = if (isProfit) "+" else ""
+                    Spacer(modifier = Modifier.height(10.dp))
+                    HorizontalDivider(color = DarkBorder, thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    
                     Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(badgeBg)
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .background(badgeText, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "$sign${String.format("%.2f", stats.totalPnLPct)}%",
-                            color = badgeText,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                            Text("LIFETIME P&L", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            val isTotalUp = stats.totalPnL >= 0
+                            Text(
+                                text = "${if (isTotalUp) "+" else ""}${formatPnL(stats.totalPnL, stats.currency)} (${String.format(Locale.US, "%.1f", stats.totalPnLPct)}%)",
+                                color = if (isTotalUp) AccentGreen else AccentRose,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Box(modifier = Modifier.width(1.dp).height(24.dp).background(DarkBorder))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                            Text("TODAY'S P&L", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            val isDayUp = stats.todayPnL >= 0
+                            Text(
+                                text = "${if (isDayUp) "+" else ""}${formatPnL(stats.todayPnL, stats.currency)} (${String.format(Locale.US, "%.1f", stats.todayPnLPct)}%)",
+                                color = if (isDayUp) AccentGreen else AccentRose,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 3. INSTITUTIONAL ANALYTICS (Heatmap)
+            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                SectorHeatmapWidget(holdings, stockPrices, stats)
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 4. Brokerage Shield Widget
+            val shieldActive = stats.isPremium || stats.brokerageCredits >= 20
+            var showShieldDialog by remember { mutableStateOf(false) }
+
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (stats.isPremium) Color(0xFF151525) else if (shieldActive) Color(0xFF102010) else Color(0xFF251010)),
+                border = BorderStroke(1.dp, if (stats.isPremium) BrandViolet.copy(alpha = 0.4f) else if (shieldActive) AccentGreen.copy(alpha = 0.3f) else AccentRose.copy(alpha = 0.3f))
+            ) {
+                val mainActivity = context as? MainActivity
+                var isWatchingAd by remember { mutableStateOf(false) }
+                var isAdLoading by remember { mutableStateOf(false) }
+                var adTimer by remember { mutableIntStateOf(0) }
                 
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = DarkBorder, thickness = 1.dp)
-                Spacer(modifier = Modifier.height(10.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "DAY'S P&L (EST)", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        var estDayPnL = 0.0
-                        for (holding in holdings) {
-                            val liveStock = stockPrices.find { it.symbol == holding.symbol }
-                            val changePct = (liveStock?.dailyChangePct ?: 0.0) / 100.0
-                            val currentValue = holding.shares * (liveStock?.currentPrice ?: holding.averagePrice)
-                            estDayPnL += (currentValue * changePct)
-                        }
-                        val isDayProfit = estDayPnL >= 0
-                        val daySign = if (isDayProfit) "+" else ""
-                        Text(
-                            text = "$daySign${formatPnL(estDayPnL, stats.currency)}",
-                            color = if (isDayProfit) AccentGreen else AccentRose,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                if (isAdLoading || isWatchingAd) {
+                    Row(modifier = Modifier.padding(10.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = BrandViolet)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(if (isAdLoading) "Connecting..." else "Watching... ${adTimer}s", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
-                    
-                    Box(modifier = Modifier.width(1.dp).height(24.dp).background(DarkBorder))
-                    
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "PRESENT CASH IN HAND", color = TextSubtle, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = formatCurrency(stats.cash, stats.currency),
-                            color = Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    if (isWatchingAd) {
+                        LaunchedEffect(Unit) {
+                            adTimer = 2
+                            while (adTimer > 0) { kotlinx.coroutines.delay(1000); adTimer-- }
+                            viewModel.earnBrokerageCredits(50); isWatchingAd = false
+                        }
+                    }
+                } else {
+                    Row(modifier = Modifier.padding(10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(if (shieldActive) Icons.Default.CheckCircle else Icons.Default.Warning, null, tint = if (shieldActive) AccentGreen else AccentRose, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("Brokerage Shield", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(if (stats.isPremium) "PRO Waiver Active" else "${stats.brokerageCredits} Credits", color = TextMuted, fontSize = 9.sp)
+                            }
+                        }
+                        Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(if (stats.isPremium) AccentYellow.copy(alpha = 0.1f) else BrandViolet).clickable {
+                            if (stats.isPremium) viewModel.showFeedback("Pro Active!")
+                            else {
+                                if (stats.shouldShowShieldDialog) showShieldDialog = true
+                                else { isAdLoading = true; mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(50) }) ?: run { isAdLoading = false; isWatchingAd = true } }
+                            }
+                        }.padding(horizontal = 8.dp, vertical = 5.dp)) {
+                            Text(if (stats.isPremium) "PRO ⚡" else "Shield Up 📺", color = if (stats.isPremium) AccentYellow else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                if (showShieldDialog) {
+                    BrokerageShieldDialog(
+                        onDismiss = { showShieldDialog = false },
+                        onGoPro = { showShieldDialog = false; viewModel.openBillingFlow() },
+                        onWatchAd = { 
+                            showShieldDialog = false
+                            isAdLoading = true
+                            mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(50) }) ?: run { isAdLoading = false; isWatchingAd = true }
+                        },
+                        onDoNotShowAgain = { viewModel.setShouldShowShieldDialog(false) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Sub-Tabs
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).clip(RoundedCornerShape(12.dp)).background(DarkSurface).padding(4.dp)) {
+                listOf("Holdings" to "Holdings (${holdings.size})", "Positions" to "Trades (${transactions.size})").forEach { (tabId, tabTitle) ->
+                    val isSel = activeSubTab == tabId
+                    Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(if (isSel) BrandViolet.copy(alpha = 0.15f) else Color.Transparent).clickable { activeSubTab = tabId }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                        Text(tabTitle, color = if (isSel) BrandViolet else Color.White.copy(alpha = 0.5f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Lists
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                if (activeSubTab == "Holdings") {
+                    HoldingsList(holdings, stockPrices, stats, onTickerClick, viewModel)
+                } else {
+                    TransactionsList(transactions, stockPrices, stats, onTickerClick)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) { EquityCurveWidget(accountSnapshots, stats.currency) }
+            Spacer(modifier = Modifier.height(80.dp))
+        }
+
+        // 🟢 DOCKED FOOTER (SPRING ANIMATION)
+        androidx.compose.animation.AnimatedVisibility(
+            visible = showDockedFooter,
+            enter = slideInVertically(initialOffsetY = { it }, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow)) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp)
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A0A0C).copy(alpha = 0.98f)),
+                border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.5f))
+            ) {
+                Row(modifier = Modifier.padding(horizontal = 14.dp).fillMaxSize(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("PORTFOLIO VALUE", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                        Text(formatCurrency(stats.totalValue, stats.currency), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                        Text("LIFETIME", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                        val isTotalUp = stats.totalPnL >= 0
+                        Text("${formatPnL(stats.totalPnL, stats.currency)} (${if (isTotalUp) "+" else ""}${String.format(Locale.US, "%.1f", stats.totalPnLPct)}%)", color = if (isTotalUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
+                        Text("TODAY", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                        val isDayUp = stats.todayPnL >= 0
+                        Text("${formatPnL(stats.todayPnL, stats.currency)} (${if (isDayUp) "+" else ""}${String.format(Locale.US, "%.1f", stats.todayPnLPct)}%)", color = if (isDayUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        // 🟢 SECURE CAPTURE (measured but not placed)
+        Box(
+            modifier = Modifier.layout { measurable, constraints ->
+                val width = 360.dp.roundToPx(); val height = 480.dp.roundToPx()
+                measurable.measure(constraints.copy(minWidth = width, maxWidth = width, minHeight = height, maxHeight = height))
+                layout(0, 0) {} 
+            }.drawWithContent {
+                graphicsLayer.record(density = density, layoutDirection = layoutDirection, size = IntSize(360.dp.roundToPx(), 480.dp.roundToPx())) { this@drawWithContent.drawContent() }
+            }
+        ) { Surface(color = Color.Black, modifier = Modifier.fillMaxSize()) { PortfolioShareCard(stats = stats) } }
+    }
+}
 
-        // Brokerage Shield Widget
-        val shieldActive = stats.isPremium || stats.brokerageCredits >= 20
+@Composable
+fun BrokerageShieldDialog(
+    onDismiss: () -> Unit,
+    onGoPro: () -> Unit,
+    onWatchAd: () -> Unit,
+    onDoNotShowAgain: (Boolean) -> Unit
+) {
+    var checked by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-                .testTag("brokerage_shield_card"),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (stats.isPremium) Color(0xFF1A1A2F) else if (shieldActive) Color(0xFF132A13) else Color(0xFF2B1B1B)
-            ),
-            border = BorderStroke(1.dp, if (stats.isPremium) BrandViolet.copy(alpha = 0.5f) else if (shieldActive) AccentGreen.copy(alpha = 0.3f) else AccentRose.copy(alpha = 0.3f))
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
+            border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))
         ) {
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val mainActivity = context as? MainActivity
-            var isWatchingAd by remember { mutableStateOf(false) }
-            var isAdLoading by remember { mutableStateOf(false) }
-            var adTimer by remember { mutableStateOf(0) }
-            
-            if (isAdLoading) {
-                Column(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator(color = BrandViolet, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Connecting to AdMob Live Stream...", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.padding(24.dp)) {
+                // 1. Header with Icon
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Watch Ad",
+                        tint = BrandViolet,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Recharge Brokerage Shield 📺", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
-            } else if (isWatchingAd) {
-                Column(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 2. Educational Summary
+                Text(
+                    text = "Accumulate brokerage credits by watching ads anytime (even off-market)! Each trade costs 20 credits to waive fees.",
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 3. PRO Advantage Promotional Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = BrandViolet.copy(alpha = 0.15f)),
+                    border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))
                 ) {
-                    CircularProgressIndicator(color = BrandViolet, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Streaming Sponsor Video... ${adTimer}s", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
-                LaunchedEffect(isWatchingAd) {
-                    adTimer = 2
-                    while (adTimer > 0) {
-                        kotlinx.coroutines.delay(1000)
-                        adTimer--
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Pro Option",
+                                tint = AccentYellow,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "SKIP ALL ADS WITH PRO",
+                                color = AccentYellow,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Get TradeLab Pro to unlock zero brokerage permanently and skip all sponsor ads instantly.",
+                            color = TextSubtle,
+                            fontSize = 10.sp,
+                            lineHeight = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = onGoPro,
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("GO PRO • ₹99/mo", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
-                    viewModel.earnBrokerageCredits(50)
-                    isWatchingAd = false
                 }
-            } else {
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 4. Primary and Secondary Actions
+                Button(
+                    onClick = onWatchAd,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("WATCH SPONSOR AD (+50)", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 5. Preference Toggle & Close
                 Row(
-                    modifier = Modifier.padding(14.dp).fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (stats.isPremium) Icons.Default.CheckCircle else if (shieldActive) Icons.Default.CheckCircle else Icons.Default.Warning,
-                            contentDescription = "Shield State",
-                            tint = if (stats.isPremium) AccentYellow else if (shieldActive) AccentGreen else AccentRose,
-                            modifier = Modifier.size(28.dp)
+                        Checkbox(
+                            checked = checked,
+                            onCheckedChange = { 
+                                checked = it
+                                onDoNotShowAgain(it)
+                            },
+                            colors = CheckboxDefaults.colors(checkedColor = BrandViolet)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Brokerage Shield",
-                                    color = Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(
-                                            if (stats.isPremium) AccentYellow.copy(alpha = 0.15f)
-                                            else if (shieldActive) AccentGreen.copy(alpha = 0.15f)
-                                            else AccentRose.copy(alpha = 0.15f)
-                                        )
-                                        .padding(horizontal = 5.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = if (stats.isPremium) "PRO ACTIVE ⚡" else if (shieldActive) "PROTECTED" else "DRAINING",
-                                        color = if (stats.isPremium) AccentYellow else if (shieldActive) AccentGreen else AccentRose,
-                                        fontSize = 8.sp,
-                                        fontWeight = FontWeight.ExtraBold
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (stats.isPremium) "Zero brokerage fees active. No credits consumed." else "${stats.brokerageCredits} Credits remaining (Consumes 20/trade)",
-                                color = if (stats.isPremium) AccentYellow.copy(alpha = 0.8f) else TextMuted,
-                                fontSize = 10.sp
-                            )
-                        }
+                        Text("Don't show again", color = TextMuted, fontSize = 11.sp)
                     }
-                    
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(
-                                if (stats.isPremium) AccentYellow.copy(alpha = 0.15f)
-                                else if (shieldActive) Color.White.copy(alpha = 0.05f)
-                                else BrandViolet
-                            )
-                            .border(
-                                1.dp,
-                                if (stats.isPremium) AccentYellow.copy(alpha = 0.3f)
-                                else if (shieldActive) Color.White.copy(alpha = 0.1f)
-                                else Color.Transparent,
-                                RoundedCornerShape(8.dp)
-                            )
-                            .clickable {
-                                if (stats.isPremium) {
-                                    viewModel.showFeedback("TradeLab Pro is active! Zero brokerage fee waiver applied to all trades.")
-                                } else {
-                                    isAdLoading = true
-                                    if (mainActivity != null) {
-                                        mainActivity.loadAndShowRewardedAd(
-                                            adType = MainActivity.AdType.PORTFOLIO_SHIELD,
-                                            onAdLoaded = {
-                                                isAdLoading = false
-                                            },
-                                            onAdFailed = { errorMsg ->
-                                                isAdLoading = false
-                                                viewModel.showFeedback("AdMob failed: $errorMsg. Launching fallback.")
-                                                isWatchingAd = true
-                                            },
-                                            onUserEarnedReward = {
-                                                viewModel.earnBrokerageCredits(50)
-                                            }
-                                        )
-                                    } else {
-                                        isAdLoading = false
-                                        isWatchingAd = true
-                                    }
-                                }
-                            }
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = if (stats.isPremium) "Pro Waiver Active ⚡" else if (shieldActive) "Recharge (+50)" else "Shield Up 📺",
-                            color = if (stats.isPremium) AccentYellow else Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    TextButton(onClick = onDismiss) {
+                        Text("CANCEL", color = TextSubtle, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // 2. Sub-Tab Row: Holdings vs Positions (all trades happening)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(DarkSurface)
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            listOf("Holdings" to "Holdings (${holdings.size})", "Positions" to "Trades/Positions (${transactions.size})").forEach { (tabId, tabTitle) ->
-                val isSelected = activeSubTab == tabId
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) BrandViolet.copy(alpha = 0.15f) else Color.Transparent)
-                        .clickable { activeSubTab = tabId }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = tabTitle,
-                        color = if (isSelected) BrandViolet else Color.White.copy(alpha = 0.5f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 3. Render Holdings or Positions
-        if (activeSubTab == "Holdings") {
-            if (holdings.isEmpty()) {
-                // Empty state: show 0 / zero-state
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
-                            contentDescription = "Zero",
-                            tint = TextMuted,
-                            modifier = Modifier.size(44.dp)
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text("No Holdings: 0 Value", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "Get started by adding tickers to your Watchlist and placing a trade!",
-                            color = TextSubtle,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 4.dp)
-                        )
-                    }
-                }
-            } else {
-                val (optionHoldings, equityHoldings) = holdings.partition {
-                    it.symbol.contains("_CE_") || it.symbol.contains("_PE_")
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (equityHoldings.isNotEmpty()) {
-                        Text(
-                            text = "EQUITY & ASSET HOLDINGS",
-                            color = TextMuted,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-
-                        equityHoldings.forEach { holding ->
-                            val liveStock = stockPrices.find { it.symbol == holding.symbol }
-                            val currentPrice = liveStock?.currentPrice ?: holding.averagePrice
-                            val currentValue = holding.shares * currentPrice
-                            val costBasis = holding.shares * holding.averagePrice
-                            val pnl = currentValue - costBasis
-                            val pnlPct = if (costBasis > 0) (pnl / costBasis) * 100.0 else 0.0
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(DarkSurface)
-                                    .border(1.dp, DarkBorder, RoundedCornerShape(16.dp))
-                                    .clickable { onTickerClick(holding.symbol) }
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(24.dp)
-                                                .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(6.dp)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(text = holding.symbol.take(4), color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                        }
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(text = holding.symbol, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "${String.format("%.2f", holding.shares)} shares",
-                                        color = TextMuted,
-                                        fontSize = 11.sp
-                                    )
-                                    Text(
-                                        text = "Avg: ${formatCurrency(holding.averagePrice, stats.currency)}",
-                                        color = TextSubtle,
-                                        fontSize = 11.sp
-                                    )
-                                }
-
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = formatCurrency(currentValue, stats.currency),
-                                        color = Color.White,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    val isUp = pnl >= 0
-                                    Text(
-                                        text = "${if (isUp) "+" else ""}${formatCurrency(pnl, stats.currency)} (${if (isUp) "+" else ""}${String.format("%.2f", pnlPct)}%)",
-                                        color = if (isUp) AccentGreen else AccentRose,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (optionHoldings.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Render portfolio Greeks box
-                        GreeksDiagnosticsBox(optionHoldings, stockPrices, stats.currency)
-
-                        Text(
-                            text = "ACTIVE OPTIONS CONTRACTS (F&O)",
-                            color = TextMuted,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-
-                        optionHoldings.forEach { holding ->
-                            val isCall = holding.symbol.contains("_CE_")
-                            val separator = if (isCall) "_CE_" else "_PE_"
-                            val parts = holding.symbol.split(separator)
-                            val underlying = parts[0]
-                            val strike = parts.getOrNull(1)?.toDoubleOrNull() ?: 100.0
-
-                            val liveStock = stockPrices.find { it.symbol == holding.symbol }
-                            val currentPrice = liveStock?.currentPrice ?: holding.averagePrice
-                            val currentValue = holding.shares * currentPrice
-                            val costBasis = holding.shares * holding.averagePrice
-                            val pnl = currentValue - costBasis
-                            val pnlPct = if (costBasis > 0) (pnl / costBasis) * 100.0 else 0.0
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(DarkSurface)
-                                    .border(1.dp, BrandViolet.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(if (isCall) AccentGreen.copy(alpha = 0.15f) else AccentRose.copy(alpha = 0.15f))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                text = if (isCall) "CALL" else "PUT",
-                                                color = if (isCall) AccentGreen else AccentRose,
-                                                fontSize = 8.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(text = "$underlying @ $strike", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "Qty: ${String.format("%.0f", holding.shares)} shares (${String.format("%.2f", holding.shares / 100.0)} Lots)",
-                                        color = TextMuted,
-                                        fontSize = 11.sp
-                                    )
-                                    Text(
-                                        text = "Avg Prem: ${formatCurrency(holding.averagePrice, stats.currency)}",
-                                        color = TextSubtle,
-                                        fontSize = 11.sp
-                                    )
-                                }
-
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = formatCurrency(currentValue, stats.currency),
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    val isUp = pnl >= 0
-                                    Text(
-                                        text = "${if (isUp) "+" else ""}${formatPnL(pnl, stats.currency)} (${if (isUp) "+" else ""}${String.format("%.2f", pnlPct)}%)",
-                                        color = if (isUp) AccentGreen else AccentRose,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    
-                                    // Square Off / Close Position Command Button
-                                    Button(
-                                        onClick = {
-                                            viewModel.sellStock(holding.symbol, holding.shares)
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C1E1E)),
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                        modifier = Modifier.height(24.dp)
-                                    ) {
-                                        Text("SQUARE OFF", color = AccentRose, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // Positions (All trades happening)
-            if (transactions.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.SwapVert,
-                            contentDescription = "Zero Trades",
-                            tint = TextMuted,
-                            modifier = Modifier.size(44.dp)
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text("No Trades Done: 0 Transactions", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            "Any buying or selling transaction you execute will be logged here instantly.",
-                            color = TextSubtle,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 4.dp)
-                        )
-                    }
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    transactions.forEach { tx ->
-                        val liveStock = stockPrices.find { it.symbol == tx.symbol }
-                        val currentPrice = liveStock?.currentPrice ?: tx.price
-                        val isBuy = tx.type == "BUY"
-                        
-                        // Transaction P&L calculations
-                        val boughtValue = tx.shares * tx.price
-                        val presentValue = tx.shares * currentPrice
-                        val txPnL = if (isBuy) (presentValue - boughtValue) else (boughtValue - presentValue)
-                        val txPnLPct = if (boughtValue > 0) (txPnL / boughtValue) * 100.0 else 0.0
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(DarkSurface)
-                                .border(1.dp, DarkBorder, RoundedCornerShape(16.dp))
-                                .clickable { onTickerClick(tx.symbol) }
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(if (isBuy) AccentGreen.copy(alpha = 0.1f) else AccentRose.copy(alpha = 0.1f))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = tx.type,
-                                            color = if (isBuy) AccentGreen else AccentRose,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = tx.symbol, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "${String.format("%.2f", tx.shares)} units @ ${formatCurrency(tx.price, stats.currency)}",
-                                    color = TextMuted,
-                                    fontSize = 11.sp
-                                )
-                                Text(
-                                    text = "Trade Value: ${formatCurrency(boughtValue, stats.currency)}",
-                                    color = TextSubtle,
-                                    fontSize = 11.sp
-                                )
-                            }
-
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = "Current: ${formatCurrency(currentPrice, stats.currency)}",
-                                    color = Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                val isPositive = txPnL >= 0
-                                Text(
-                                    text = "${if (isPositive) "+" else ""}${formatCurrency(txPnL, stats.currency)} (${if (isPositive) "+" else ""}${String.format("%.2f", txPnLPct)}%)",
-                                    color = if (isPositive) AccentGreen else AccentRose,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(30.dp))
     }
 }
 
-
 @Composable
-fun AssetsScreen(viewModel: TradingViewModel, stats: PortfolioStats) {
-    val holdings by viewModel.holdings.collectAsStateWithLifecycle()
-    val stockPrices by viewModel.stockPrices.collectAsStateWithLifecycle()
-    val pendingOrders by viewModel.pendingOrders.collectAsStateWithLifecycle()
-
-    var selectedSection by remember { mutableStateOf("Holdings") } // "Holdings" or "Pending"
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp)
-    ) {
-        // Portfolio Asset Summary Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
-            border = BorderStroke(1.dp, DarkBorder)
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = "PORTFOLIO DISTRIBUTION",
-                    color = TextSubtle,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
+fun HoldingsList(holdings: List<Holding>, stockPrices: List<StockPrice>, stats: PortfolioStats, onTickerClick: (String) -> Unit, viewModel: TradingViewModel) {
+    if (holdings.isEmpty()) {
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.AccountBalanceWallet, null, tint = TextMuted, modifier = Modifier.size(44.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                Text("No Holdings Found", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    } else {
+        val (optionHoldings, equityHoldings) = holdings.partition { it.symbol.contains("_CE_") || it.symbol.contains("_PE_") }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            equityHoldings.forEach { HoldingItem(it, stockPrices, stats, onTickerClick) }
+            if (optionHoldings.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Holdings", color = BrandViolet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(text = formatCurrency(stats.holdingsValue, stats.currency), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Divider(modifier = Modifier.height(30.dp).width(1.dp), color = DarkBorder)
-                    Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
-                        Text(text = "Cash Balance", color = TextMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(text = formatCurrency(stats.cash, stats.currency), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                val totalValue = maxOf(stats.totalValue, 1.0)
-                val holdingsPct = (stats.holdingsValue / totalValue).toFloat()
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.White.copy(alpha = 0.08f))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(maxOf(holdingsPct, 0.001f))
-                            .background(BrandViolet)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(maxOf(1f - holdingsPct, 0.001f))
-                            .background(Color.White.copy(alpha = 0.2f))
-                    )
-                }
+                GreeksDiagnosticsBox(optionHoldings, stockPrices, stats.currency)
+                optionHoldings.forEach { OptionHoldingItem(it, stockPrices, stats, viewModel) }
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(20.dp))
+@Composable
+fun HoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: PortfolioStats, onTickerClick: (String) -> Unit) {
+    val liveStock = stockPrices.find { it.symbol == holding.symbol }
+    val currentPrice = liveStock?.currentPrice ?: holding.averagePrice
+    val totalShares = holding.shares + holding.sharesT1
+    val currentValue = totalShares * currentPrice
+    val costBasis = totalShares * holding.averagePrice
+    val pnl = currentValue - costBasis
+    val pnlPct = if (costBasis > 0) (pnl / costBasis) * 100.0 else 0.0
+    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(DarkSurface).border(1.dp, DarkBorder, RoundedCornerShape(16.dp)).clickable { onTickerClick(holding.symbol) }.padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Column {
+            Text(holding.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("${String.format(Locale.US, "%.2f", totalShares)} shares", color = TextMuted, fontSize = 10.sp)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(formatCurrency(currentValue, stats.currency), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            val isUp = pnl >= 0
+            Text("${if (isUp) "+" else ""}${String.format(Locale.US, "%.2f", pnlPct)}%", color = if (isUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
 
-        // Custom Navigation Tab Selector (Holdings vs Pending Orders)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(DarkSurface)
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            listOf("Holdings" to "Active Holdings", "Pending" to "Pending Orders (${pendingOrders.size})").forEach { (secId, title) ->
-                val isSelected = selectedSection == secId
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (isSelected) BrandViolet.copy(alpha = 0.15f) else Color.Transparent)
-                        .clickable { selectedSection = secId }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = title,
-                        color = if (isSelected) BrandViolet else Color.White.copy(alpha = 0.6f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+@Composable
+fun OptionHoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: PortfolioStats, viewModel: TradingViewModel) {
+    val isCall = holding.symbol.contains("_CE_")
+    val liveStock = stockPrices.find { it.symbol == holding.symbol }
+    val currentPrice = liveStock?.currentPrice ?: holding.averagePrice
+    val currentValue = holding.shares * currentPrice
+    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(DarkSurface).border(1.dp, BrandViolet.copy(alpha = 0.2f), RoundedCornerShape(16.dp)).padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(if (isCall) AccentGreen.copy(alpha = 0.15f) else AccentRose.copy(alpha = 0.15f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                    Text(if (isCall) "CALL" else "PUT", color = if (isCall) AccentGreen else AccentRose, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                 }
+                Spacer(modifier = Modifier.width(6.dp)); Text(holding.symbol, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+            Text("Qty: ${holding.shares.toInt()}", color = TextMuted, fontSize = 10.sp)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(formatCurrency(currentValue, stats.currency), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Button(onClick = { viewModel.sellStock(holding.symbol, holding.shares) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C1E1E)), shape = RoundedCornerShape(8.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 5.dp), modifier = Modifier.height(24.dp)) {
+                Text("SQUARE OFF", color = AccentRose, fontSize = 7.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (selectedSection == "Holdings") {
-            if (holdings.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
-                            contentDescription = "No positions",
-                            tint = TextSubtle,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "No active holdings",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "Go to the Trade tab, choose a stock, and place an order to build your virtual portfolio.",
-                            color = TextSubtle,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(holdings) { holding ->
-                        val liveStock = stockPrices.find { it.symbol == holding.symbol }
-                        val currentPrice = liveStock?.currentPrice ?: holding.averagePrice
-                        val currentValue = holding.shares * currentPrice
-                        val costBasis = holding.shares * holding.averagePrice
-                        val pnl = currentValue - costBasis
-                        val pnlPct = if (costBasis > 0) (pnl / costBasis) * 100.0 else 0.0
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(DarkSurface)
-                                .border(1.dp, DarkBorder, RoundedCornerShape(20.dp))
-                                .clickable {
-                                    viewModel.selectStock(holding.symbol)
-                                    viewModel.selectTab("Trade")
-                                }
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(6.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(text = holding.symbol, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = holding.symbol, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "${String.format("%.4f", holding.shares)} shares",
-                                    color = TextMuted,
-                                    fontSize = 11.sp
-                                )
-                                Text(
-                                    text = "Avg: ${formatCurrency(holding.averagePrice, stats.currency)}",
-                                    color = TextSubtle,
-                                    fontSize = 11.sp
-                                )
+@Composable
+fun TransactionsList(transactions: List<Transaction>, stockPrices: List<StockPrice>, stats: PortfolioStats, onTickerClick: (String) -> Unit) {
+    if (transactions.isEmpty()) {
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.SwapVert, null, tint = TextMuted, modifier = Modifier.size(44.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                Text("No Trades Found", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            transactions.forEach { tx ->
+                val liveStock = stockPrices.find { it.symbol == tx.symbol }
+                val currentPrice = liveStock?.currentPrice ?: tx.price
+                val isBuy = tx.type == "BUY"
+                val presentValue = tx.shares * currentPrice
+                Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(DarkSurface).border(1.dp, DarkBorder, RoundedCornerShape(16.dp)).clickable { onTickerClick(tx.symbol) }.padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(if (isBuy) AccentGreen.copy(alpha = 0.1f) else AccentRose.copy(alpha = 0.1f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                                Text(tx.type, color = if (isBuy) AccentGreen else AccentRose, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                             }
+                            Spacer(modifier = Modifier.width(8.dp)); Text(tx.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Text("${tx.shares.toInt()} @ ${formatCurrency(tx.price, stats.currency)}", color = TextMuted, fontSize = 10.sp)
+                    }
+                    Column(horizontalAlignment = Alignment.End) { Text(formatCurrency(presentValue, stats.currency), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+                }
+            }
+        }
+    }
+}
 
+@Composable
+fun SectorHeatmapWidget(
+    holdings: List<Holding>,
+    stockPrices: List<StockPrice>,
+    stats: PortfolioStats
+) {
+    if (holdings.isEmpty()) return
+    var isExpanded by remember { mutableStateOf(false) }
+    val sectorMap = remember(holdings, stockPrices) {
+        val map = mutableMapOf<String, Double>()
+        holdings.forEach { h ->
+            val live = stockPrices.find { it.symbol == h.symbol }
+            val price = live?.currentPrice ?: h.averagePrice
+            val industry = mapTickerToIndustry(h.symbol)
+            map[industry] = map.getOrDefault(industry, 0.0) + ((h.shares + h.sharesT1) * price)
+        }
+        map.toList().sortedByDescending { it.second }
+    }
+    Card(modifier = Modifier.fillMaxWidth().clickable { isExpanded = !isExpanded }, shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = DarkSurface), border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.2f))) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("SECTOR ALLOCATION", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Icon(if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = TextMuted, modifier = Modifier.size(14.dp))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(modifier = Modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(13.dp)).background(Color.White.copy(alpha = 0.05f))) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    val totalValue = maxOf(stats.holdingsValue, 1.0)
+                    sectorMap.forEachIndexed { index, (sector, value) ->
+                        val weight = (value / totalValue).toFloat().coerceAtLeast(0.01f)
+                        val color = when (index % 5) { 0 -> BrandViolet; 1 -> AccentGreen; 2 -> Color(0xFF2196F3); 3 -> AccentYellow; else -> AccentRose }
+                        Box(modifier = Modifier.fillMaxHeight().weight(weight).background(color), contentAlignment = Alignment.Center) {
+                            Text(sector.take(4).uppercase(), color = Color.Black, fontSize = 8.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.padding(horizontal = 2.dp))
+                        }
+                    }
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(visible = isExpanded) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    sectorMap.forEachIndexed { index, (sector, value) ->
+                        val pct = (value / maxOf(stats.holdingsValue, 1.0)) * 100.0
+                        val color = when (index % 5) { 0 -> BrandViolet; 1 -> AccentGreen; 2 -> Color(0xFF2196F3); 3 -> AccentYellow; else -> AccentRose }
+                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
+                                Spacer(modifier = Modifier.width(10.dp)); Text(sector, color = Color.White, fontSize = 12.sp)
+                            }
+                            Text("${String.format(Locale.US, "%.1f", pct)}%", color = TextSubtle, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun mapTickerToIndustry(symbol: String): String {
+    val clean = symbol.substringBefore(".NS").substringBefore(".BO").uppercase()
+    return when {
+        clean.contains("RELIANCE") || clean.contains("ONGC") || clean.contains("BPCL") -> "Energy"
+        clean.contains("TCS") || clean.contains("INFY") || clean.contains("WIPRO") || clean.contains("HCL") -> "IT"
+        clean.contains("BANK") || clean.contains("SBIN") || clean.contains("PFC") -> "Finance"
+        clean.contains("TATASTEEL") || clean.contains("JSW") || clean.contains("HINDALCO") -> "Metals"
+        clean.contains("AAPL") || clean.contains("MSFT") || clean.contains("GOOG") -> "Global"
+        clean.contains("BTC") || clean.contains("ETH") -> "Crypto"
+        clean.contains("GOLD") || clean.contains("CRUDE") -> "Commodity"
+        else -> "Misc"
+    }
+}
+
+@Composable
+fun EquityCurveWidget(snapshots: List<AccountSnapshot>, currency: String) {
+    var showDetails by remember { mutableStateOf(false) }
+    Card(modifier = Modifier.fillMaxWidth().clickable { showDetails = true }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = DarkSurface), border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))) {
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.AutoMirrored.Filled.ShowChart, null, tint = AccentGreen, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text("EQUITY CURVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text("Performance analytics", color = TextMuted, fontSize = 8.sp)
+                }
+            }
+            Icon(Icons.AutoMirrored.Filled.OpenInNew, null, tint = TextMuted, modifier = Modifier.size(14.dp))
+        }
+    }
+    if (showDetails) {
+        Dialog(onDismissRequest = { showDetails = false }) {
+            Card(modifier = Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated), border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("PERFORMANCE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { showDetails = false }, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, null, tint = TextMuted) }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+                    if (snapshots.size < 2) {
+                        Column(modifier = Modifier.fillMaxWidth().height(160.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.DataUsage, null, tint = TextMuted, modifier = Modifier.size(48.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("NOT ENOUGH DATA", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("Typical history required: 30 days.", color = TextSubtle, fontSize = 11.sp, textAlign = TextAlign.Center)
+                        }
+                    } else {
+                        val pricesString = snapshots.joinToString(",") { it.totalValue.toString() }
+                        val isPositive = snapshots.last().totalValue >= snapshots.first().totalValue
+                        Box(modifier = Modifier.fillMaxWidth().height(180.dp)) { StockLineChart(pricesString = pricesString, isPositive = isPositive, showIndicators = false, modifier = Modifier.fillMaxSize()) }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        val gain = snapshots.last().totalValue - snapshots.first().totalValue
+                        val gainPct = if (snapshots.first().totalValue > 0) (gain / snapshots.first().totalValue) * 100.0 else 0.0
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("NET GROWTH", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(text = formatCurrency(gain, currency), color = if (gain >= 0) AccentGreen else AccentRose, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
                             Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = formatCurrency(currentValue, stats.currency),
-                                    color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                val displayColor = if (pnl >= 0) AccentGreen else AccentRose
-                                val sign = if (pnl >= 0) "+" else ""
-                                Text(
-                                    text = "$sign${formatCurrency(pnl, stats.currency)} ($sign${String.format("%.2f", pnlPct)}%)",
-                                    color = displayColor,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text("TOTAL RETURN", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "${if (gainPct >= 0) "+" else ""}${String.format(Locale.US, "%.2f", gainPct)}%", color = if (gainPct >= 0) AccentGreen else AccentRose, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
-                }
-            }
-        } else {
-            // PENDING ORDERS SECTION (GTT / Limit)
-            if (pendingOrders.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.Timer,
-                            contentDescription = "No Pending Orders",
-                            tint = TextSubtle,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "No pending orders",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "GTT and Limit orders will stay active here until they are triggered or manually cancelled.",
-                            color = TextSubtle,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(pendingOrders) { order ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(DarkSurface)
-                                .border(1.dp, DarkBorder, RoundedCornerShape(20.dp))
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(if (order.type == "BUY") AccentGreen.copy(alpha = 0.15f) else AccentRose.copy(alpha = 0.15f))
-                                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = "${order.type} ${order.orderType}",
-                                            color = if (order.type == "BUY") AccentGreen else AccentRose,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = order.symbol, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "${String.format("%.2f", order.shares)} Shares",
-                                    color = TextMuted,
-                                    fontSize = 11.sp
-                                )
-                                Text(
-                                    text = "Trigger at: ${formatCurrency(order.triggerPrice, stats.currency)}",
-                                    color = AccentYellow,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            IconButton(
-                                onClick = { viewModel.deletePendingOrder(order.id) },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Cancel Pending Order",
-                                    tint = AccentRose
-                                )
-                            }
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(24.dp)); Button(onClick = { showDetails = false }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = BrandViolet), shape = RoundedCornerShape(12.dp)) { Text("Close View", color = Color.White, fontWeight = FontWeight.Bold) }
                 }
             }
         }
     }
 }
-
-
-@Composable
-fun PortfolioCard(stats: PortfolioStats, onSimulateTick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("portfolio_card"),
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        border = BorderStroke(1.dp, DarkBorder)
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column {
-                    Text(
-                        text = "Total Portfolio Value",
-                        color = TextMuted,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = formatCurrencyNoDecimals(stats.totalValue, stats.currency),
-                            color = Color.White,
-                            fontSize = 38.sp,
-                            fontWeight = FontWeight.Light,
-                            letterSpacing = (-1).sp
-                        )
-                        val scale = if (stats.currency == "INR") 83.0 else 1.0
-                        val decimalPart = ((stats.totalValue * scale) % 1) * 100
-                        Text(
-                            text = String.format(".%02d", decimalPart.toInt().coerceIn(0, 99)),
-                            color = TextMuted,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Light,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
-                }
-
-                // SIMULATE TICK BUTTON - ONLY ENABLED OR UNLOCKED VISUALLY FOR ARCADE
-                if (stats.isArcadeMode) {
-                    IconButton(
-                        onClick = onSimulateTick,
-                        modifier = Modifier
-                            .testTag("simulate_tick_button")
-                            .size(40.dp)
-                            .background(AccentYellow.copy(alpha = 0.2f), CircleShape)
-                            .border(1.dp, AccentYellow.copy(alpha = 0.4f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Simulate Market Movement",
-                            tint = AccentYellow,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Buying power
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Available Cash (Buying Power)",
-                        color = TextSubtle,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = formatCurrency(stats.cash, stats.currency),
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                val returnsPct = stats.totalPnLPct
-                val badgeBg = if (returnsPct >= 0) AccentGreenDark else AccentRoseDark
-                val badgeText = if (returnsPct >= 0) AccentGreen else AccentRose
-                val sign = if (returnsPct >= 0) "+" else ""
-
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(badgeBg)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(badgeText, CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "$sign${String.format("%.2f", returnsPct)}%",
-                        color = badgeText,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-fun StatCard(label: String, value: String, valueColor: Color, percent: String?, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        border = BorderStroke(1.dp, DarkBorder)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = label.uppercase(),
-                color = TextSubtle,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = value,
-                color = valueColor,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-            if (percent != null) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = percent,
-                    color = valueColor.copy(alpha = 0.7f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-    }
-}
-
-

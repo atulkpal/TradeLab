@@ -15,9 +15,11 @@ import androidx.room.RoomDatabase
         WatchlistName::class,
         WatchlistItemV2::class,
         PendingOrder::class,
-        AppNotification::class
+        AppNotification::class,
+        MarketNews::class,
+        AccountSnapshot::class
     ],
-    version = 9,
+    version = 15,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +31,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun watchlistV2Dao(): WatchlistV2Dao
     abstract fun pendingOrderDao(): PendingOrderDao
     abstract fun appNotificationDao(): AppNotificationDao
+    abstract fun marketNewsDao(): MarketNewsDao
+    abstract fun accountSnapshotDao(): AccountSnapshotDao
 
     companion object {
         @Volatile

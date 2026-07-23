@@ -1,0 +1,6 @@
+- [x] Update `libs.versions.toml` and `build.gradle.kts` for Firestore
+- [x] Create `LeaderboardManager.kt`
+- [x] Update `TradingViewModel.kt` to sync stats and expose leaderboard
+- [x] Update `AcademyScreen.kt` to display dynamic leaderboard
+- [x] Provide Firestore Security Rules
+- [x] Create walkthrough

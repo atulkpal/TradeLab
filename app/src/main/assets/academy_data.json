@@ -150,5 +150,53 @@
         "content": "A 'hammer' candlestick has a small body at the top with a very long lower wick. When this appears near major support, it proves that sellers tried to push prices down, but aggressive buyers stepped in and drove the price back up. This is a common technical signal for a bullish trend reversal."
       }
     ]
+  },
+  {
+    "id": 7,
+    "title": "Level 7: The Cost of Trading",
+    "topic": "Taxes & Fees",
+    "rewardAmt": 15000.0,
+    "concept": "Trading isn't free. Every trade attracts STT (Securities Transaction Tax), Stamp Duty, Exchange Charges, and SEBI fees. Understanding these is vital for net profitability.",
+    "question": "Which tax is typically higher for Delivery trades than Intraday in India?",
+    "options": [
+      "GST on Brokerage",
+      "STT (Securities Transaction Tax)",
+      "Income Tax on Dividends"
+    ],
+    "correctIndex": 1,
+    "lectures": [
+      {
+        "title": "Lecture 7.1: Statutory Charges",
+        "content": "STATUTORY CHARGES are mandatory taxes collected by the government. STT (Securities Transaction Tax) is the largest component, followed by Stamp Duty and SEBI charges. These are automatically deducted from your contract note."
+      },
+      {
+        "title": "Lecture 7.2: Brokerage vs. Taxes",
+        "content": "Brokerage is the fee you pay to the broker (like TradeLab) for the service. Taxes are paid to the government. Even if your broker offers 'Zero Brokerage', you still pay STT and other statutory taxes."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Level 8: Intraday vs Delivery",
+    "topic": "Settlement & Cycles",
+    "rewardAmt": 15000.0,
+    "concept": "Intraday means buying and selling on the same day. Delivery means keeping stocks for T+1 days or more. Delivery trades have a longer settlement cycle.",
+    "question": "In a T+1 settlement cycle, when do shares bought today become available for delivery exit?",
+    "options": [
+      "Instantly within 5 minutes",
+      "The next market working day",
+      "Exactly 30 days later"
+    ],
+    "correctIndex": 1,
+    "lectures": [
+      {
+        "title": "Lecture 8.1: The T+1 Cycle",
+        "content": "Indian markets operate on a T+1 SETTLEMENT CYCLE. If you buy shares on Monday (T), they are officially 'settled' and transferred to your demat account by Tuesday (T+1). Before that, they stay in your 'Position' as T1 holdings."
+      },
+      {
+        "title": "Lecture 8.2: Intraday Risks",
+        "content": "Intraday trading requires you to square off your positions before 3:20 PM. It offers high leverage but carries higher risk as you must exit regardless of the market price at EOD."
+      }
+    ]
   }
 ]

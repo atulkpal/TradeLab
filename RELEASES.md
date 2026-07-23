@@ -4,6 +4,32 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [1.1.0] - Foundation Modernization & Market Realism
+**Release Date:** July 21, 2026  
+**Version Code:** `3`  
+**Status:** 🟢 STABLE / CURRENT
+
+### Summary of Changes
+This release stabilizes the application architecture and introduces authentic market session logic for the Indian stock market.
+
+### Core Features
+- **Hilt Architecture:** Fully dependency-injected core logic for high testability.
+- **Indian Market Hours:** Enforced NSE/BSE session cutoffs and holiday support for simulations.
+- **Swipe Navigation:** Fluid horizontal pager navigation between all primary app screens.
+- **Ultra-Dense Watchlist:** Refactored UI for higher data density with persistent view preferences.
+
+### Signing & Security
+This version is signed with the production `tradelab-release.keystore`.
+- **SHA-1 (Release):** `4E:0D:BE:63:7E:86:31:0A:35:B7:9C:D3:D0:F0:10:F6:47:DD:3A:E9`
+- **SHA-256 (Release):** `BE:C3:0C:BC:B2:F7:FA:6A:4A:51:B1:B3:9C:52:20:3E:66:8E:BD:AA:AA:7D:4D:1B:19:59:94:17:53:FD:54:FC`
+
+### Build Artifacts
+- **Debug APK:** `app-debug.apk` (Hilt enabled, Sandbox mode)
+- **Release APK:** `app-release.apk` (Signed, Production SDKs)
+- **App Bundle:** `app-release.aab` (v1.1.0 Build 3)
+
+---
+
 ## [1.0.0] - Stable Release Candidate 
 **Release Date:** July 19, 2026  
 **Version Code:** `2`  

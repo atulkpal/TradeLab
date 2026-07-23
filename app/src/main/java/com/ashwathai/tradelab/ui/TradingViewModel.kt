@@ -73,6 +73,16 @@ class TradingViewModel @Inject constructor(
     val appNotifications: StateFlow<List<AppNotification>> = repository.appNotifications
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val latestNews: StateFlow<List<MarketNews>> = repository.latestNews
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val accountSnapshots: StateFlow<List<AccountSnapshot>> = repository.accountSnapshots
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun getNewsForSymbol(symbol: String): Flow<List<MarketNews>> {
+        return repository.getNewsBySymbolFlow(symbol)
+    }
+
     // Multi-Watchlist Selected ID
     private val _selectedWatchlistId = MutableStateFlow(1)
     val selectedWatchlistId: StateFlow<Int> = _selectedWatchlistId.asStateFlow()
@@ -95,6 +105,9 @@ class TradingViewModel @Inject constructor(
     private val _showGoogleBilling = MutableStateFlow(false)
     val showGoogleBilling: StateFlow<Boolean> = _showGoogleBilling.asStateFlow()
 
+    private val _showPremiumHub = MutableStateFlow(false)
+    val showPremiumHub: StateFlow<Boolean> = _showPremiumHub.asStateFlow()
+
     // Gemini AI Chat log
     private val _aiChatLog = MutableStateFlow<List<Pair<String, String>>>(emptyList())
     val aiChatLog: StateFlow<List<Pair<String, String>>> = _aiChatLog.asStateFlow()
@@ -113,6 +126,19 @@ class TradingViewModel @Inject constructor(
     fun getConvertedStockPrice(priceInNativeCurrency: Double, symbol: String, targetCurrency: String): Double {
         return TradingHelper.getConvertedStockPrice(priceInNativeCurrency, symbol, targetCurrency)
     }
+
+    // Top Movers (Track B)
+    val topGainers: StateFlow<List<StockPrice>> = stockPrices
+        .map { list -> list.filter { it.symbol !in listOf("NIFTY50", "BANKNIFTY", "NIFTYIT") }.sortedByDescending { it.dailyChangePct }.take(3) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val topLosers: StateFlow<List<StockPrice>> = stockPrices
+        .map { list -> list.filter { it.symbol !in listOf("NIFTY50", "BANKNIFTY", "NIFTYIT") }.sortedBy { it.dailyChangePct }.take(3) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val indices: StateFlow<List<StockPrice>> = stockPrices
+        .map { list -> list.filter { it.symbol in listOf("NIFTY50", "BANKNIFTY", "NIFTYIT") }.sortedBy { it.symbol } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // UI Interactive States
     private val _currentTab = MutableStateFlow("Portfolio") // Portfolio, Watchlist, Academy, Profile
@@ -166,6 +192,9 @@ class TradingViewModel @Inject constructor(
     private val _orderType = MutableStateFlow("Market") // Market, Limit, GTT
     val orderType: StateFlow<String> = _orderType.asStateFlow()
 
+    private val _isDelivery = MutableStateFlow(true)
+    val isDelivery: StateFlow<Boolean> = _isDelivery.asStateFlow()
+
     private val _triggerPriceInput = MutableStateFlow("")
     val triggerPriceInput: StateFlow<String> = _triggerPriceInput.asStateFlow()
 
@@ -206,19 +235,31 @@ class TradingViewModel @Inject constructor(
 
         var holdingsValue = 0.0
         var totalCostBasis = 0.0
+        var todayPnL = 0.0
 
         for (holding in activeHoldings) {
             val liveStock = prices.find { it.symbol == holding.symbol }
             val livePrice = liveStock?.currentPrice ?: holding.averagePrice
+            val totalShares = holding.shares + holding.sharesT1
             val convertedLivePrice = getConvertedStockPrice(livePrice, holding.symbol, profile.currency)
-            holdingsValue += (holding.shares * convertedLivePrice)
-            totalCostBasis += (holding.shares * holding.averagePrice)
+            
+            holdingsValue += (totalShares * convertedLivePrice)
+            totalCostBasis += (totalShares * holding.averagePrice)
+            
+            // Today's P&L calculation (based on daily change of current price vs previous close)
+            val changePct = (liveStock?.dailyChangePct ?: 0.0) / 100.0
+            val currentVal = totalShares * convertedLivePrice
+            todayPnL += (currentVal * changePct)
         }
 
         val totalValue = profile.cash + holdingsValue
         val totalProfitLoss = totalValue - profile.startingCash
         val profitLossPct = if (profile.startingCash > 0) (totalProfitLoss / profile.startingCash) * 100.0 else 0.0
         val openProfitLoss = holdingsValue - totalCostBasis
+        
+        // Today's percentage is relative to total value at start of day (estimated)
+        val valueAtStartOfDay = totalValue - todayPnL
+        val todayPnLPct = if (valueAtStartOfDay > 0) (todayPnL / valueAtStartOfDay) * 100.0 else 0.0
 
         PortfolioStats(
             totalValue = totalValue,
@@ -227,6 +268,8 @@ class TradingViewModel @Inject constructor(
             holdingsValue = holdingsValue,
             totalPnL = totalProfitLoss,
             totalPnLPct = profitLossPct,
+            todayPnL = todayPnL,
+            todayPnLPct = todayPnLPct,
             openPnL = openProfitLoss,
             riskLevel = profile.riskPreference,
             currency = profile.currency,
@@ -237,7 +280,8 @@ class TradingViewModel @Inject constructor(
             aiAuditCredits = profile.aiAuditCredits,
             isPremium = profile.isPremium,
             fnoTokens = profile.fnoTokens,
-            portfolioResetsCount = profile.portfolioResetsCount
+            portfolioResetsCount = profile.portfolioResetsCount,
+            shouldShowShieldDialog = profile.shouldShowShieldDialog
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PortfolioStats())
 
@@ -250,6 +294,9 @@ class TradingViewModel @Inject constructor(
             repository.initializeDataIfEmpty()
             repository.updateCurrency("INR")
             
+            // Hyper-Gamification: Update Streak
+            updateUserStreak()
+
             // Immediate initial fetch of live delayed prices
             try {
                 repository.updateAllPricesFromYahoo()
@@ -274,10 +321,11 @@ class TradingViewModel @Inject constructor(
             while (true) {
                 kotlinx.coroutines.delay(5000)
                 commoditiesUnlockTime?.let { unlockTime ->
-                    if (System.currentTimeMillis() - unlockTime >= 3600 * 1000L) {
+                    // Updated to 3-hour expiry
+                    if (System.currentTimeMillis() - unlockTime >= 3 * 3600 * 1000L) {
                         _commoditiesUnlocked.value = false
                         commoditiesUnlockTime = null
-                        showFeedback("Your 1-hour Commodities Desk access has expired. Watch another ad to unlock!")
+                        showFeedback("Your 3-hour Commodities Desk access has expired. Watch another ad to unlock!")
                     }
                 }
             }
@@ -285,7 +333,31 @@ class TradingViewModel @Inject constructor(
 
         // Coroutine for live delayed price updates (Yahoo Finance API) every 15 seconds
         viewModelScope.launch(defaultDispatcher) {
+            var marketOpenAlertSent = false
+            var marketCloseAlertSent = false
+
             while (true) {
+                // Local Market Alerts Logic (IST) using Calendar for API 24 compatibility
+                val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"))
+                val hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
+                val minute = cal.get(java.util.Calendar.MINUTE)
+
+                // 9:15 AM Market Open
+                if (hour == 9 && minute == 15 && !marketOpenAlertSent) {
+                    repository.addNotification("🔔 Market is OPEN! NSE/BSE active. Happy trading!")
+                    marketOpenAlertSent = true
+                } else if (hour != 9) {
+                    marketOpenAlertSent = false
+                }
+
+                // 3:30 PM Market Close
+                if (hour == 15 && minute == 30 && !marketCloseAlertSent) {
+                    repository.addNotification("😴 Market is CLOSED. NSE/BSE session ended.")
+                    marketCloseAlertSent = true
+                } else if (hour != 15) {
+                    marketCloseAlertSent = false
+                }
+
                 if (!_isSimulatedMode.value) {
                     try {
                         repository.updateAllPricesFromYahoo()
@@ -310,15 +382,36 @@ class TradingViewModel @Inject constructor(
                 kotlinx.coroutines.delay(2000)
             }
         }
+
+        // Coroutine for real-world news sync every 60 seconds
+        viewModelScope.launch(defaultDispatcher) {
+            while (true) {
+                if (!_isSimulatedMode.value) {
+                    try {
+                        val activeSymbol = _selectedStockSymbol.value
+                        if (activeSymbol != null) {
+                            repository.syncNewsFromYahoo(activeSymbol)
+                        }
+                        
+                        // Rotate through top Indian indices news
+                        val rotating = listOf("RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "AAPL", "TSLA").random()
+                        repository.syncNewsFromYahoo(rotating)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                kotlinx.coroutines.delay(60000)
+            }
+        }
     }
 
     private fun syncStatsToFirestore(stats: PortfolioStats) {
-        val email = userProfile.value?.userEmail ?: return
-        val name = userProfile.value?.userName ?: "Trader"
+        val profile = userProfile.value ?: return
+        val email = profile.userEmail
+        val name = profile.userName
         if (email.isBlank()) return
 
-        val completedSet = stats.completedLevels.split(",").filter { it.isNotBlank() }.toSet()
-        val xp = completedSet.size * 1000 + 1500
+        val xp = profile.xp
         
         viewModelScope.launch {
             leaderboardManager.syncUserStats(email, name, xp, stats.totalValue)
@@ -487,6 +580,10 @@ class TradingViewModel @Inject constructor(
         _orderType.value = type
     }
 
+    fun setDeliveryMode(isDelivery: Boolean) {
+        _isDelivery.value = isDelivery
+    }
+
     fun setTriggerPrice(price: String) {
         _triggerPriceInput.value = price
     }
@@ -542,7 +639,7 @@ class TradingViewModel @Inject constructor(
             val orderTypeVal = _orderType.value
 
             if (orderTypeVal == "Market") {
-                val result = repository.buyStock(symbol, shares)
+                val result = repository.buyStock(symbol, shares, _isDelivery.value)
                 result.onSuccess {
                     val statsVal = portfolioStats.value
                     val convertedPrice = getConvertedStockPrice(stock.currentPrice, stock.symbol, statsVal.currency)
@@ -637,7 +734,7 @@ class TradingViewModel @Inject constructor(
             val orderTypeVal = _orderType.value
 
             if (orderTypeVal == "Market") {
-                val result = repository.sellStock(symbol, shares)
+                val result = repository.sellStock(symbol, shares, _isDelivery.value)
                 result.onSuccess {
                     val statsVal = portfolioStats.value
                     val convertedPrice = getConvertedStockPrice(stock.currentPrice, stock.symbol, statsVal.currency)
@@ -843,6 +940,39 @@ class TradingViewModel @Inject constructor(
         }
     }
 
+    private fun updateUserStreak() {
+        viewModelScope.launch(ioDispatcher) {
+            repository.updateUserStreak()
+        }
+    }
+
+    // League System Logic
+    val userLeague = userProfile
+        .map { profile ->
+            val xp = profile?.xp ?: 0
+            when {
+                xp >= 150000 -> "Diamond"
+                xp >= 50000 -> "Platinum"
+                xp >= 15000 -> "Gold"
+                xp >= 5000 -> "Silver"
+                else -> "Bronze"
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Bronze")
+
+    val xpToNextLeague = userProfile
+        .map { profile ->
+            val xp = profile?.xp ?: 0
+            when {
+                xp < 5000 -> 5000 - xp
+                xp < 15000 -> 15000 - xp
+                xp < 50000 -> 50000 - xp
+                xp < 150000 -> 150000 - xp
+                else -> 0
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     fun toggleWatchlistCompactMode() {
         viewModelScope.launch {
             repository.setWatchlistCompactMode(!isWatchlistCompactMode.value)
@@ -858,6 +988,14 @@ class TradingViewModel @Inject constructor(
 
     fun closeProBenefits() {
         _showProBenefits.value = false
+    }
+
+    fun openPremiumHub() {
+        _showPremiumHub.value = true
+    }
+
+    fun closePremiumHub() {
+        _showPremiumHub.value = false
     }
 
     fun openBillingFlow() {
@@ -1081,6 +1219,12 @@ class TradingViewModel @Inject constructor(
         }
     }
 
+    fun setShouldShowShieldDialog(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.updateShieldDialogPreference(enabled)
+        }
+    }
+
     fun unlockPremiumIndicators(durationHours: Int) {
         viewModelScope.launch {
             repository.unlockPremiumIndicators(durationHours)
@@ -1092,7 +1236,7 @@ class TradingViewModel @Inject constructor(
     fun unlockCommodities() {
         _commoditiesUnlocked.value = true
         commoditiesUnlockTime = System.currentTimeMillis()
-        showFeedback("Commodities Desk successfully unlocked via sponsorship ad for 1 hour!")
+        showFeedback("Commodities Desk successfully unlocked via sponsorship ad for 3 hours!")
         triggerConfetti()
     }
 
@@ -1169,6 +1313,17 @@ class TradingViewModel @Inject constructor(
             }
         }
     }
+
+    // Debug Actions (Track A Testing)
+    fun debugSimulateAccountSnapshot() {
+        if (BuildConfig.DEBUG) {
+            viewModelScope.launch {
+                val current = portfolioStats.value.totalValue
+                repository.recordAccountSnapshot(current)
+                showFeedback("Debug: Snapshot recorded at $current")
+            }
+        }
+    }
 }
 
 // Data holder for live portfolio aggregates
@@ -1179,6 +1334,8 @@ data class PortfolioStats(
     val holdingsValue: Double = 0.0,
     val totalPnL: Double = 0.0,
     val totalPnLPct: Double = 0.0,
+    val todayPnL: Double = 0.0,
+    val todayPnLPct: Double = 0.0,
     val openPnL: Double = 0.0,
     val riskLevel: String = "Moderate",
     val currency: String = "INR",
@@ -1189,7 +1346,8 @@ data class PortfolioStats(
     val aiAuditCredits: Int = 3,
     val isPremium: Boolean = false,
     val fnoTokens: Int = 0,
-    val portfolioResetsCount: Int = 0
+    val portfolioResetsCount: Int = 0,
+    val shouldShowShieldDialog: Boolean = true
 )
 
 data class Lecture(

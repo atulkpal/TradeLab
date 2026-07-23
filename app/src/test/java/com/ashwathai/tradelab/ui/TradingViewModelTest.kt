@@ -32,6 +32,11 @@ class TradingViewModelTest {
         mockkStatic(Log::class)
         every { Log.e(any(), any(), any()) } returns 0
         
+        // Mock assets to prevent IOExceptions during ViewModel init
+        val assetManager = mockk<android.content.res.AssetManager>(relaxed = true)
+        every { context.assets } returns assetManager
+        every { assetManager.open(any()) } returns "[] ".byteInputStream() // Added space to ensure it's not "zero bytes"
+
         // Mock repository flows
         every { repository.userProfile } returns flowOf(null)
         every { repository.holdings } returns flowOf(emptyList())
@@ -86,11 +91,24 @@ class TradingViewModelTest {
     }
 
     @Test
-    fun `toggleWatchlistCompactMode changes state`() = runTest {
-        assertEquals(false, viewModel.isWatchlistCompactMode.value)
-        viewModel.toggleWatchlistCompactMode()
-        assertEquals(true, viewModel.isWatchlistCompactMode.value)
-        viewModel.toggleWatchlistCompactMode()
-        assertEquals(false, viewModel.isWatchlistCompactMode.value)
+    fun `toggleWatchlistCompactMode triggers repository update`() = runTest {
+        val userProfileFlow = MutableStateFlow<UserProfile?>(UserProfile(isWatchlistCompactMode = false))
+        every { repository.userProfile } returns userProfileFlow
+        
+        val testViewModel = TradingViewModel(
+            context,
+            repository,
+            leaderboardManager,
+            testCoroutineRule.testDispatcher,
+            testCoroutineRule.testDispatcher
+        )
+
+        assertEquals(false, testViewModel.isWatchlistCompactMode.value)
+        
+        testViewModel.toggleWatchlistCompactMode()
+        
+        testCoroutineRule.testDispatcher.scheduler.advanceUntilIdle()
+        
+        coVerify { repository.setWatchlistCompactMode(true) }
     }
 }

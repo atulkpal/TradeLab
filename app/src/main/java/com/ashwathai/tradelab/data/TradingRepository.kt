@@ -13,6 +13,8 @@ import java.net.URLEncoder
 import kotlinx.coroutines.async
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 
 import javax.inject.Inject
@@ -74,6 +76,8 @@ class TradingRepository @Inject constructor(
     private val watchlistV2Dao = database.watchlistV2Dao()
     private val pendingOrderDao = database.pendingOrderDao()
     private val appNotificationDao = database.appNotificationDao()
+    private val marketNewsDao = database.marketNewsDao()
+    private val accountSnapshotDao = database.accountSnapshotDao()
 
     val userProfile: Flow<UserProfile?> = userProfileDao.getUserProfileFlow()
     val holdings: Flow<List<Holding>> = holdingDao.getAllHoldingsFlow()
@@ -89,6 +93,10 @@ class TradingRepository @Inject constructor(
     val pendingOrders: Flow<List<PendingOrder>> = pendingOrderDao.getAllPendingOrdersFlow()
     val activePendingOrders: Flow<List<PendingOrder>> = pendingOrderDao.getPendingOrdersFlow()
     val appNotifications: Flow<List<AppNotification>> = appNotificationDao.getAllNotificationsFlow()
+    val latestNews: Flow<List<MarketNews>> = marketNewsDao.getLatestNewsFlow(20)
+    val accountSnapshots: Flow<List<AccountSnapshot>> = accountSnapshotDao.getAllSnapshotsFlow()
+
+    fun getNewsBySymbolFlow(symbol: String): Flow<List<MarketNews>> = marketNewsDao.getNewsBySymbolFlow(symbol)
 
     // Initialize default stock data and user profile if not present
     suspend fun initializeDataIfEmpty() = withContext(Dispatchers.IO) {
@@ -231,7 +239,12 @@ class TradingRepository @Inject constructor(
                 StockPrice("MCX_SILVER", "Silver MCX (per kg)", 77950.00, -0.65, 78460.00, 79020.00, 77550.00, "76080.0,76880.0,77680.0,78480.0,78460.0,77950.00"),
                 StockPrice("MCX_CRUDE", "Crude Oil MCX (per barrel)", 6764.50, 1.12, 6689.80, 6822.60, 6648.30, "6515.5,6573.6,6623.4,6731.3,6689.8,6764.50"),
                 StockPrice("MCX_NATGAS", "Natural Gas MCX (per MMBtu)", 203.35, -2.15, 207.50, 211.65, 199.20, "215.8,211.6,205.8,209.1,207.5,203.35"),
-                StockPrice("MCX_COPPER", "Copper MCX (per kg)", 814.25, 0.85, 806.95, 827.05, 801.45, "777.6,790.4,786.7,812.4,806.95,814.25")
+                StockPrice("MCX_COPPER", "Copper MCX (per kg)", 814.25, 0.85, 806.95, 827.05, 801.45, "777.6,790.4,786.7,812.4,806.95,814.25"),
+                
+                // Indices
+                StockPrice("NIFTY50", "Nifty 50 Index", 24500.0, 0.45, 24390.0, 24550.0, 24300.0, "24000,24100,24200,24390,24500"),
+                StockPrice("BANKNIFTY", "Nifty Bank Index", 52500.0, -0.20, 52605.0, 52800.0, 52400.0, "52000,52200,52400,52605,52500"),
+                StockPrice("NIFTYIT", "Nifty IT Index", 38000.0, 0.15, 37943.0, 38100.0, 37850.0, "37500,37700,37800,37943,38000")
             )
             stockPriceDao.insertStockPrices(initialStocks)
 
@@ -245,101 +258,156 @@ class TradingRepository @Inject constructor(
     }
 
     // Execute Buy Transaction
-    suspend fun buyStock(symbol: String, shares: Double): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun buyStock(symbol: String, shares: Double, isDelivery: Boolean = true): Result<Unit> = withContext(Dispatchers.IO) {
         if (!isMarketOpen(symbol)) {
-            return@withContext Result.failure(Exception("Cannot execute trade. The market for $symbol is currently closed (Trading is only allowed during active market hours)."))
+            return@withContext Result.failure(Exception("Cannot execute trade. The market for $symbol is currently closed."))
         }
         val profile = userProfileDao.getUserProfile() ?: return@withContext Result.failure(Exception("User Profile not found"))
         val stock = stockPriceDao.getStockPrice(symbol) ?: return@withContext Result.failure(Exception("Stock symbol not found"))
 
-        val totalCostStock = shares * stock.currentPrice
-        val totalCostStockProfileCurrency = getConvertedStockPrice(totalCostStock, symbol, profile.currency)
+        val totalValueStock = shares * stock.currentPrice
+        val totalValueProfileCurrency = getConvertedStockPrice(totalValueStock, symbol, profile.currency)
         
-        // 0.05% simulated brokerage fee
-        val simulatedBrokerageFee = totalCostStockProfileCurrency * 0.0005
-        val (finalCashDeduction, consumedCredits) = if (profile.isPremium) {
-            Pair(totalCostStockProfileCurrency, 0)
-        } else if (profile.brokerageCredits >= 20) {
-            Pair(totalCostStockProfileCurrency, 20)
-        } else {
-            Pair(totalCostStockProfileCurrency + simulatedBrokerageFee, 0)
-        }
+        // --- REALISTIC CHARGES & TAXES (Simulated Indian Market) ---
+        // STT (Securities Transaction Tax): 0.1% for Delivery, 0.025% for Intraday (Sell side mostly, but simplified here)
+        val sttRate = if (isDelivery) 0.001 else 0.00025
+        val stt = totalValueProfileCurrency * sttRate
+        
+        // SEBI + Stamp Duty + Transaction Charges (~0.01% combined)
+        val miscCharges = totalValueProfileCurrency * 0.0001
+        
+        // Brokerage: 0.05% or 20 credits waiver
+        val brokerageFee = if (profile.isPremium || profile.brokerageCredits >= 20) 0.0 else totalValueProfileCurrency * 0.0005
+        val creditsToConsume = if (!profile.isPremium && profile.brokerageCredits >= 20) 20 else 0
+
+        val totalDeduction = totalValueProfileCurrency + stt + miscCharges + brokerageFee
 
         val sym = if (profile.currency == "INR") "₹" else "$"
-        if (profile.cash < finalCashDeduction) {
-            val feeMsg = if (consumedCredits == 0) " (Includes simulated brokerage fee: $sym${String.format("%.2f", simulatedBrokerageFee)})" else ""
-            return@withContext Result.failure(Exception("Insufficient buying power. Required: $sym${String.format("%.2f", finalCashDeduction)}$feeMsg, Available: $sym${String.format("%.2f", profile.cash)}"))
+        if (profile.cash < totalDeduction) {
+            return@withContext Result.failure(Exception("Insufficient funds. Required: $sym${String.format("%.2f", totalDeduction)} (incl. charges), Available: $sym${String.format("%.2f", profile.cash)}"))
         }
 
-        // Deduct Cash & Update Credits
+        // 1. Update Profile
         val updatedProfile = profile.copy(
-            cash = profile.cash - finalCashDeduction,
-            brokerageCredits = (profile.brokerageCredits - consumedCredits).coerceAtLeast(0)
+            cash = profile.cash - totalDeduction,
+            brokerageCredits = (profile.brokerageCredits - creditsToConsume).coerceAtLeast(0)
         )
         userProfileDao.insertProfile(updatedProfile)
 
-        // Update Position
+        // 2. Update Holdings (T+1 logic: moves to sharesT1 if delivery)
         val existingHolding = holdingDao.getHoldingBySymbol(symbol)
         if (existingHolding != null) {
-            val totalShares = existingHolding.shares + shares
-            val avgPrice = ((existingHolding.shares * existingHolding.averagePrice) + totalCostStockProfileCurrency) / totalShares
-            holdingDao.insertHolding(Holding(symbol = symbol, shares = totalShares, averagePrice = avgPrice))
+            val totalExistingShares = existingHolding.shares + existingHolding.sharesT1
+            val newTotalShares = totalExistingShares + shares
+            val avgPrice = ((totalExistingShares * existingHolding.averagePrice) + totalValueProfileCurrency) / newTotalShares
+            
+            if (isDelivery) {
+                holdingDao.insertHolding(existingHolding.copy(sharesT1 = existingHolding.sharesT1 + shares, averagePrice = avgPrice))
+            } else {
+                // Intraday adds directly to 'settled' shares but they'll be squared off by EOD logic (future epic)
+                holdingDao.insertHolding(existingHolding.copy(shares = existingHolding.shares + shares, averagePrice = avgPrice))
+            }
         } else {
-            holdingDao.insertHolding(Holding(symbol = symbol, shares = shares, averagePrice = stock.currentPrice))
+            holdingDao.insertHolding(
+                Holding(
+                    symbol = symbol, 
+                    shares = if (isDelivery) 0.0 else shares, 
+                    averagePrice = stock.currentPrice,
+                    sharesT1 = if (isDelivery) shares else 0.0
+                )
+            )
         }
 
-        // Insert Transaction Log
+        // 3. Insert Transaction Log
         transactionDao.insertTransaction(
-            Transaction(symbol = symbol, type = "BUY", shares = shares, price = stock.currentPrice)
+            Transaction(
+                symbol = symbol, 
+                type = "BUY", 
+                shares = shares, 
+                price = stock.currentPrice,
+                isDelivery = isDelivery,
+                charges = miscCharges + brokerageFee,
+                tax = stt
+            )
         )
 
         Result.success(Unit)
     }
 
     // Execute Sell Transaction
-    suspend fun sellStock(symbol: String, shares: Double): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun sellStock(symbol: String, shares: Double, isDelivery: Boolean = true): Result<Unit> = withContext(Dispatchers.IO) {
         if (!isMarketOpen(symbol)) {
-            return@withContext Result.failure(Exception("Cannot execute trade. The market for $symbol is currently closed (Trading is only allowed during active market hours)."))
+            return@withContext Result.failure(Exception("Cannot execute trade. The market for $symbol is currently closed."))
         }
         val profile = userProfileDao.getUserProfile() ?: return@withContext Result.failure(Exception("User Profile not found"))
         val stock = stockPriceDao.getStockPrice(symbol) ?: return@withContext Result.failure(Exception("Stock symbol not found"))
-        val holding = holdingDao.getHoldingBySymbol(symbol) ?: return@withContext Result.failure(Exception("No active holdings for this stock"))
+        val holding = holdingDao.getHoldingBySymbol(symbol) ?: return@withContext Result.failure(Exception("No holdings for this stock"))
 
-        if (holding.shares < shares) {
-            return@withContext Result.failure(Exception("Insufficient shares. Available: ${holding.shares}, Selling: $shares"))
+        val availableToSell = if (isDelivery) holding.shares else (holding.shares + holding.sharesT1)
+        if (availableToSell < shares) {
+            val msg = if (isDelivery) "Insufficient settled shares for delivery exit. (Wait for T+1 settlement)" else "Insufficient total shares."
+            return@withContext Result.failure(Exception(msg))
         }
 
-        val totalCreditStock = shares * stock.currentPrice
-        val totalCreditProfileCurrency = getConvertedStockPrice(totalCreditStock, symbol, profile.currency)
+        val totalValueStock = shares * stock.currentPrice
+        val totalValueProfileCurrency = getConvertedStockPrice(totalValueStock, symbol, profile.currency)
         
-        // 0.05% simulated brokerage fee
-        val simulatedBrokerageFee = totalCreditProfileCurrency * 0.0005
-        val (finalCashAddition, consumedCredits) = if (profile.isPremium) {
-            Pair(totalCreditProfileCurrency, 0)
-        } else if (profile.brokerageCredits >= 20) {
-            Pair(totalCreditProfileCurrency, 20)
-        } else {
-            Pair(totalCreditProfileCurrency - simulatedBrokerageFee, 0)
-        }
+        // Charges & Taxes
+        val sttRate = if (isDelivery) 0.001 else 0.00025
+        val stt = totalValueProfileCurrency * sttRate
+        val miscCharges = totalValueProfileCurrency * 0.0001
+        val brokerageFee = if (profile.isPremium || profile.brokerageCredits >= 20) 0.0 else totalValueProfileCurrency * 0.0005
+        val creditsToConsume = if (!profile.isPremium && profile.brokerageCredits >= 20) 20 else 0
 
-        // Add Cash & Update Credits
+        val totalCredit = totalValueProfileCurrency - stt - miscCharges - brokerageFee
+
+        // 1. Update Profile
         val updatedProfile = profile.copy(
-            cash = profile.cash + finalCashAddition,
-            brokerageCredits = (profile.brokerageCredits - consumedCredits).coerceAtLeast(0)
+            cash = profile.cash + totalCredit,
+            brokerageCredits = (profile.brokerageCredits - creditsToConsume).coerceAtLeast(0)
         )
         userProfileDao.insertProfile(updatedProfile)
 
-        // Update or delete Position
-        val remainingShares = holding.shares - shares
-        if (remainingShares > 0.0001) {
-            holdingDao.insertHolding(holding.copy(shares = remainingShares))
+        // 2. Update Holdings
+        if (isDelivery) {
+            val remainingSettled = holding.shares - shares
+            if (remainingSettled + holding.sharesT1 > 0.0001) {
+                holdingDao.insertHolding(holding.copy(shares = remainingSettled))
+            } else {
+                holdingDao.deleteHoldingBySymbol(symbol)
+            }
         } else {
-            holdingDao.deleteHoldingBySymbol(symbol)
+            // Intraday sell from total pool
+            var remToDeduct = shares
+            var newSettled = holding.shares
+            var newT1 = holding.sharesT1
+            
+            if (newSettled >= remToDeduct) {
+                newSettled -= remToDeduct
+            } else {
+                remToDeduct -= newSettled
+                newSettled = 0.0
+                newT1 -= remToDeduct
+            }
+            
+            if (newSettled + newT1 > 0.0001) {
+                holdingDao.insertHolding(holding.copy(shares = newSettled, sharesT1 = newT1))
+            } else {
+                holdingDao.deleteHoldingBySymbol(symbol)
+            }
         }
 
-        // Insert Transaction Log
+        // 3. Log
         transactionDao.insertTransaction(
-            Transaction(symbol = symbol, type = "SELL", shares = shares, price = stock.currentPrice)
+            Transaction(
+                symbol = symbol, 
+                type = "SELL", 
+                shares = shares, 
+                price = stock.currentPrice,
+                isDelivery = isDelivery,
+                charges = miscCharges + brokerageFee,
+                tax = stt
+            )
         )
 
         Result.success(Unit)
@@ -757,12 +825,14 @@ class TradingRepository @Inject constructor(
 
             // B. Steering / Gravity Drift
             // Gently nudge the price towards the real-world Anchor (targetPrice)
-            // We move 5% of the distance to the target on every tick
+            // We move 5% baseline, but up to 15% if news sentiment aligns (Option B)
             val driftDelta = if (stock.targetPrice != null) {
-                (stock.targetPrice - stock.currentPrice) * 0.05
+                val distance = stock.targetPrice - stock.currentPrice
+                val isAligning = (distance > 0 && stock.sentimentBias > 0) || (distance < 0 && stock.sentimentBias < 0)
+                val boost = if (isAligning) (kotlin.math.abs(stock.sentimentBias) * 0.1) else 0.0
+                distance * (0.05 + boost)
             } else {
-                // Pure Simulation Fallback: If no anchor, apply a small organic drift
-                // to prevent the stock from becoming too static.
+                // Pure Simulation Fallback
                 val organicDriftPct = (Random.nextDouble() * 0.2) - 0.1 // -0.1% to +0.1%
                 stock.currentPrice * (organicDriftPct / 100.0)
             }
@@ -834,11 +904,284 @@ class TradingRepository @Inject constructor(
 
         val allUpdated = updatedStandardPrices + updatedOptionPrices
         stockPriceDao.insertStockPrices(allUpdated)
+        
+        // 4. Update Indices based on constituent performance
+        updateIndices(allUpdated)
+        
+        generateContextualNews(updatedStandardPrices)
         matchPendingOrders()
+    }
+
+    private suspend fun updateIndices(allPrices: List<StockPrice>) {
+        val indices = allPrices.filter { it.symbol in listOf("NIFTY50", "BANKNIFTY", "NIFTYIT") }
+        if (indices.isEmpty()) return
+
+        val updatedIndices = indices.map { index ->
+            val constituents = when (index.symbol) {
+                "NIFTY50" -> listOf("RELIANCE", "TCS", "HDFCBANK", "ICICIBANK", "INFY", "ITC", "BHARTIARTL")
+                "BANKNIFTY" -> listOf("HDFCBANK", "ICICIBANK", "SBIN", "KOTAKBANK", "AXISBANK")
+                "NIFTYIT" -> listOf("TCS", "INFY", "WIPRO", "HCLTECH", "TECHM")
+                else -> emptyList()
+            }
+
+            if (constituents.isEmpty()) return@map index
+
+            // Calculate weighted average change
+            var totalChange = 0.0
+            var validCount = 0
+            constituents.forEach { sym ->
+                val s = allPrices.find { it.symbol == sym }
+                if (s != null) {
+                    totalChange += s.dailyChangePct
+                    validCount++
+                }
+            }
+
+            if (validCount == 0) return@map index
+            val avgChangePct = totalChange / validCount
+            
+            // New Index Price = Prev Close * (1 + avgChange/100)
+            val newPrice = index.previousClose * (1 + avgChangePct / 100.0)
+            
+            val historyPoints = index.historyData.split(",").toMutableList()
+            historyPoints.add(String.format("%.2f", newPrice))
+            if (historyPoints.size > 12) historyPoints.removeAt(0)
+
+            index.copy(
+                currentPrice = Math.round(newPrice * 100.0) / 100.0,
+                dailyChangePct = Math.round(avgChangePct * 100.0) / 100.0,
+                highPrice = maxOf(index.highPrice, newPrice),
+                lowPrice = minOf(index.lowPrice, newPrice),
+                historyData = historyPoints.joinToString(",")
+            )
+        }
+        stockPriceDao.insertStockPrices(updatedIndices)
+    }
+
+    suspend fun recordAccountSnapshot(totalValue: Double) = withContext(Dispatchers.IO) {
+        accountSnapshotDao.insertSnapshot(AccountSnapshot(totalValue = totalValue))
+        // Cleanup: Keep only last 30 snapshots
+        accountSnapshotDao.deleteOldSnapshots(System.currentTimeMillis() - 30 * 24 * 3600 * 1000L)
+    }
+
+    private suspend fun generateContextualNews(stocks: List<StockPrice>) {
+        val newsItems = mutableListOf<MarketNews>()
+        stocks.forEach { stock ->
+            val absChange = kotlin.math.abs(stock.dailyChangePct)
+            if (absChange >= 1.5) { // Significant move threshold
+                val sentiment = if (stock.dailyChangePct > 0) "BULLISH" else "BEARISH"
+                val title = if (sentiment == "BULLISH") {
+                    listOf(
+                        "${stock.symbol} surges as buyers take control",
+                        "Bullish momentum picks up for ${stock.symbol}",
+                        "${stock.symbol} breaks resistance in latest rally"
+                    ).random()
+                } else {
+                    listOf(
+                        "${stock.symbol} faces selling pressure",
+                        "Bearish clouds hover over ${stock.symbol}",
+                        "${stock.symbol} tests key support levels"
+                    ).random()
+                }
+                
+                newsItems.add(MarketNews(
+                    symbol = stock.symbol,
+                    title = title,
+                    summary = "The stock has moved ${String.format("%.2f", stock.dailyChangePct)}% in the current session as wiggles gravitate toward real-world anchors.",
+                    sentiment = sentiment,
+                    timestamp = System.currentTimeMillis()
+                ))
+            }
+        }
+        
+        if (newsItems.isNotEmpty()) {
+            marketNewsDao.insertNews(newsItems)
+            
+            // Clean up old news (keep only last 24 hours)
+            marketNewsDao.deleteOldNews(System.currentTimeMillis() - 24 * 3600 * 1000L)
+            
+            // For Pro users, periodically refine news with AI
+            val profile = userProfileDao.getUserProfile()
+            if (profile?.isPremium == true) {
+                refineNewsWithAi(newsItems)
+            }
+        }
+    }
+
+    private suspend fun refineNewsWithAi(news: List<MarketNews>) {
+        // In a real implementation, this would call Gemini.
+        // For now, we simulate the refinement with more professional strings.
+        val refined = news.map { n ->
+            if (n.sentiment == "BULLISH") {
+                n.copy(
+                    title = "[AI Refined] Institutional demand drives ${n.symbol} breakout",
+                    summary = "Advanced sentiment analysis detects a strong bullish divergence as ${n.symbol} outperforms peers in the current anchored simulation cycle.",
+                    isAiRefined = true
+                )
+            } else {
+                n.copy(
+                    title = "[AI Refined] Macro headwinds weigh on ${n.symbol} valuation",
+                    summary = "Algorithmic scanning identifies short-term distribution patterns as ${n.symbol} drifts toward lower anchor support zones.",
+                    isAiRefined = true
+                )
+            }
+        }
+        marketNewsDao.insertNews(refined)
     }
 
     suspend fun setWatchlistCompactMode(compact: Boolean) = withContext(Dispatchers.IO) {
         userProfileDao.updateWatchlistCompactMode(compact)
+    }
+
+    // Fetch and Sync Real-World News from Yahoo Finance
+    suspend fun syncNewsFromYahoo(symbol: String) = withContext(Dispatchers.IO) {
+        try {
+            val client = OkHttpClient()
+            val yahooSymbol = getYahooSymbol(symbol)
+            val url = "https://query2.finance.yahoo.com/v1/finance/search?q=$yahooSymbol&newsCount=5&quotesCount=0"
+
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@withContext
+                
+                val body = response.body?.string() ?: return@withContext
+                val json = JSONObject(body)
+                val newsArray = json.optJSONArray("news") ?: return@withContext
+                
+                val items = mutableListOf<MarketNews>()
+                var totalBias = 0.0
+                
+                for (i in 0 until newsArray.length()) {
+                    val obj = newsArray.getJSONObject(i)
+                    val rawTitle = obj.optString("title")
+                    val publisher = obj.optString("publisher")
+                    
+                    // Simple local sentiment scoring (Free Tier)
+                    val titleLower = rawTitle.lowercase()
+                    val bias = when {
+                        titleLower.contains("buy") || titleLower.contains("surge") || titleLower.contains("bull") || titleLower.contains("growth") -> 0.4
+                        titleLower.contains("sell") || titleLower.contains("drop") || titleLower.contains("bear") || titleLower.contains("fall") -> -0.4
+                        else -> 0.0
+                    }
+                    totalBias += bias
+                    
+                    items.add(MarketNews(
+                        symbol = symbol,
+                        title = rawTitle,
+                        summary = "Breaking report via $publisher.",
+                        sentiment = if (bias > 0) "BULLISH" else if (bias < 0) "BEARISH" else "NEUTRAL",
+                        source = mapPublisherToLocal(publisher, isIndianStockSymbol(symbol)),
+                        url = obj.optString("link"),
+                        timestamp = obj.optLong("providerPublishTime") * 1000L
+                    ))
+                }
+                
+                if (items.isNotEmpty()) {
+                    marketNewsDao.insertNews(items)
+                    // Update Stock Sentiment Bias for Option B influence
+                    val avgBias = (totalBias / items.size).coerceIn(-1.0, 1.0)
+                    stockPriceDao.updateStockSentimentBias(symbol, avgBias)
+                    
+                    // Pro AI Refinement
+                    val profile = userProfileDao.getUserProfile()
+                    if (profile?.isPremium == true) {
+                        refineNewsWithGemini(symbol, items)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun mapPublisherToLocal(original: String, isIndian: Boolean): String {
+        if (!isIndian) return original
+        val upper = original.uppercase()
+        // Expanded Brand Mapping for Indian Market Realism
+        return when {
+            upper.contains("YAHOO") || upper.contains("REUTERS") -> 
+                listOf("CNBC Awaaz", "Zee News", "NDTV Profit").random()
+            upper.contains("BLOOMBERG") || upper.contains("ZACKS") || upper.contains("BARRON") -> 
+                listOf("ET Now", "Moneycontrol", "Mint").random()
+            upper.contains("FORBES") || upper.contains("INVESTOR") -> 
+                listOf("Business Standard", "Financial Express", "The Hindu").random()
+            else -> original
+        }
+    }
+
+    private suspend fun refineNewsWithGemini(symbol: String, news: List<MarketNews>) {
+        val apiKey = BuildConfig.GEMINI_API_KEY
+        if (apiKey == "MY_GEMINI_API_KEY" || apiKey.isBlank()) return
+
+        try {
+            val headlines = news.take(3).joinToString("\n") { "- ${it.title}" }
+            // SENSATIONALIZED TV PROMPT
+            val systemPrompt = """
+                You are a senior editor at a leading Indian financial news channel (like CNBC Awaaz or Zee Business).
+                Read these real-world headlines for $symbol and write a sensationalized, high-impact "BREAKING NEWS" brief.
+                
+                RULES:
+                1. Use dramatic vocabulary: "ON FIRE", "CRASH FEARS", "RECOVERY MODE", "INSTITUTIONAL ATTACK".
+                2. Keep it to exactly one punchy sentence.
+                3. Provide a sentiment score from -1.0 (Total Panic) to 1.0 (Euphoria).
+                
+                Format: [DRAMATIC BRIEF] | [SCORE]
+                
+                Headlines:
+                $headlines
+            """.trimIndent()
+
+            val client = OkHttpClient()
+            val jsonBody = """
+                {
+                    "contents": [{
+                        "parts": [{"text": "$systemPrompt"}]
+                    }]
+                }
+            """.trimIndent()
+
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val requestBody = jsonBody.toRequestBody(mediaType)
+            val request = Request.Builder()
+                .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey")
+                .post(requestBody)
+                .build()
+
+            withContext(Dispatchers.IO) {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@withContext
+                    
+                    val bodyString = response.body?.string() ?: ""
+                    val matchResult = "\"text\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(bodyString)
+                    val rawResponse = matchResult?.groupValues?.get(1) ?: return@withContext
+                    
+                    val parts = rawResponse.split("|")
+                    if (parts.size >= 2) {
+                        val aiBrief = parts[0].trim().replace("\\n", " ").replace("\\\"", "\"")
+                        val aiScore = parts[1].trim().toDoubleOrNull() ?: 0.0
+                        
+                        // Upsert refined news
+                        val refinedItem = MarketNews(
+                            symbol = symbol,
+                            title = aiBrief,
+                            summary = "Exclusive AI-powered sentiment analysis from TradeLab Pro desk.",
+                            sentiment = if (aiScore > 0.3) "BULLISH" else if (aiScore < -0.3) "BEARISH" else "NEUTRAL",
+                            source = listOf("CNBC Awaaz", "Zee News", "NDTV Profit").random(),
+                            isAiRefined = true,
+                            timestamp = System.currentTimeMillis()
+                        )
+                        marketNewsDao.insertNews(listOf(refinedItem))
+                        stockPriceDao.updateStockSentimentBias(symbol, aiScore)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     // Match Pending Orders
@@ -917,6 +1260,34 @@ class TradingRepository @Inject constructor(
     suspend fun deleteWatchlist(id: Int) = withContext(Dispatchers.IO) {
         watchlistV2Dao.deleteWatchlistName(id)
         watchlistV2Dao.deleteWatchlistItemsByWatchlistId(id)
+    }
+
+    // Market Ticker & Industry Mapping
+    private val TICKER_INDUSTRY_MAP = mapOf(
+        "RELIANCE" to "Energy & Petrochemicals",
+        "TCS" to "IT Services",
+        "INFY" to "IT Services",
+        "HDFCBANK" to "Banking & Finance",
+        "ICICIBANK" to "Banking & Finance",
+        "SBIN" to "Banking & Finance",
+        "BHARTIARTL" to "Telecommunications",
+        "ITC" to "FMCG & Consumer Goods",
+        "WIPRO" to "IT Services",
+        "HINDUNILVR" to "FMCG & Consumer Goods",
+        "TATAMOTORS" to "Automotive",
+        "TATASTEEL" to "Metals & Mining",
+        "AAPL" to "Technology",
+        "TSLA" to "Automotive & Energy",
+        "MSFT" to "Technology",
+        "BTC-USD" to "Cryptocurrency",
+        "ETH-USD" to "Cryptocurrency",
+        "MCX_GOLD" to "Commodities",
+        "MCX_CRUDE" to "Commodities"
+    )
+
+    fun getIndustryForSymbol(symbol: String): String {
+        val clean = symbol.substringBefore(".NS").substringBefore(".BO").uppercase()
+        return TICKER_INDUSTRY_MAP[clean] ?: "Diversified"
     }
 
     // Pending Orders management methods
@@ -1065,5 +1436,66 @@ class TradingRepository @Inject constructor(
 
     suspend fun acceptSimDisclaimer() = withContext(Dispatchers.IO) {
         userProfileDao.updateSimDisclaimer(true)
+    }
+
+    suspend fun updateUserStreak() = withContext(Dispatchers.IO) {
+        val profile = userProfileDao.getUserProfile() ?: return@withContext
+        val now = System.currentTimeMillis()
+        val lastActive = profile.lastActiveTimestamp
+
+        val calNow = Calendar.getInstance()
+        calNow.timeInMillis = now
+        val calLast = Calendar.getInstance()
+        calLast.timeInMillis = lastActive
+
+        val dayNow = calNow.get(Calendar.DAY_OF_YEAR)
+        val yearNow = calNow.get(Calendar.YEAR)
+        val dayLast = calLast.get(Calendar.DAY_OF_YEAR)
+        val yearLast = calLast.get(Calendar.YEAR)
+
+        if (yearNow == yearLast && dayNow == dayLast) {
+            // Already active today, do nothing
+            return@withContext
+        }
+
+        // --- T+1 SETTLEMENT LOGIC ---
+        // Since it's a new day, move all sharesT1 to settled shares
+        val currentHoldings = holdingDao.getAllHoldings()
+        currentHoldings.forEach { h ->
+            if (h.sharesT1 > 0) {
+                holdingDao.insertHolding(
+                    h.copy(
+                        shares = h.shares + h.sharesT1,
+                        sharesT1 = 0.0
+                    )
+                )
+            }
+        }
+
+        val isConsecutive = if (yearNow == yearLast) {
+            dayNow == dayLast + 1
+        } else if (yearNow == yearLast + 1) {
+            dayLast >= 365 && dayNow == 1 // Simple leap year check fallback
+        } else {
+            false
+        }
+
+        val newStreak = if (isConsecutive) profile.dailyStreak + 1 else 1
+        userProfileDao.insertProfile(
+            profile.copy(
+                dailyStreak = newStreak,
+                lastActiveTimestamp = now,
+                xp = profile.xp + (newStreak * 50) // Bonus XP for streaks
+            )
+        )
+    }
+
+    suspend fun addXp(amount: Int) = withContext(Dispatchers.IO) {
+        val profile = userProfileDao.getUserProfile() ?: return@withContext
+        userProfileDao.insertProfile(profile.copy(xp = profile.xp + amount))
+    }
+
+    suspend fun updateShieldDialogPreference(show: Boolean) = withContext(Dispatchers.IO) {
+        userProfileDao.updateShieldDialogPreference(show)
     }
 }

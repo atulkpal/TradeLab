@@ -70,6 +70,7 @@ import com.ashwathai.tradelab.ui.common.*
 import com.ashwathai.tradelab.ui.charts.*
 import com.ashwathai.tradelab.ui.portfolio.*
 import com.ashwathai.tradelab.ui.watchlist.*
+import com.ashwathai.tradelab.ui.watchlist.BuySellBottomSheet
 import com.ashwathai.tradelab.ui.academy.*
 import com.ashwathai.tradelab.ui.derivatives.*
 import com.ashwathai.tradelab.ui.commodities.*
@@ -178,8 +179,10 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
     val showRegistrationGate by viewModel.showRegistrationGate.collectAsStateWithLifecycle()
     val showPaywall by viewModel.showPaywall.collectAsStateWithLifecycle()
     val showProBenefits by viewModel.showProBenefits.collectAsStateWithLifecycle()
+    val showPremiumHub by viewModel.showPremiumHub.collectAsStateWithLifecycle()
     val showGoogleBilling by viewModel.showGoogleBilling.collectAsStateWithLifecycle()
     val isSimulatedMode by viewModel.isSimulatedMode.collectAsStateWithLifecycle()
+    val latestNews by viewModel.latestNews.collectAsStateWithLifecycle()
     val confettiTrigger by viewModel.confettiTrigger.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -279,12 +282,11 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                     }
                 )
 
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 // Dynamic view based on active tab with Horizontal Pager
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxSize(),
                     beyondViewportPageCount = MainTabs.size,
                     userScrollEnabled = true 
                 ) { page ->
@@ -292,6 +294,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                         "Portfolio" -> PortfolioScreen(
                             viewModel = viewModel,
                             stats = stats,
+                            latestNews = latestNews,
                             onTickerClick = { symbol ->
                                 viewModel.selectStock(symbol)
                                 showTradeSheet = true
@@ -300,6 +303,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                         "Watchlist" -> WatchlistScreen(
                             viewModel = viewModel,
                             stats = stats,
+                            latestNews = latestNews,
                             onTickerClick = { symbol ->
                                 viewModel.selectStock(symbol)
                                 showTradeSheet = true
@@ -328,7 +332,22 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                         )
                     }
                 }
+
+                // Premium Hub Overlay
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = showPremiumHub,
+                    enter = slideInHorizontally(initialOffsetX = { it }),
+                    exit = slideOutHorizontally(targetOffsetX = { it }),
+                    modifier = Modifier.fillMaxSize().zIndex(100f)
+                ) {
+                    PremiumHubScreen(
+                        viewModel = viewModel,
+                        stats = stats,
+                        onBack = { viewModel.closePremiumHub() }
+                    )
+                }
             }
+        }
 
             // Post-Trade Diagnostic and Rating Feedback Dialog
             postTradeRating?.let { rating ->

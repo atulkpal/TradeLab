@@ -440,23 +440,28 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                     )
                                                     
                                                     val credential = result.credential
-                                                    if (credential is GoogleIdTokenCredential) {
-                                                        val googleIdToken = credential.idToken
-                                                        val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-                                                        firebaseAuth.signInWithCredential(firebaseCredential)
-                                                            .addOnSuccessListener { authResult ->
-                                                                val user = authResult.user
-                                                                viewModel.registerOrLogin(user?.displayName ?: "Google User", user?.email ?: "")
-                                                                isLoading = false
-                                                            }
-                                                            .addOnFailureListener { e ->
-                                                                android.util.Log.e("AuthScreen", "Firebase Auth with Google failed", e)
-                                                                errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
-                                                                isLoading = false
-                                                            }
-                                                    } else {
-                                                        errorMessage = "Unexpected credential type returned."
-                                                        isLoading = false
+                                                    when (credential) {
+                                                        is GoogleIdTokenCredential -> {
+                                                            val googleIdToken = credential.idToken
+                                                            val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
+                                                            firebaseAuth.signInWithCredential(firebaseCredential)
+                                                                .addOnSuccessListener { authResult ->
+                                                                    val user = authResult.user
+                                                                    viewModel.registerOrLogin(user?.displayName ?: "Google User", user?.email ?: "")
+                                                                    isLoading = false
+                                                                }
+                                                                .addOnFailureListener { e ->
+                                                                    android.util.Log.e("AuthScreen", "Firebase Auth with Google failed", e)
+                                                                    errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
+                                                                    isLoading = false
+                                                                }
+                                                        }
+                                                        else -> {
+                                                            val type = credential.type
+                                                            android.util.Log.e("AuthScreen", "Unexpected credential type: $type")
+                                                            errorMessage = "Unexpected credential: $type. Please ensure your Google account is selected."
+                                                            isLoading = false
+                                                        }
                                                     }
                                                 } catch (e: Exception) {
                                                     android.util.Log.e("AuthScreen", "Google Sign-In Exception", e)
@@ -573,8 +578,10 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                                     is com.google.firebase.FirebaseTooManyRequestsException -> "Too many requests. Please try again later."
                                                                     else -> "Verification failed: ${e.message}"
                                                                 }
-                                                                // Hint about SHA-1 if it's a common production failure
-                                                                if (errorMessage?.contains("app not authorized", ignoreCase = true) == true) {
+                                                                // Check for common permission/configuration issues
+                                                                if (e.message?.contains("This operation is not allowed", ignoreCase = true) == true) {
+                                                                    errorMessage = "Verification failed: Phone provider or region (India) is not enabled in Firebase Console. [Check Console Settings]"
+                                                                } else if (errorMessage?.contains("app not authorized", ignoreCase = true) == true) {
                                                                     errorMessage += " (Check Firebase SHA-1 configuration)"
                                                                 }
                                                                 isLoading = false

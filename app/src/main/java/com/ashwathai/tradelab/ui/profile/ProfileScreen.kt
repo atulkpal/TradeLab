@@ -190,7 +190,7 @@ fun ProfileScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(AccentYellow.copy(alpha = 0.15f))
                                 .border(1.dp, AccentYellow.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                                .clickable { viewModel.showFeedback("Your subscription is active. Billed ₹99/mo via Google Play.") }
+                                .clickable { viewModel.openPremiumHub() }
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Text(
@@ -202,7 +202,7 @@ fun ProfileScreen(
                         }
                     } else {
                         Button(
-                            onClick = { viewModel.openProBenefits() },
+                            onClick = { viewModel.openPremiumHub() },
                             colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
                             shape = RoundedCornerShape(10.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)

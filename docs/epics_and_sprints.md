@@ -37,8 +37,41 @@ This document defines the development roadmap for **Trade Lab**. It breaks down 
  │  EPIC 10: Codebase Modularization & Refactoring [100% COMP.]│
  ├─────────────────────────────────────────────────────────────┤
  │  EPIC 11: Architectural Modernization & Hilt DI [100% COMP.]│
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 12: UI Density & Market Realism        [100% COMP.]   │
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 13: Institutional Portfolio Analytics  [100% COMP.]   │
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 14: Market Sentiments & TV News        [100% COMP.]   │
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 15: Real-World News & Option B Influence [100% COMP.] │
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 16: Pre-Launch Polish & Advanced Realism [90% COMP.]  │
  └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Epic 16: Pre-Launch Polish & Advanced Realism (Status: 🟡 Active)
+Refine the UI for high-information density, fix pre-launch glitches, and implement professional-grade settlement mechanics.
+
+### Sprint 16.1: Viral Sharing & UI Stability
+*   [x] **Share My Portfolio**: Implement high-contrast neon snapshot generator for social media.
+*   [x] **Fixed Transparency**: Resolved bitmap generation issues and added solid background base to shared images.
+*   [x] **Ghost Element Cleanup**: Fixed capture containers appearing behind active UI cards.
+*   [ ] **GenZ Sharing Hooks**: Add contextual sharing prompts (e.g., "I just flipped my capital by 50%!").
+
+### Sprint 16.2: Professional Market Mechanics (T+1 & Taxes)
+*   [x] **T+1 Settlement Engine**: Implemented `sharesT1` logic where trades stay in "Positions" until the next market day.
+*   [x] **Realistic Statutory Charges**: Added STT, Stamp Duty, and SEBI charges logic to trade executions.
+*   [x] **Intraday vs. Delivery**: Backend support for distinct trade types and settlement cycles.
+*   [ ] **Intraday UI Toggle**: Add "Intraday/Delivery" selector to the main Order Ticket sheet.
+
+### Sprint 16.3: Adaptive Analytics & Dashboard
+*   [x] **Auto-Marquee Ticker**: Replaced manual scroll with `basicMarquee` for a seamless TV-style experience.
+*   [x] **Collapsible Heatmap**: Redesigned the sector allocation widget to save vertical space.
+*   [x] **On-Demand Equity Curve**: Moved the performance chart to a demand-based pop-up with empty-state logic for new users.
+*   [x] **Extended Rewards**: Increased Commodities Desk access duration to 3 hours per ad watch.
 
 ---
 
@@ -291,6 +324,71 @@ Transition the app to modern dependency injection patterns to improve testabilit
 ### Sprint 11.3: SDK & Framework Modernization
 *   [x] Update project to **Android API 37** to support the latest Hilt and Lifecycle features.
 *   [x] Stabilize `MainActivityLaunchTest` using Hilt-compatible mocking strategies.
+
+---
+
+## Epic 12: UI Density & Market Realism (Status: 🟢 Complete)
+Optimize the user experience for high-information density and authentic Indian market behaviors.
+
+### Sprint 12.1: Ultra-Dense Watchlist
+*   [x] Move multi-watchlist switcher to the top for faster access.
+*   [x] Implement a collapsible Search Lens in the HeaderBar to maximize vertical screen space.
+*   [x] Implement "Vanishing Tickers" logic: automatically hide suggested tickers once the user has added 5+ stocks.
+*   [x] Create dual-mode (Classic/Compact) Watchlist rows with persistent database storage (DB v9).
+
+### Sprint 12.2: Gesture-Based Navigation
+*   [x] Integrate `HorizontalPager` as the main navigation shell.
+*   [x] Synchronize pager state with `BottomNavBar` and `TradingViewModel.currentTab`.
+*   [x] Enable pre-loading of adjacent screens for a lag-free premium feel.
+
+### Sprint 12.3: Indian Market Logic & Enforcement
+*   [x] Implement strict session hour enforcement: Indian stocks stop wiggling after 3:30 PM IST in Live mode.
+*   [x] Integrate the 2026-2027 NSE/BSE holiday calendar.
+*   [x] Add a visual "MARKET CLOSED" red badge in the Watchlist header for immediate session feedback.
+
+---
+
+## Epic 13: Institutional Portfolio Analytics (Status: 🟢 Complete)
+Bring professional-grade risk management tools to the retail simulator.
+
+### Sprint 13.1: Sectoral Heatmap Visualization
+*   [x] Create an industry mapping registry for all seeded tickers (Banking, Tech, Energy, etc.).
+*   [x] Implement a multi-segment heatbar on the Home screen to visualize concentration risk.
+*   [x] Update heatmap dynamically as the user buys or sells across different sectors.
+
+### Sprint 13.2: Portfolio Equity Curve
+*   [x] Create the `AccountSnapshot` database system (DB v12) to track daily performance.
+*   [x] Build a professional line chart widget displaying account value growth over time.
+*   [x] Implement a "Simulate Trading Day" debug action to instantly generate historical snapshots for verification.
+
+---
+
+## Epic 14: Market Sentiments & TV News (Status: 🟢 Complete)
+Enhance immersion with contextual news feeds and a sensationalized TV-style presentation.
+
+### Sprint 14.1: Contextual News Engine
+*   [x] Create the `MarketNews` data infrastructure and DAO.
+*   [x] Implement an intelligent news trigger: price wiggles > 1.5% automatically generate localized sentiment headlines.
+*   [x] Build the "Market Pulse" scrolling widget on the Home screen.
+
+### Sprint 14.2: Sensationalized TV Ticker
+*   [x] Design the `BreakingNewsTicker` globally pinned bar with pulsing "BREAKING" tags.
+*   [x] Implement dynamic channel branding for Indian brands (CNBC Awaaz, Zee News, ET Now).
+*   [x] Integrate ticker-specific insights into the expanded order ticket sheet.
+
+---
+
+## Epic 15: Real-World News & Option B Influence (Status: 🟢 Complete)
+Bridge the gap between simulation and reality with actual market headlines and math-driven news impact.
+
+### Sprint 15.1: Yahoo Finance News Sync
+*   [x] Integrate the real-world Yahoo Finance News API to fetch actual headlines by ticker symbol.
+*   [x] Map global publishers to local Indian financial brands for deep simulator immersion.
+
+### Sprint 15.2: Sentiment-Driven Math (Option B)
+*   [x] Implement `sentimentBias` in the price simulation engine.
+*   [x] **Option B Math:** Stocks with strong "Bullish" real-world news drift toward their anchors **3x faster** than neutral stocks.
+*   [x] **Pro AI Summary:** Exclusively for Paid Members, use Google Gemini to read real news and generate an "Executive Impact Brief" and sentiment score.
 
 
 
