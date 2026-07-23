@@ -3,6 +3,18 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [1.2.0] - Pre-Launch Polish & Advanced Realism - 2026-07-23
+
+### Added
+- **Viral Sharing Hooks (Sprint 16.1)**: Implemented performance-aware catchy phrases (e.g., "Flipped my capital! 🚀") that appear on shared portfolio cards to encourage social media engagement.
+- **Professional Order Toggles (Sprint 16.2)**: Added CNC/MIS (Equity) and NRML/MIS (F&O) product type selectors with educational tooltips, mimicking institutional trading desks.
+- **T+1 UI Refinements**: Standardized P/L display and square-off logic for options, including clear "T1" unsettled share visibility.
+
+### Changed
+- Updated version code to 4 and version name to 1.2.0 for release preparation.
+
+---
+
 ## [1.1.0] - Foundation Modernization & Market Realism - 2026-07-21
 
 ### Added

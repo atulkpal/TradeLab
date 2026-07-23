@@ -4,10 +4,30 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [1.2.0] - Pre-Launch Polish & Advanced Realism
+**Release Date:** July 23, 2026  
+**Version Code:** `4`  
+**Status:** 🟡 RELEASE CANDIDATE
+
+### Summary of Changes
+Final polish before launch, focusing on social virality and professional trading desk mechanics.
+
+### Core Features
+- **Viral Sharing Hooks:** Catchy, dynamic phrases integrated into portfolio snapshots.
+- **Professional Order Toggles:** CNC/MIS and NRML/MIS selectors for advanced realism.
+- **T+1 Logic Refinement:** Visual clarity for unsettled shares in derivatives.
+
+### Build Artifacts
+- **Debug APK:** `app-debug.apk`
+- **Release APK:** `app-release.apk`
+- **App Bundle:** `app-release.aab`
+
+---
+
 ## [1.1.0] - Foundation Modernization & Market Realism
 **Release Date:** July 21, 2026  
 **Version Code:** `3`  
-**Status:** 🟢 STABLE / CURRENT
+**Status:** 🟢 STABLE
 
 ### Summary of Changes
 This release stabilizes the application architecture and introduces authentic market session logic for the Indian stock market.

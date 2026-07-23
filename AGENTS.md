@@ -53,15 +53,20 @@ The **Architectural Modernization** has been successfully verified:
     *   Collapsible search lens and "vanishing" tickers to maximize data density.
 6.  **Psychological Profiler:** A 60-second questionnaire on the Profile screen that aligns virtual capital sizes to real-world budgets to build realistic trading habits.
 7.  **Production Auth & Diagnostics:** Firebase Auth (Google/Phone) with robust Logcat-based diagnostics for production environment configuration.
+8.  **Viral Sharing & Professional Mechanics (Epic 16):**
+    *   Integrated dynamic performance-based "GenZ" sharing hooks for social media snapshots.
+    *   Added institutional-grade product toggles (CNC/MIS for Equity, NRML/MIS for F&O) with educational tooltips.
+    *   Standardized T+1 settlement visibility and square-off logic for derivatives.
 
 ---
 
 ## 4. Current Work & Next Milestones
 
-We are currently transitioning into **Phase 2 (Advanced Tactics)**.
+We have successfully completed **Phase 1 (Foundations)** and the **Pre-Launch Polish**. The app is now at **v1.2.0 (Build 4)** and ready for production distribution.
 
 ### What is Active Right Now
-*   **Documentation Alignments & Multi-Platform Planning:** Setting up architectural patterns to scale from Android-first to iOS and Web (via Kotlin Multiplatform).
+*   **Release Distribution:** Deploying signed APKs and AABs to internal testing tracks.
+*   **Multi-Platform Planning:** Scoping the migration of core logic to Kotlin Multiplatform (KMP) for iOS and Web support (deferred until milestone achievement).
 
 ### Parallelizable Engineering Streams
 To maximize efficiency, multiple agents or contributors can work on these distinct tracks in parallel:

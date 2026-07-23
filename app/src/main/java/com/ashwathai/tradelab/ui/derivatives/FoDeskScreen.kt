@@ -333,6 +333,7 @@ fun FoDeskScreen(
     var activeOptionSymbol by remember { mutableStateOf<String?>(null) }
     var orderLots by remember { mutableStateOf(1) }
     var isBuyOrder by remember { mutableStateOf(true) }
+    var isDelivery by remember { mutableStateOf(true) } // Carry Forward vs Intraday
 
     // Synchronize selected strike details if ticker changes
     LaunchedEffect(selectedTicker, currentPrice) {
@@ -611,6 +612,30 @@ fun FoDeskScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // NEW: PRODUCT TYPE TOGGLE (NRML vs MIS)
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text("PRODUCT TYPE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(DarkBg).padding(2.dp)) {
+                            listOf(true to "NRML (Carry Forward)", false to "MIS (Intraday)").forEach { (isDel, label) ->
+                                val selected = isDelivery == isDel
+                                Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (selected) Color.White.copy(alpha = 0.08f) else Color.Transparent).clickable { isDelivery = isDel }.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
+                                    Text(label, color = if (selected) Color.White else Color.White.copy(alpha = 0.4f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        // Educational Warning for MIS
+                        if (!isDelivery) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = "⚠️ MIS/Intraday: Position will be auto-squared off at 3:20 PM IST today.", color = AccentYellow, fontSize = 10.sp, lineHeight = 13.sp)
+                        } else {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = "💎 NRML/Carry Forward: Hold position until contract expiry. Higher margin may be required for overnight holdings.", color = BrandViolet, fontSize = 10.sp, lineHeight = 13.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider(color = DarkBorder, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -719,6 +744,8 @@ fun FoDeskScreen(
                                 viewModel.showFeedback("Failed: Insufficient Cash Balance for this derivative order!")
                                 return@Button
                             }
+
+                            viewModel.setDeliveryMode(isDelivery)
 
                             if (!stats.isPremium && stats.fnoTokens > 0) {
                                 // Spend token first

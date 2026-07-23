@@ -27,8 +27,8 @@ android {
     applicationId = "com.ashwathai.tradelab"
     minSdk = 24
     targetSdk = 37
-    versionCode = 3
-    versionName = "1.1.0"
+    versionCode = 4
+    versionName = "1.2.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
@@ -85,32 +85,6 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
-}
-
-// AUTOMATED ARTIFACT RENAMING - POST-BUILD TASK (ROBUST & CONFIG CACHE FRIENDLY)
-tasks.whenTaskAdded {
-  if ((name.startsWith("assemble") || name.startsWith("bundle")) && (name.endsWith("Release") || name.endsWith("Debug"))) {
-    val isApk = name.startsWith("assemble")
-    val type = name.removePrefix("assemble").removePrefix("bundle").replaceFirstChar { it.lowercase() }
-    
-    // Capture values outside doLast for Configuration Cache compatibility
-    val buildDirProvider = project.layout.buildDirectory
-    val androidExt = project.extensions.getByName("android") as com.android.build.gradle.AppExtension
-    val vName = androidExt.defaultConfig.versionName ?: "unknown"
-    val vCode = androidExt.defaultConfig.versionCode ?: 0
-    
-    doLast {
-      val ext = if (isApk) "apk" else "aab"
-      val folder = if (isApk) "apk" else "bundle"
-      val outputDir = buildDirProvider.dir("outputs/$folder/$type").get().asFile
-      
-      val oldFile = File(outputDir, "app-$type.$ext")
-      if (oldFile.exists()) {
-        val newFile = File(outputDir, "app-$type-v-$vName-vc-$vCode.$ext")
-        oldFile.renameTo(newFile)
-      }
-    }
-  }
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files

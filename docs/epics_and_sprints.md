@@ -28,7 +28,7 @@ This document defines the development roadmap for **Trade Lab**. It breaks down 
  └──────────────────────────────┬──────────────────────────────┘
                                 ▼
  ┌─────────────────────────────────────────────────────────────┐
- │  EPIC 6: Multi-Platform KMP Core Migration   [ACTIVE WORK]  │
+ │  EPIC 6: Multi-Platform KMP Core Migration   [DEFERRED]     │
  ├─────────────────────────────────────────────────────────────┤
  │  EPIC 9: Simulated F&O Engine & Premium Paywalls [100% COMP.]│
  └──────────────────────────────┬──────────────────────────────┘
@@ -52,20 +52,20 @@ This document defines the development roadmap for **Trade Lab**. It breaks down 
 
 ---
 
-## Epic 16: Pre-Launch Polish & Advanced Realism (Status: 🟡 Active)
+## Epic 16: Pre-Launch Polish & Advanced Realism (Status: 🟢 Complete)
 Refine the UI for high-information density, fix pre-launch glitches, and implement professional-grade settlement mechanics.
 
 ### Sprint 16.1: Viral Sharing & UI Stability
 *   [x] **Share My Portfolio**: Implement high-contrast neon snapshot generator for social media.
 *   [x] **Fixed Transparency**: Resolved bitmap generation issues and added solid background base to shared images.
 *   [x] **Ghost Element Cleanup**: Fixed capture containers appearing behind active UI cards.
-*   [ ] **GenZ Sharing Hooks**: Add contextual sharing prompts (e.g., "I just flipped my capital by 50%!").
+*   [x] **GenZ Sharing Hooks**: Added randomized catchy, performance-based phrases to shared portfolio cards.
 
 ### Sprint 16.2: Professional Market Mechanics (T+1 & Taxes)
 *   [x] **T+1 Settlement Engine**: Implemented `sharesT1` logic where trades stay in "Positions" until the next market day.
 *   [x] **Realistic Statutory Charges**: Added STT, Stamp Duty, and SEBI charges logic to trade executions.
 *   [x] **Intraday vs. Delivery**: Backend support for distinct trade types and settlement cycles.
-*   [ ] **Intraday UI Toggle**: Add "Intraday/Delivery" selector to the main Order Ticket sheet.
+*   [x] **Intraday UI Toggle**: Added polished CNC/MIS (Equity) and NRML/MIS (F&O) selectors with educational tooltips to order tickets.
 
 ### Sprint 16.3: Adaptive Analytics & Dashboard
 *   [x] **Auto-Marquee Ticker**: Replaced manual scroll with `basicMarquee` for a seamless TV-style experience.
@@ -192,7 +192,8 @@ Support multiple persistent watchlists, user registration gating, and premium AI
 
 ---
 
-## Epic 6: Multi-platform KMP Core Migration (Status: 🟡 Active)
+## Epic 6: Multi-platform KMP Core Migration (Status: ⏸️ Deferred)
+*Deferred until >100 downloads on Play Store.*
 Scale the local architecture to support iOS and Web applications.
 
 ### Sprint 6.1: Shared Library Structuring

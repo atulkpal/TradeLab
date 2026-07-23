@@ -75,6 +75,8 @@ fun PortfolioScreen(
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
 
+    val shareHook = remember(stats.totalPnLPct) { ShareHooks.getRandomHook(stats) }
+
     var activeSubTab by remember { mutableStateOf("Holdings") }
 
     // Docking Footer logic: appears when main account card scrolls past
@@ -150,7 +152,7 @@ fun PortfolioScreen(
                                     coroutineScope.launch {
                                         try {
                                             val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
-                                            val shareText = "I turned my portfolio into ${formatCurrency(stats.totalValue, stats.currency)}! 🔥"
+                                            val shareText = "$shareHook \n\nI turned my portfolio into ${formatCurrency(stats.totalValue, stats.currency)} on Trade Lab! 🔥"
                                             ShareUtils.shareImage(context, bitmap, shareText)
                                         } catch (e: Exception) {
                                             e.printStackTrace()
@@ -351,7 +353,7 @@ fun PortfolioScreen(
             }.drawWithContent {
                 graphicsLayer.record(density = density, layoutDirection = layoutDirection, size = IntSize(360.dp.roundToPx(), 480.dp.roundToPx())) { this@drawWithContent.drawContent() }
             }
-        ) { Surface(color = Color.Black, modifier = Modifier.fillMaxSize()) { PortfolioShareCard(stats = stats) } }
+        ) { Surface(color = Color.Black, modifier = Modifier.fillMaxSize()) { PortfolioShareCard(stats = stats, hookText = shareHook) } }
     }
 }
 
@@ -530,7 +532,12 @@ fun OptionHoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: Po
     val isCall = holding.symbol.contains("_CE_")
     val liveStock = stockPrices.find { it.symbol == holding.symbol }
     val currentPrice = liveStock?.currentPrice ?: holding.averagePrice
-    val currentValue = holding.shares * currentPrice
+    val totalShares = holding.shares + holding.sharesT1
+    val currentValue = totalShares * currentPrice
+    val costBasis = totalShares * holding.averagePrice
+    val pnl = currentValue - costBasis
+    val pnlPct = if (costBasis > 0) (pnl / costBasis) * 100.0 else 0.0
+
     Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(DarkSurface).border(1.dp, BrandViolet.copy(alpha = 0.2f), RoundedCornerShape(16.dp)).padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -539,11 +546,14 @@ fun OptionHoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: Po
                 }
                 Spacer(modifier = Modifier.width(6.dp)); Text(holding.symbol, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
-            Text("Qty: ${holding.shares.toInt()}", color = TextMuted, fontSize = 10.sp)
+            Text("Qty: ${totalShares.toInt()}${if (holding.sharesT1 > 0) " (${holding.sharesT1.toInt()} T1)" else ""}", color = TextMuted, fontSize = 10.sp)
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(formatCurrency(currentValue, stats.currency), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Button(onClick = { viewModel.sellStock(holding.symbol, holding.shares) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C1E1E)), shape = RoundedCornerShape(8.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 5.dp), modifier = Modifier.height(24.dp)) {
+            val isUp = pnl >= 0
+            Text("${if (isUp) "+" else ""}${String.format(Locale.US, "%.1f", pnlPct)}%", color = if (isUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Button(onClick = { viewModel.sellStock(holding.symbol, totalShares) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C1E1E)), shape = RoundedCornerShape(8.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 5.dp), modifier = Modifier.height(24.dp)) {
                 Text("SQUARE OFF", color = AccentRose, fontSize = 7.sp, fontWeight = FontWeight.Bold)
             }
         }

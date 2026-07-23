@@ -28,6 +28,7 @@ import java.util.Locale
 @Composable
 fun PortfolioShareCard(
     stats: PortfolioStats,
+    hookText: String = "Building my empire...",
     modifier: Modifier = Modifier
 ) {
     val isProfit = stats.totalPnL >= 0
@@ -70,6 +71,18 @@ fun PortfolioShareCard(
                         letterSpacing = 2.sp
                     )
                 }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // GenZ Hook / Catchphrase
+                Text(
+                    text = hookText,
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Black,
+                    lineHeight = 28.sp,
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                )
 
                 Spacer(modifier = Modifier.weight(1f))
 

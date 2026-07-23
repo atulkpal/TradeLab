@@ -1022,7 +1022,16 @@ fun BuySellBottomSheet(
 
                 // NEW: PRODUCT TYPE TOGGLE (CNC vs MIS)
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("PRODUCT TYPE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("PRODUCT TYPE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Info",
+                            tint = TextMuted,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(DarkBg).padding(2.dp)) {
                         listOf(true to "CNC (Delivery)", false to "MIS (Intraday)").forEach { (isDel, label) ->
@@ -1035,10 +1044,20 @@ fun BuySellBottomSheet(
                     // Educational Warning for MIS
                     if (!isDelivery) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "⚠️ MIS/Intraday: Auto-squared off randomly after 3:20 PM. Penalty: 20 Credits / ₹50.", color = AccentYellow, fontSize = 10.sp, lineHeight = 13.sp)
+                        Text(
+                            text = "⚠️ MIS/Intraday: Used for same-day trading with higher leverage. Positions are auto-squared off before market close (3:20 PM IST). Penalty applies for failed auto-squareoff.",
+                            color = AccentYellow,
+                            fontSize = 10.sp,
+                            lineHeight = 13.sp
+                        )
                     } else {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "💎 CNC/Delivery: T+1 Settlement applies if held overnight. Can exit same-day as MIS.", color = BrandViolet, fontSize = 10.sp, lineHeight = 13.sp)
+                        Text(
+                            text = "💎 CNC/Delivery: Pay full value to hold shares for multiple days. T+1 Settlement cycle applies. You can still exit on the same day if desired.",
+                            color = BrandViolet,
+                            fontSize = 10.sp,
+                            lineHeight = 13.sp
+                        )
                     }
                 }
 

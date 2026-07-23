@@ -1287,9 +1287,9 @@ class TradingViewModel @Inject constructor(
             repository.insertOrUpdateOptionPrice(optionSymbol, strike, strike, isCall)
             
             val result = if (isBuy) {
-                repository.buyStock(optionSymbol, shares)
+                repository.buyStock(optionSymbol, shares, _isDelivery.value)
             } else {
-                repository.sellStock(optionSymbol, shares)
+                repository.sellStock(optionSymbol, shares, _isDelivery.value)
             }
             
             result.onSuccess {
