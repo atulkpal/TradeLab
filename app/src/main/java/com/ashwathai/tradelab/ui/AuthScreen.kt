@@ -440,8 +440,8 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                     )
                                                     
                                                     val credential = result.credential
-                                                    when (credential) {
-                                                        is GoogleIdTokenCredential -> {
+                                                    when {
+                                                        credential is GoogleIdTokenCredential -> {
                                                             val googleIdToken = credential.idToken
                                                             val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
                                                             firebaseAuth.signInWithCredential(firebaseCredential)
@@ -455,6 +455,26 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                                     errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
                                                                     isLoading = false
                                                                 }
+                                                        }
+                                                        credential.type == "com.google.android.libraries.identity.googleid.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL" -> {
+                                                            // Fix for Point 3: Explicitly handle the credential type mentioned in the screenshot
+                                                            try {
+                                                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                                                val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+                                                                firebaseAuth.signInWithCredential(firebaseCredential)
+                                                                    .addOnSuccessListener { authResult ->
+                                                                        val user = authResult.user
+                                                                        viewModel.registerOrLogin(user?.displayName ?: "Google User", user?.email ?: "")
+                                                                        isLoading = false
+                                                                    }
+                                                                    .addOnFailureListener { e ->
+                                                                        errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
+                                                                        isLoading = false
+                                                                    }
+                                                            } catch (e: Exception) {
+                                                                errorMessage = "Google Token Extraction Failed: ${e.localizedMessage}"
+                                                                isLoading = false
+                                                            }
                                                         }
                                                         else -> {
                                                             val type = credential.type
@@ -518,23 +538,69 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                 Spacer(modifier = Modifier.height(14.dp))
                                 
                                 if (!isOtpSent) {
-                                    OutlinedTextField(
-                                        value = phoneInput,
-                                        onValueChange = { phoneInput = it },
-                                        label = { Text("Phone Number (with code)", color = TextMuted, fontSize = 12.sp) },
-                                        modifier = Modifier.fillMaxWidth().testTag("auth_phone_field"),
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = BrandViolet,
-                                            unfocusedBorderColor = DarkBorder,
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White
-                                        ),
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone Icon", tint = TextMuted) },
-                                        placeholder = { Text("+91 XXXXX XXXXX", color = TextMuted.copy(alpha = 0.5f)) }
-                                    )
+                                    // Point 4: Country Selector UI
+                                    var showCountryPicker by remember { mutableStateOf(false) }
+                                    var selectedCountryCode by remember { mutableStateOf("+91") }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(80.dp)
+                                                .height(56.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(DarkSurfaceElevated)
+                                                .border(1.dp, DarkBorder, RoundedCornerShape(10.dp))
+                                                .clickable { showCountryPicker = true },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(selectedCountryCode, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                                Icon(Icons.Default.ArrowDropDown, null, tint = TextMuted)
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        OutlinedTextField(
+                                            value = phoneInput,
+                                            onValueChange = { if (it.all { char -> char.isDigit() }) phoneInput = it },
+                                            label = { Text("Phone Number", color = TextMuted, fontSize = 12.sp) },
+                                            modifier = Modifier.weight(1f).testTag("auth_phone_field"),
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedBorderColor = BrandViolet,
+                                                unfocusedBorderColor = DarkBorder,
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White
+                                            ),
+                                            singleLine = true,
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                            placeholder = { Text("XXXXX XXXXX", color = TextMuted.copy(alpha = 0.5f)) }
+                                        )
+                                    }
+
+                                    // Simple Country Picker Dropdown
+                                    if (showCountryPicker) {
+                                        DropdownMenu(
+                                            expanded = showCountryPicker,
+                                            onDismissRequest = { showCountryPicker = false },
+                                            modifier = Modifier.background(DarkSurfaceElevated).border(1.dp, DarkBorder)
+                                        ) {
+                                            listOf("+91" to "India", "+1" to "USA", "+44" to "UK", "+971" to "UAE").forEach { (code, name) ->
+                                                DropdownMenuItem(
+                                                    text = { Text("$code ($name)", color = Color.White) },
+                                                    onClick = {
+                                                        selectedCountryCode = code
+                                                        showCountryPicker = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+
                                     Spacer(modifier = Modifier.height(16.dp))
                                     
                                     Button(
@@ -544,15 +610,16 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                 errorMessage = "Please enter your phone number"
                                                 return@Button
                                             }
+                                            val fullNumber = "$selectedCountryCode$phoneInput"
                                             isLoading = true
                                             coroutineScope.launch {
                                                 if (firebaseAuth == null || BuildConfig.DEBUG) {
                                                     isLoading = false
-                                                    successMessage = "Demo OTP Code '123456' sent to $phoneInput!"
+                                                    successMessage = "Demo OTP Code '123456' sent to $fullNumber!"
                                                     isOtpSent = true
                                                 } else {
                                                     val options = PhoneAuthOptions.newBuilder(firebaseAuth)
-                                                        .setPhoneNumber(phoneInput)
+                                                        .setPhoneNumber(fullNumber)
                                                         .setTimeout(60L, TimeUnit.SECONDS)
                                                         .setActivity(context as Activity)
                                                         .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
@@ -560,7 +627,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                                 firebaseAuth.signInWithCredential(credential)
                                                                     .addOnSuccessListener { authResult ->
                                                                         val user = authResult.user
-                                                                        viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.$phoneInput@tradelab.com")
+                                                                        viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.${phoneInput}@tradelab.com", fullNumber)
                                                                         isLoading = false
                                                                         successMessage = "Automatic verification successful!"
                                                                     }
@@ -572,13 +639,11 @@ fun AuthScreen(viewModel: TradingViewModel) {
 
                                                             override fun onVerificationFailed(e: FirebaseException) {
                                                                 android.util.Log.e("AuthScreen", "Phone Auth Verification Failed", e)
-                                                                // Provide descriptive error messages for production
                                                                 errorMessage = when (e) {
                                                                     is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> "Invalid phone number format."
                                                                     is com.google.firebase.FirebaseTooManyRequestsException -> "Too many requests. Please try again later."
                                                                     else -> "Verification failed: ${e.message}"
                                                                 }
-                                                                // Check for common permission/configuration issues
                                                                 if (e.message?.contains("This operation is not allowed", ignoreCase = true) == true) {
                                                                     errorMessage = "Verification failed: Phone provider or region (India) is not enabled in Firebase Console. [Check Console Settings]"
                                                                 } else if (errorMessage?.contains("app not authorized", ignoreCase = true) == true) {
@@ -591,7 +656,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                                 verificationId = verId
                                                                 isOtpSent = true
                                                                 isLoading = false
-                                                                successMessage = "OTP sent to $phoneInput"
+                                                                successMessage = "OTP sent to $fullNumber"
                                                             }
                                                         })
                                                         .build()
@@ -646,13 +711,13 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                             coroutineScope.launch {
                                                 if (firebaseAuth == null || BuildConfig.DEBUG || otpInput == "123456") {
                                                     isLoading = false
-                                                    viewModel.registerOrLogin("Phone User", "phone.$phoneInput@tradelab.com")
+                                                    viewModel.registerOrLogin("Phone User", "phone.${phoneInput}@tradelab.com", "+91$phoneInput")
                                                 } else {
                                                     val credential = PhoneAuthProvider.getCredential(verificationId, otpInput)
                                                     firebaseAuth.signInWithCredential(credential)
                                                         .addOnSuccessListener { authResult ->
                                                             val user = authResult.user
-                                                            viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.$phoneInput@tradelab.com")
+                                                            viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.${phoneInput}@tradelab.com", "+91$phoneInput")
                                                             isLoading = false
                                                         }
                                                         .addOnFailureListener { e ->

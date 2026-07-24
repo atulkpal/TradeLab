@@ -27,7 +27,12 @@ data class UserProfile(
     val xp: Int = 1500,
     val dailyStreak: Int = 1,
     val lastActiveTimestamp: Long = System.currentTimeMillis(),
-    val shouldShowShieldDialog: Boolean = true
+    val shouldShowShieldDialog: Boolean = true,
+    val phoneNumber: String = "",
+    val userUniqueId: String = "",
+    val profilePictureUrl: String = "",
+    val isEmailVerified: Boolean = false,
+    val isPhoneVerified: Boolean = false
 )
 
 @Entity(tableName = "holdings")

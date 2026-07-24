@@ -1,5 +1,10 @@
 package com.ashwathai.tradelab
 
+import androidx.lifecycle.lifecycleScope
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import androidx.core.app.NotificationCompat
 import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -138,6 +143,32 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun createNotificationChannel() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val name = "Market Alerts"
+            val descriptionText = "Notifications for market open/close"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel("MARKET_ALERTS", name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun showSystemNotification(message: String) {
+        val builder = NotificationCompat.Builder(this, "MARKET_ALERTS")
+            .setSmallIcon(R.drawable.app_logo_premium)
+            .setContentTitle("TradeLab Market Alert")
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -147,6 +178,15 @@ class MainActivity : ComponentActivity() {
 
         // Initialize the Google Mobile Ads SDK
         MobileAds.initialize(this) {}
+        
+        createNotificationChannel()
+
+        // Observe system notifications
+        lifecycleScope.launch {
+            viewModel.systemNotificationFlow.collect { message ->
+                showSystemNotification(message)
+            }
+        }
         
         // Start periodic price updates and simulations
         viewModel.startBackgroundTasks()

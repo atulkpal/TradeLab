@@ -1323,10 +1323,11 @@ class TradingRepository @Inject constructor(
         return@withContext nextCount >= 7
     }
 
-    suspend fun registerOrLogin(userName: String, userEmail: String) = withContext(Dispatchers.IO) {
+    suspend fun registerOrLogin(userName: String, userEmail: String, phoneNumber: String = "") = withContext(Dispatchers.IO) {
         val existingProfile = userProfileDao.getUserProfile()
+        val uniqueId = existingProfile?.userUniqueId?.ifBlank { UUID.randomUUID().toString().take(8).uppercase() } ?: UUID.randomUUID().toString().take(8).uppercase()
+        
         if (existingProfile == null) {
-            // Force create a profile if it doesn't exist (prevents race condition on first launch)
             userProfileDao.insertProfile(
                 UserProfile(
                     id = 1,
@@ -1336,6 +1337,8 @@ class TradingRepository @Inject constructor(
                     isLoggedIn = true,
                     userName = userName,
                     userEmail = userEmail,
+                    phoneNumber = phoneNumber,
+                    userUniqueId = uniqueId,
                     trialActionsCount = 0
                 )
             )
@@ -1343,12 +1346,25 @@ class TradingRepository @Inject constructor(
             userProfileDao.insertProfile(
                 existingProfile.copy(
                     isLoggedIn = true,
-                    userName = userName,
-                    userEmail = userEmail,
+                    userName = userName.ifBlank { existingProfile.userName },
+                    userEmail = userEmail.ifBlank { existingProfile.userEmail },
+                    phoneNumber = phoneNumber.ifBlank { existingProfile.phoneNumber },
+                    userUniqueId = uniqueId,
                     trialActionsCount = 0
                 )
             )
         }
+    }
+
+    suspend fun updateUserProfile(name: String, email: String, phone: String) = withContext(Dispatchers.IO) {
+        val profile = userProfileDao.getUserProfile() ?: return@withContext
+        userProfileDao.insertProfile(
+            profile.copy(
+                userName = name,
+                userEmail = email,
+                phoneNumber = phone
+            )
+        )
     }
 
     suspend fun purchasePremium() = withContext(Dispatchers.IO) {

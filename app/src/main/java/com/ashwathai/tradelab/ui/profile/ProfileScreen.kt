@@ -78,6 +78,7 @@ fun ProfileScreen(
     val quizModules by viewModel.quizModules.collectAsStateWithLifecycle()
 
     var showAiCoachDialog by remember { mutableStateOf(false) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     var isAdLoading by remember { mutableStateOf(false) }
@@ -137,12 +138,18 @@ fun ProfileScreen(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
-                        Text(
-                            text = if (userProfile?.userName?.isNotBlank() == true) userProfile!!.userName else "Ashwath Trader",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (userProfile?.userName?.isNotBlank() == true) userProfile!!.userName else "Ashwath Trader",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(onClick = { showEditProfileDialog = true }, modifier = Modifier.size(20.dp)) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit Profile", tint = BrandViolet, modifier = Modifier.size(14.dp))
+                            }
+                        }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = if (userProfile?.userEmail?.isNotBlank() == true) userProfile!!.userEmail else "ashwath@ashwathai.com",
@@ -150,10 +157,18 @@ fun ProfileScreen(
                             fontSize = 12.sp
                         )
                         Text(
-                            text = "+91 98765 43210",
+                            text = userProfile?.phoneNumber?.ifBlank { "+91 98765 43210" } ?: "+91 98765 43210",
                             color = TextSubtle,
                             fontSize = 12.sp
                         )
+                        userProfile?.userUniqueId?.let {
+                            Text(
+                                text = "ID: $it",
+                                color = BrandViolet.copy(alpha = 0.7f),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
@@ -435,7 +450,8 @@ fun ProfileScreen(
                                                     adLoadFailedMessage = err
                                                 },
                                                 onUserEarnedReward = {
-                                                    viewModel.earnBrokerageCredits(100)
+                                                    viewModel.earnBrokerageCredits(20)
+                                                    viewModel.showFeedback("Reward Claimed: +20 Brokerage Credits!")
                                                 }
                                             )
                                         } else {
@@ -462,7 +478,7 @@ fun ProfileScreen(
                                 Column {
                                     Text("Brokerage Shield Recharge", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text(
-                                        text = if (stats.isPremium) "Unlimited waivers active" else "Claim +100 Credits (${stats.brokerageCredits} active)",
+                                        text = if (stats.isPremium) "Unlimited waivers active" else "Claim +20 Credits (${stats.brokerageCredits} active)",
                                         color = TextMuted,
                                         fontSize = 10.sp
                                     )
@@ -1456,7 +1472,57 @@ fun ProfileScreen(
             }
             activeAdRewardType = null
         }
-    } else if (adLoadFailedMessage != null) {
+    } else    if (showEditProfileDialog) {
+        var editName by remember { mutableStateOf(userProfile?.userName ?: "") }
+        var editEmail by remember { mutableStateOf(userProfile?.userEmail ?: "") }
+        var editPhone by remember { mutableStateOf(userProfile?.phoneNumber ?: "") }
+
+        AlertDialog(
+            onDismissRequest = { showEditProfileDialog = false },
+            title = { Text("Edit Profile", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Name", color = TextMuted) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = BrandViolet, unfocusedBorderColor = DarkBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editEmail,
+                        onValueChange = { editEmail = it },
+                        label = { Text("Email", color = TextMuted) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = BrandViolet, unfocusedBorderColor = DarkBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editPhone,
+                        onValueChange = { editPhone = it },
+                        label = { Text("Phone Number", color = TextMuted) },
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = BrandViolet, unfocusedBorderColor = DarkBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.updateProfile(editName, editEmail, editPhone)
+                    showEditProfileDialog = false
+                }, colors = ButtonDefaults.buttonColors(containerColor = BrandViolet)) {
+                    Text("Save Changes", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditProfileDialog = false }) {
+                    Text("Cancel", color = TextMuted)
+                }
+            },
+            containerColor = DarkSurfaceElevated
+        )
+    }
+
+    if (adLoadFailedMessage != null) {
         AlertDialog(
             onDismissRequest = { adLoadFailedMessage = null },
             title = {

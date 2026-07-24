@@ -1,5 +1,7 @@
 package com.ashwathai.tradelab.ui.common
 
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -206,16 +208,18 @@ fun HeaderBar(
         ) {
             actions()
             
-            if (!BuildConfig.DEBUG) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(avatarGradient)
-                        .border(1.dp, Color(0xFF222222), CircleShape)
-                )
-            }
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // Point 10: Use TradeLab Logo instead of purple circle
+            Image(
+                painter = painterResource(id = com.ashwathai.tradelab.R.drawable.app_logo_premium),
+                contentDescription = "TradeLab Logo",
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, Color(0xFF222222), CircleShape),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
         }
     }
 }

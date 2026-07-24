@@ -151,9 +151,14 @@ fun PortfolioScreen(
                                 onClick = {
                                     coroutineScope.launch {
                                         try {
-                                            val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
-                                            val shareText = "$shareHook \n\nI turned my portfolio into ${formatCurrency(stats.totalValue, stats.currency)} on Trade Lab! 🔥"
-                                            ShareUtils.shareImage(context, bitmap, shareText)
+                                            // Point 11: Ensure layer is captured with size
+                                            if (graphicsLayer.size.width > 0 && graphicsLayer.size.height > 0) {
+                                                val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
+                                                val shareText = "$shareHook \n\nI turned my portfolio into ${formatCurrency(stats.totalValue, stats.currency)} on Trade Lab! 🔥"
+                                                ShareUtils.shareImage(context, bitmap, shareText)
+                                            } else {
+                                                viewModel.showFeedback("Snapshot ready. Please try sharing again.")
+                                            }
                                         } catch (e: Exception) {
                                             e.printStackTrace()
                                             viewModel.showFeedback("Error: ${e.message}")
@@ -262,7 +267,7 @@ fun PortfolioScreen(
                             if (stats.isPremium) viewModel.showFeedback("Pro Active!")
                             else {
                                 if (stats.shouldShowShieldDialog) showShieldDialog = true
-                                else { isAdLoading = true; mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(50) }) ?: run { isAdLoading = false; isWatchingAd = true } }
+                                else { isAdLoading = true; mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(20) }) ?: run { isAdLoading = false; isWatchingAd = true } }
                             }
                         }.padding(horizontal = 8.dp, vertical = 5.dp)) {
                             Text(if (stats.isPremium) "PRO ⚡" else "Shield Up 📺", color = if (stats.isPremium) AccentYellow else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
@@ -277,7 +282,7 @@ fun PortfolioScreen(
                         onWatchAd = { 
                             showShieldDialog = false
                             isAdLoading = true
-                            mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(50) }) ?: run { isAdLoading = false; isWatchingAd = true }
+                            mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(20) }) ?: run { isAdLoading = false; isWatchingAd = true }
                         },
                         onDoNotShowAgain = { viewModel.setShouldShowShieldDialog(false) }
                     )
@@ -286,9 +291,13 @@ fun PortfolioScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Sub-Tabs
+            // Sub-Tabs (Point 7 & 12)
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).clip(RoundedCornerShape(12.dp)).background(DarkSurface).padding(4.dp)) {
-                listOf("Holdings" to "Holdings (${holdings.size})", "Positions" to "Trades (${transactions.size})").forEach { (tabId, tabTitle) ->
+                listOf(
+                    "Holdings" to "Holdings (${holdings.filter { it.shares > 0 }.size})", 
+                    "Positions" to "Positions (${holdings.filter { it.sharesT1 > 0 }.size})",
+                    "Pending" to "Pending"
+                ).forEach { (tabId, tabTitle) ->
                     val isSel = activeSubTab == tabId
                     Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(if (isSel) BrandViolet.copy(alpha = 0.15f) else Color.Transparent).clickable { activeSubTab = tabId }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                         Text(tabTitle, color = if (isSel) BrandViolet else Color.White.copy(alpha = 0.5f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -300,10 +309,10 @@ fun PortfolioScreen(
 
             // Lists
             Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                if (activeSubTab == "Holdings") {
-                    HoldingsList(holdings, stockPrices, stats, onTickerClick, viewModel)
-                } else {
-                    TransactionsList(transactions, stockPrices, stats, onTickerClick)
+                when (activeSubTab) {
+                    "Holdings" -> HoldingsList(holdings.filter { it.shares > 0 }, stockPrices, stats, onTickerClick, viewModel)
+                    "Positions" -> PositionsList(holdings.filter { it.sharesT1 > 0 }, transactions, stockPrices, stats, onTickerClick, viewModel)
+                    "Pending" -> PendingOrdersList(viewModel)
                 }
             }
 
@@ -560,6 +569,94 @@ fun OptionHoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: Po
     }
 }
 
+@Composable
+fun PositionsList(t1Holdings: List<Holding>, transactions: List<Transaction>, stockPrices: List<StockPrice>, stats: PortfolioStats, onTickerClick: (String) -> Unit, viewModel: TradingViewModel) {
+    if (t1Holdings.isEmpty()) {
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.Timer, null, tint = TextMuted, modifier = Modifier.size(44.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                Text("No Open Positions (T1)", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("Stocks bought today appear here until T+1 settlement.", color = TextMuted, fontSize = 11.sp)
+            }
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            t1Holdings.forEach { holding ->
+                val liveStock = stockPrices.find { it.symbol == holding.symbol }
+                val currentPrice = liveStock?.currentPrice ?: holding.averagePrice
+                val convertedPrice = viewModel.getConvertedStockPrice(currentPrice, holding.symbol, stats.currency)
+                val pnl = holding.sharesT1 * (convertedPrice - holding.averagePrice)
+                val pnlPct = if (holding.averagePrice > 0) (pnl / (holding.sharesT1 * holding.averagePrice)) * 100.0 else 0.0
+
+                Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(DarkSurface).border(1.dp, BrandViolet.copy(alpha = 0.3f), RoundedCornerShape(16.dp)).clickable { onTickerClick(holding.symbol) }.padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(BrandViolet.copy(alpha = 0.15f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                                Text("T1", color = BrandViolet, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(holding.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Text("${holding.sharesT1.toInt()} shares @ ${formatCurrency(holding.averagePrice, stats.currency)}", color = TextMuted, fontSize = 10.sp)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(formatCurrency(holding.sharesT1 * convertedPrice, stats.currency), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        val isUp = pnl >= 0
+                        Text("${if (isUp) "+" else ""}${String.format(Locale.US, "%.2f", pnlPct)}%", color = if (isUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PendingOrdersList(viewModel: TradingViewModel) {
+    val pendingOrders by viewModel.activePendingOrders.collectAsStateWithLifecycle()
+    val stats by viewModel.portfolioStats.collectAsStateWithLifecycle()
+
+    if (pendingOrders.isEmpty()) {
+        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.HourglassEmpty, null, tint = TextMuted, modifier = Modifier.size(44.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                Text("No Pending Orders", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("Active Limit and GTT orders will appear here.", color = TextMuted, fontSize = 11.sp)
+            }
+        }
+    } else {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            pendingOrders.forEach { order ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    border = BorderStroke(1.dp, DarkBorder)
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(if (order.type == "BUY") AccentGreen.copy(alpha = 0.1f) else AccentRose.copy(alpha = 0.1f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                                    Text(order.type, color = if (order.type == "BUY") AccentGreen else AccentRose, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(order.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(order.orderType, color = BrandViolet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("${order.shares.toInt()} shares @ ${formatCurrency(order.triggerPrice, stats.currency)}", color = TextSecondary, fontSize = 11.sp)
+                        }
+                        IconButton(onClick = { viewModel.deletePendingOrder(order.id) }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Delete, contentDescription = "Cancel", tint = AccentRose.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 fun TransactionsList(transactions: List<Transaction>, stockPrices: List<StockPrice>, stats: PortfolioStats, onTickerClick: (String) -> Unit) {
     if (transactions.isEmpty()) {

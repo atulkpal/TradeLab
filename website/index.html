@@ -4,6 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trade Lab — Sophisticated Paper Trading Simulator</title>
+    <meta name="description" content="Trade Lab is a realistic, offline-first paper trading simulator for beginners. Learn risk management, position sizing, and market mechanics with virtual capital.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tradelab.ashwathai.com/">
+    <meta property="og:title" content="Trade Lab — Sophisticated Paper Trading Simulator">
+    <meta property="og:description" content="Master the markets without the risk. A professional-grade paper trading experience designed for disciplined investors.">
+    <meta property="og:image" content="https://tradelab.ashwathai.com/assets/og-preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://tradelab.ashwathai.com/">
+    <meta property="twitter:title" content="Trade Lab — Sophisticated Paper Trading Simulator">
+    <meta property="twitter:description" content="Master the markets without the risk. A professional-grade paper trading experience designed for disciplined investors.">
+    <meta property="twitter:image" content="https://tradelab.ashwathai.com/assets/og-preview.png">
+
+    <!-- Theme & Icons -->
+    <meta name="theme-color" content="#090D16">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tradelab.ashwathai.com/">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -16,21 +38,23 @@
 <body class="bg-[#090D16] text-slate-100 font-['Plus_Jakarta_Sans'] h-screen overflow-hidden flex flex-col antialiased">
 
     <!-- Top Header Bar -->
-    <header class="border-b border-slate-800/80 bg-[#0D1527]/60 backdrop-blur-md px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-none">
+    <header class="border-b border-slate-800/80 bg-[#0D1527]/60 backdrop-blur-md px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 flex-none" role="banner">
         <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                <span class="font-['Space_Grotesk'] font-bold text-lg text-white">TL</span>
-            </div>
-            <div>
-                <h1 class="font-['Space_Grotesk'] font-bold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">Trade Lab</h1>
-                <p class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">BY ASHWATH AI</p>
-            </div>
+            <a href="index.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity" aria-label="Trade Lab Home">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <span class="font-['Space_Grotesk'] font-bold text-lg text-white">TL</span>
+                </div>
+                <div>
+                    <h1 class="font-['Space_Grotesk'] font-bold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">Trade Lab</h1>
+                    <p class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">BY ASHWATH AI</p>
+                </div>
+            </a>
         </div>
         
         <!-- Live status and Global Controls -->
         <div class="flex flex-wrap items-center gap-4 text-xs">
             <!-- Android Download CTA -->
-            <a href="https://play.google.com/store/apps/details?id=com.ashwathai.tradelab" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-cyan-500/20">
+            <a href="https://play.google.com/store/apps/details?id=com.ashwathai.tradelab" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-cyan-500/20" aria-label="Download Trade Lab on Google Play">
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.303l3.49-2.015c.655-.378.655-.998 0-1.377l-3.49-2.015L14.53 12l2.993 3.303zM3.415 2.11l10.026 10.027-2.735 2.735L3.415 2.11zm10.026 10.027L3.415 21.89l7.291-7.291 2.735-2.735zm1.141 1.141l3.058 3.058-2.656 1.534-3.058-3.058 2.656-1.534zM14.582 9.418L3.415 2.11l11.167 7.308zm0 5.164l-11.167 7.308 11.167-7.308z"/></svg>
                 <span>Download App</span>
             </a>
@@ -56,25 +80,25 @@
     <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
         
         <!-- Navigation Rail (Sidebar) -->
-        <nav class="w-full md:w-64 border-r border-slate-800/80 bg-[#0D1527]/30 p-4 flex flex-row md:flex-col gap-2 overflow-x-auto flex-none">
-            <button data-tab="portfolio" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        <nav class="w-full md:w-64 border-r border-slate-800/80 bg-[#0D1527]/30 p-4 flex flex-row md:flex-col gap-2 overflow-x-auto flex-none" aria-label="Main Navigation">
+            <button data-tab="portfolio" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" aria-label="Portfolio Desk Tab">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                 <span class="hidden md:inline">Portfolio Desk</span>
             </button>
-            <button data-tab="watchlist" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+            <button data-tab="watchlist" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200" aria-label="Watchlist Desk Tab">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
                 <span class="hidden md:inline">Watchlist Desk</span>
             </button>
-            <button data-tab="academy" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            <button data-tab="academy" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200" aria-label="Academy Hub Tab">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 <span class="hidden md:inline">Academy Hub</span>
             </button>
-            <button data-tab="profile" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <button data-tab="profile" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-slate-400 hover:bg-slate-800/40 hover:text-slate-200" aria-label="Investor Profile Tab">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                 <span class="hidden md:inline">Investor Profile</span>
             </button>
-            <button data-tab="ai-hub" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-indigo-400 hover:bg-indigo-950/20 border border-transparent hover:border-indigo-500/20">
-                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <button data-tab="ai-hub" class="tab-btn flex-1 md:flex-none flex items-center justify-center md:justify-start gap-3 px-4 py-3 rounded-xl font-medium transition-all text-sm text-indigo-400 hover:bg-indigo-950/20 border border-transparent hover:border-indigo-500/20" aria-label="Gemini AI Audit Tab">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 <span class="hidden md:inline">Gemini AI Audit</span>
             </button>
 
@@ -513,6 +537,24 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Global Footer -->
+            <footer class="mt-12 pt-8 border-t border-slate-800/50 pb-8 text-center md:text-left">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="space-y-1">
+                        <p class="text-xs text-slate-500 font-medium">Copyright © 2026 Ashwath AI. All rights reserved.</p>
+                        <p class="text-[10px] text-slate-600 uppercase tracking-widest font-bold">Trade Lab Simulator v1.2.0</p>
+                    </div>
+                    <div class="flex flex-wrap justify-center gap-6 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        <a href="index.html" class="hover:text-cyan-400 transition-colors">Home</a>
+                        <a href="privacy.html" class="hover:text-cyan-400 transition-colors">Privacy Policy</a>
+                        <a href="terms.html" class="hover:text-cyan-400 transition-colors">Terms of Service</a>
+                        <a href="delete-account.html" class="hover:text-cyan-400 transition-colors">Delete Account</a>
+                        <a href="mailto:ashwathai.dev@gmail.com" class="hover:text-cyan-400 transition-colors">Contact Support</a>
+                    </div>
+                </div>
+                <p class="mt-6 text-[10px] text-slate-600 leading-relaxed max-w-2xl mx-auto md:mx-0">Disclaimer: Trade Lab is a paper trading simulator intended for educational purposes only. No real money is involved, and it does not provide financial or investment advice.</p>
+            </footer>
         </main>
     </div>
 

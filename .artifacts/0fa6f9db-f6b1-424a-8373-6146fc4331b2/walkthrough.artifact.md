@@ -13,12 +13,18 @@ The version has been bumped, documentation updated, and all release artifacts ha
 ### 📖 Documentation Update
 - **[MODIFY] [CHANGELOG.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/CHANGELOG.md)**: Added entry for `1.2.0` documenting Epic 16 accomplishments (Sharing hooks, Professional toggles, T+1 refinements).
 - **[MODIFY] [RELEASES.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/RELEASES.md)**: Added release ledger entry for version `1.2.0` Build 4.
+- **[MODIFY] [AGENTS.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/AGENTS.md)**: Updated the "What Has Been Done" section and project status to reflect the completion of the pre-launch polish.
 
 ### 📦 Build Artifacts Created
 The following artifacts were built and are ready in their respective directories:
 - **Debug APK**: `app/build/outputs/apk/debug/app-debug.apk`
 - **Release APK**: `app/build/outputs/apk/release/app-release.apk`
 - **App Bundle**: `app/build/outputs/bundle/release/app-release.aab`
+
+### 🛠️ Version Control & Release
+- **Commit**: All changes for `v1.2.0` have been committed with a descriptive message.
+- **Push**: Changes pushed to the main branch.
+- **Tag**: Created and pushed tag `v1.2.0` to the remote repository.
 
 ## Verification Results
 

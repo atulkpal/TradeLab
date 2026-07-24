@@ -240,16 +240,25 @@ class TradingViewModel @Inject constructor(
         for (holding in activeHoldings) {
             val liveStock = prices.find { it.symbol == holding.symbol }
             val livePrice = liveStock?.currentPrice ?: holding.averagePrice
+            val prevClose = liveStock?.previousClose ?: livePrice
+            
             val totalShares = holding.shares + holding.sharesT1
             val convertedLivePrice = getConvertedStockPrice(livePrice, holding.symbol, profile.currency)
+            val convertedPrevClose = getConvertedStockPrice(prevClose, holding.symbol, profile.currency)
+            val convertedAvgPrice = getConvertedStockPrice(holding.averagePrice, holding.symbol, profile.currency)
             
             holdingsValue += (totalShares * convertedLivePrice)
             totalCostBasis += (totalShares * holding.averagePrice)
             
-            // Today's P&L calculation (based on daily change of current price vs previous close)
-            val changePct = (liveStock?.dailyChangePct ?: 0.0) / 100.0
-            val currentVal = totalShares * convertedLivePrice
-            todayPnL += (currentVal * changePct)
+            // Refined Today's P&L calculation (Point 13)
+            // 1. Settled Shares P&L = shares * (Live - Prev Close)
+            val settledPnL = holding.shares * (convertedLivePrice - convertedPrevClose)
+            
+            // 2. T1 Shares P&L = sharesT1 * (Live - Avg Purchase Price)
+            // This prevents mid-day buys from inheriting the whole day's P&L jump
+            val t1PnL = holding.sharesT1 * (convertedLivePrice - convertedAvgPrice)
+            
+            todayPnL += (settledPnL + t1PnL)
         }
 
         val totalValue = profile.cash + holdingsValue
@@ -257,7 +266,7 @@ class TradingViewModel @Inject constructor(
         val profitLossPct = if (profile.startingCash > 0) (totalProfitLoss / profile.startingCash) * 100.0 else 0.0
         val openProfitLoss = holdingsValue - totalCostBasis
         
-        // Today's percentage is relative to total value at start of day (estimated)
+        // Today's percentage is relative to total value at start of day
         val valueAtStartOfDay = totalValue - todayPnL
         val todayPnLPct = if (valueAtStartOfDay > 0) (todayPnL / valueAtStartOfDay) * 100.0 else 0.0
 
@@ -284,6 +293,9 @@ class TradingViewModel @Inject constructor(
             shouldShowShieldDialog = profile.shouldShowShieldDialog
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PortfolioStats())
+
+    private val _systemNotificationFlow = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val systemNotificationFlow: SharedFlow<String> = _systemNotificationFlow.asSharedFlow()
 
     init {
         // Synchronize repository mode state with ViewModel state
@@ -345,6 +357,7 @@ class TradingViewModel @Inject constructor(
                 // 9:15 AM Market Open
                 if (hour == 9 && minute == 15 && !marketOpenAlertSent) {
                     repository.addNotification("🔔 Market is OPEN! NSE/BSE active. Happy trading!")
+                    _systemNotificationFlow.tryEmit("🔔 Market is OPEN! NSE/BSE active. Happy trading!")
                     marketOpenAlertSent = true
                 } else if (hour != 9) {
                     marketOpenAlertSent = false
@@ -353,6 +366,7 @@ class TradingViewModel @Inject constructor(
                 // 3:30 PM Market Close
                 if (hour == 15 && minute == 30 && !marketCloseAlertSent) {
                     repository.addNotification("😴 Market is CLOSED. NSE/BSE session ended.")
+                    _systemNotificationFlow.tryEmit("😴 Market is CLOSED. NSE/BSE session ended.")
                     marketCloseAlertSent = true
                 } else if (hour != 15) {
                     marketCloseAlertSent = false
@@ -907,21 +921,28 @@ class TradingViewModel @Inject constructor(
         _showPaywall.value = true
     }
 
-    fun simulateRegister(name: String, email: String) {
+    fun simulateRegister(name: String, email: String, phone: String = "") {
         viewModelScope.launch {
-            repository.registerOrLogin(name, email)
+            repository.registerOrLogin(name, email, phone)
             _showRegistrationGate.value = false
             _hasDismissedAuthScreen.value = true
             showFeedback("Welcome, $name! Trial limits unlocked.")
         }
     }
 
-    fun registerOrLogin(name: String, email: String) {
+    fun registerOrLogin(name: String, email: String, phone: String = "") {
         viewModelScope.launch {
-            repository.registerOrLogin(name, email)
+            repository.registerOrLogin(name, email, phone)
             _showRegistrationGate.value = false
             _hasDismissedAuthScreen.value = true
             showFeedback("Welcome to TradeLab, $name!")
+        }
+    }
+
+    fun updateProfile(name: String, email: String, phone: String) {
+        viewModelScope.launch {
+            repository.updateUserProfile(name, email, phone)
+            showFeedback("Profile updated successfully!")
         }
     }
 
