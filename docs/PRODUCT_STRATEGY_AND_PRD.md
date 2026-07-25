@@ -68,8 +68,10 @@ The MVP has been fully designed and integrated into the current Android applicat
 - [x] **Historical Performance Metrics:** Display transaction history logs with detailed metrics showing daily/weekly wins and losses.
 - [x] **Offline On-Demand Ads Monetization:** Configured AdMob rewarded-ad "Watch-to-Earn" flows (+100 brokerage credits, emergency recharges, unlocking technical overlays).
 
-### Phase 3: AI Integration & Long-Term Roadmap (Completed V2)
+### Phase 3: AI Integration & Long-Term Roadmap (Status: ACTIVE)
 - [x] **Serverless Gemini API Strategy Advisor:** Generate personalized AI portfolio diagnostics, scanning the user's trading history to point out behavioral pitfalls (e.g., holding onto losing trades too long).
+- [x] **Institutional Visualization (Track A):** Native technical analysis suite with dedicated chart terminals, interactive zoom/pan, and unified OHLCV history for all indices and assets.
+- [x] **Institutional Order Management (Track B):** Advanced risk management tools including Trailing Stop-Loss, Bracket Orders (OCO), and 5x Intraday leverage with auto-liquidation.
 - [ ] **Multi-Platform Native Core Sync:** Enable secondary secure cloud sync to view portfolios from a web browser while keeping data private (Currently in active development with KMP Core Migration).
 
 ---

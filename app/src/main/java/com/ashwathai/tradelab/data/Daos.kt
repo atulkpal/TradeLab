@@ -32,8 +32,11 @@ interface HoldingDao {
     @Query("SELECT * FROM holdings")
     suspend fun getAllHoldings(): List<Holding>
 
-    @Query("SELECT * FROM holdings WHERE symbol = :symbol LIMIT 1")
-    suspend fun getHoldingBySymbol(symbol: String): Holding?
+    @Query("SELECT * FROM holdings WHERE symbol = :symbol")
+    suspend fun getHoldingsBySymbol(symbol: String): List<Holding>
+
+    @Query("SELECT * FROM holdings WHERE symbol = :symbol AND isDelivery = :isDelivery LIMIT 1")
+    suspend fun getHolding(symbol: String, isDelivery: Boolean): Holding?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHolding(holding: Holding)
@@ -41,8 +44,11 @@ interface HoldingDao {
     @Delete
     suspend fun deleteHolding(holding: Holding)
 
+    @Query("DELETE FROM holdings WHERE symbol = :symbol AND isDelivery = :isDelivery")
+    suspend fun deleteHolding(symbol: String, isDelivery: Boolean)
+
     @Query("DELETE FROM holdings WHERE symbol = :symbol")
-    suspend fun deleteHoldingBySymbol(symbol: String)
+    suspend fun deleteHoldingsBySymbol(symbol: String)
 }
 
 @Dao
@@ -51,7 +57,7 @@ interface TransactionDao {
     fun getAllTransactionsFlow(): Flow<List<Transaction>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTransaction(transaction: Transaction)
+    suspend fun insertTransaction(transaction: Transaction): Long
 }
 
 @Dao
@@ -130,6 +136,9 @@ interface PendingOrderDao {
 
     @Query("DELETE FROM pending_orders WHERE id = :id")
     suspend fun deletePendingOrder(id: Int)
+
+    @Query("UPDATE pending_orders SET triggerPrice = :triggerPrice, trailingBaselinePrice = :baselinePrice WHERE id = :id")
+    suspend fun updateTrailingOrder(id: Int, triggerPrice: Double, baselinePrice: Double)
 }
 
 @Dao
@@ -172,4 +181,16 @@ interface AccountSnapshotDao {
 
     @Query("DELETE FROM account_snapshots WHERE timestamp < :expiryTimestamp")
     suspend fun deleteOldSnapshots(expiryTimestamp: Long)
+}
+
+@Dao
+interface LedgerDao {
+    @Query("SELECT * FROM ledger_entries ORDER BY timestamp DESC")
+    fun getAllLedgerEntriesFlow(): Flow<List<LedgerEntry>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertLedgerEntry(entry: LedgerEntry)
+
+    @Query("DELETE FROM ledger_entries")
+    suspend fun deleteAll()
 }

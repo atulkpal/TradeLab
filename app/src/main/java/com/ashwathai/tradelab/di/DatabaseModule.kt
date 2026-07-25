@@ -42,4 +42,7 @@ object DatabaseModule {
 
     @Provides
     fun provideAppNotificationDao(database: AppDatabase) = database.appNotificationDao()
+
+    @Provides
+    fun provideLedgerDao(database: AppDatabase) = database.ledgerDao()
 }

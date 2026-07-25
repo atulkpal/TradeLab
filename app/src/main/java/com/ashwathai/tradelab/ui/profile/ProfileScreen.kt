@@ -314,6 +314,129 @@ fun ProfileScreen(
             }
         }
 
+        // 2.1 Discipline Score & Maturity Meter
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .testTag("profile_discipline_card"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = BorderStroke(1.dp, if (stats.disciplineScore >= 80) AccentGreen.copy(alpha = 0.3f) else BrandViolet.copy(alpha = 0.2f))
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "INVESTOR MATURITY",
+                            color = BrandViolet,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Discipline Score: ${stats.disciplineScore}/100",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { viewModel.shareDisciplineChallenge() },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(BrandViolet.copy(alpha = 0.1f))
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = "Share Score", tint = BrandViolet, modifier = Modifier.size(16.dp))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val scoreColor = when {
+                            stats.disciplineScore >= 85 -> AccentGreen
+                            stats.disciplineScore >= 70 -> AccentYellow
+                            else -> AccentRose
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(scoreColor.copy(alpha = 0.1f))
+                                .border(1.dp, scoreColor.copy(alpha = 0.3f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = when {
+                                    stats.disciplineScore >= 85 -> "A+"
+                                    stats.disciplineScore >= 70 -> "B"
+                                    else -> "C"
+                                },
+                                color = scoreColor,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                LinearProgressIndicator(
+                    progress = { stats.disciplineScore / 100f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(5.dp)),
+                    color = when {
+                        stats.disciplineScore >= 85 -> AccentGreen
+                        stats.disciplineScore >= 70 -> AccentYellow
+                        else -> AccentRose
+                    },
+                    trackColor = Color.White.copy(alpha = 0.05f)
+                )
+                
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Quantified behavior monitoring: High scores reflect disciplined position sizing (max 12%), portfolio diversification, and long-term holding times.",
+                    color = TextMuted,
+                    fontSize = 10.sp,
+                    lineHeight = 14.sp
+                )
+                
+                if (stats.activeBadges.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "DISCIPLINE BADGES",
+                        color = TextSubtle,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(stats.activeBadges.split(",")) { badge ->
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(BrandViolet.copy(alpha = 0.1f))
+                                    .border(1.dp, BrandViolet.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(badge, color = BrandViolet, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // 2.5 sponsor video / monetization terminal
         Card(
             modifier = Modifier
@@ -617,6 +740,77 @@ fun ProfileScreen(
                                 Column {
                                     Text("Premium Indicators Unlock", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text(expiryLabel, color = if (indUnl) AccentGreen else TextMuted, fontSize = 10.sp)
+                                }
+                            }
+                            Text(
+                                text = if (stats.isPremium) "PRO ACTIVE ⚡" else "FREE 📺",
+                                color = if (stats.isPremium) AccentYellow else BrandViolet,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+
+                        // Reward 5: Intraday Session Pass unlock
+                        val levUnl = stats.isPremium || (userProfile?.leverageUnlockedUntil ?: 0L) > System.currentTimeMillis()
+                        val levExpiryLabel = if (stats.isPremium) {
+                            "✓ PRO ACTIVE: Intraday Suite unlocked."
+                        } else if (levUnl) {
+                            val expiry = userProfile?.leverageUnlockedUntil ?: 0L
+                            val sdf = java.text.SimpleDateFormat("MMM dd, hh:mm a", java.util.Locale.getDefault())
+                            sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
+                            "ACTIVE until ${sdf.format(java.util.Date(expiry))}"
+                        } else {
+                            "Locked (1 ad = 1 session of 5x MIS trading)"
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.02f))
+                                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                .clickable {
+                                    if (stats.isPremium) {
+                                        viewModel.showFeedback("Pro Active: Intraday Suite is permanently unlocked!")
+                                    } else {
+                                        isAdLoading = true
+                                        adLoadFailedMessage = null
+                                        adFailedType = "LEVERAGE"
+                                        if (mainActivity != null) {
+                                            mainActivity.loadAndShowRewardedAd(
+                                                adType = MainActivity.AdType.PROFILE_LEVERAGE,
+                                                onAdLoaded = { isAdLoading = false },
+                                                onAdFailed = { err ->
+                                                    isAdLoading = false
+                                                    adLoadFailedMessage = err
+                                                },
+                                                onUserEarnedReward = {
+                                                    viewModel.unlockIntradaySession()
+                                                }
+                                            )
+                                        } else {
+                                            isAdLoading = false
+                                            activeAdRewardType = "LEVERAGE"
+                                        }
+                                    }
+                                }
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(BrandViolet.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Bolt, contentDescription = "Intraday Pass", tint = BrandViolet, modifier = Modifier.size(20.dp))
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text("Intraday Session Pass", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(levExpiryLabel, color = if (levUnl) AccentGreen else TextMuted, fontSize = 10.sp)
                                 }
                             }
                             Text(
@@ -1076,7 +1270,7 @@ fun ProfileScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = if (pGoal == "Learning") "Student Investor Profile" else "High-Roller Speculator Profile",
+                                    text = if (pGoal == "Learning") "Retail Practitioner Profile" else "High-Roller Speculator Profile",
                                     color = Color.White,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
@@ -1468,6 +1662,7 @@ fun ProfileScreen(
                     "SHIELD" -> viewModel.earnBrokerageCredits(100)
                     "AI" -> viewModel.earnAiAuditCredit()
                     "INDICATORS" -> viewModel.unlockPremiumIndicators(24)
+                    "LEVERAGE" -> viewModel.unlockIntradaySession()
                 }
             }
             activeAdRewardType = null

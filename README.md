@@ -1,6 +1,6 @@
 # Trade Lab 📈
 
-**Trade Lab** is a realistic, offline-first paper trading simulator designed specifically for beginners and young investors (16–18 years old). It is designed to teach disciplined position sizing, risk management, and market mechanics using virtual budgets denominated in Indian Rupees (₹) and US Dollars ($).
+**Trade Lab** is a realistic, offline-first paper trading simulator designed specifically for beginners and retail practitioners (16–35+ years old). It is designed to teach disciplined position sizing, risk management, and market mechanics using virtual budgets denominated in Indian Rupees (₹) and US Dollars ($).
 
 Unlike traditional trading simulators that encourage reckless "fantasy high-roller" behaviors with millions of mock dollars, Trade Lab instills real-world investing habits by starting users with realistic budgets (e.g., ₹10,000) and enforcing strict transactional boundaries.
 

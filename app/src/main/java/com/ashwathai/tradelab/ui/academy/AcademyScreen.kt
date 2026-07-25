@@ -434,6 +434,7 @@ fun AcademyScreen(
             }
         } else if (activeSubTab == "Leaderboard") {
             val globalLeaders by viewModel.globalLeaderboard.collectAsStateWithLifecycle()
+            val sortMode by viewModel.leaderboardSortMode.collectAsStateWithLifecycle()
             val completedSet = remember(stats.completedLevels) {
                 stats.completedLevels.split(",").filter { it.isNotBlank() }.toSet()
             }
@@ -475,7 +476,7 @@ fun AcademyScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Compete with other realistic practitioners.",
+                                text = "Sorted by $sortMode",
                                 color = TextSubtle,
                                 fontSize = 11.sp
                             )
@@ -483,11 +484,74 @@ fun AcademyScreen(
                     }
                 }
 
+                // Sort Toggle
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(DarkSurfaceElevated)
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    listOf("XP", "Discipline").forEach { mode ->
+                        val isSelected = sortMode == mode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) BrandViolet else Color.Transparent)
+                                .clickable { viewModel.setLeaderboardSort(mode) }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (mode == "XP") "Wealth (XP)" else "Maturity (Score)",
+                                color = if (isSelected) Color.White else TextSubtle,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Invite Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .clickable { viewModel.shareAppInvite() },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = BrandViolet.copy(alpha = 0.1f)),
+                    border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(BrandViolet),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.GroupAdd, contentDescription = "Invite", tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Challenge a Friend", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("Invite fellow traders to the arena.", color = TextSubtle, fontSize = 11.sp)
+                        }
+                        Icon(Icons.Default.ChevronRight, contentDescription = "Go", tint = BrandViolet)
+                    }
+                }
+
                 // If global leaders are empty, show local placeholder for better UX
                 val displayLeaders = if (globalLeaders.isEmpty()) {
                     listOf(
-                        LeaderboardEntry("bot", "👑 TradeLab Bot", 50000, 1000000.0, "Rank #1"),
-                        LeaderboardEntry("you", "You (Trader)", userScore, stats.totalValue, "Rank #2")
+                        LeaderboardEntry("bot", "👑 TradeLab Bot", 50000, 1000000.0, 95, "Rank #1"),
+                        LeaderboardEntry("you", "You (Trader)", userScore, stats.totalValue, stats.disciplineScore, "Rank #2")
                     )
                 } else {
                     globalLeaders
@@ -524,12 +588,22 @@ fun AcademyScreen(
                                     modifier = Modifier.width(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = leader.userName,
-                                    color = if (isUser) BrandViolet else if (isKing) AccentYellow else Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Column {
+                                    Text(
+                                        text = leader.userName,
+                                        color = if (isUser) BrandViolet else if (isKing) AccentYellow else Color.White,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (leader.disciplineScore > 0) {
+                                        Text(
+                                            text = "Discipline: ${leader.disciplineScore}/100",
+                                            color = if (leader.disciplineScore >= 80) AccentGreen else TextSubtle,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(

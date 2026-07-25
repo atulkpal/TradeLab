@@ -23,7 +23,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,13 +36,14 @@ import com.ashwathai.tradelab.ui.common.*
 import com.ashwathai.tradelab.ui.charts.*
 import java.util.Locale
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 
 @Composable
 fun WatchlistScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
     latestNews: List<MarketNews>,
-    onTickerClick: (String) -> Unit
+    onTickerClick: (String, Boolean, Boolean) -> Unit
 ) {
     val watchlistItems by viewModel.selectedWatchlistItems.collectAsStateWithLifecycle()
     val watchlistNames by viewModel.watchlistNames.collectAsStateWithLifecycle()
@@ -342,7 +342,9 @@ fun WatchlistScreen(
                             currency = stats.currency,
                             isCompact = isCompactMode,
                             onRemoveClick = { viewModel.toggleWatchlistV2(s.symbol) },
-                            onClick = { onTickerClick(s.symbol) }
+                            onAction = { isBuy -> onTickerClick(s.symbol, isBuy, false) },
+                            onClick = { onTickerClick(s.symbol, true, true) },
+                            onChartClick = { viewModel.navigateToChart(s.symbol) }
                         )
                     }
                 }
@@ -534,36 +536,104 @@ fun WatchlistStockRow(
     currency: String, 
     isCompact: Boolean = false,
     onRemoveClick: (() -> Unit)? = null,
-    onClick: () -> Unit
+    onAction: (Boolean) -> Unit, // Boolean: isBuy
+    onClick: () -> Unit,
+    onChartClick: () -> Unit
 ) {
     val isPositive = stock.dailyChangePct >= 0
     val trendColor = if (isPositive) AccentGreen else AccentRose
     val rowPadding = if (isCompact) 8.dp else 12.dp
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = if (isCompact) 1.dp else 4.dp).clip(RoundedCornerShape(12.dp)).background(DarkSurfaceElevated).border(1.dp, DarkBorderElevated, RoundedCornerShape(12.dp)).clickable { onClick() }.padding(rowPadding),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    var offsetX by remember { mutableStateOf(0f) }
+    val scope = rememberCoroutineScope()
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                when {
+                    offsetX > 50f -> AccentGreen.copy(alpha = 0.2f)
+                    offsetX < -50f -> AccentRose.copy(alpha = 0.2f)
+                    else -> DarkSurfaceElevated
+                }
+            )
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1.5f)) {
-            Box(modifier = Modifier.size(if (isCompact) 28.dp else 34.dp).clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = 0.05f)), contentAlignment = Alignment.Center) {
-                Text(text = stock.symbol.take(4), color = Color.White, fontSize = if (isCompact) 8.sp else 10.sp, fontWeight = FontWeight.Bold)
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-            Column {
-                Text(text = stock.symbol, color = Color.White, fontSize = if (isCompact) 12.sp else 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (!isCompact) {
-                    Text(text = stock.companyName, color = TextMuted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // Background Labels
+        if (offsetX > 50f) {
+            Text(
+                "BUY",
+                color = AccentGreen,
+                fontWeight = FontWeight.Black,
+                fontSize = 12.sp,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 20.dp)
+            )
+        } else if (offsetX < -50f) {
+            Text(
+                "SELL",
+                color = AccentRose,
+                fontWeight = FontWeight.Black,
+                fontSize = 12.sp,
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 20.dp)
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .offset(x = offsetX.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(DarkSurfaceElevated)
+                .border(1.dp, DarkBorderElevated, RoundedCornerShape(12.dp))
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { change, dragAmount ->
+                            offsetX += dragAmount / 2
+                            change.consume()
+                        },
+                        onDragEnd = {
+                            if (offsetX > 100f) {
+                                onAction(true)
+                            } else if (offsetX < -100f) {
+                                onAction(false)
+                            }
+                            offsetX = 0f
+                        },
+                        onDragCancel = { offsetX = 0f }
+                    )
+                }
+                .clickable { onClick() }
+                .padding(rowPadding),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1.5f)) {
+                Box(modifier = Modifier.size(if (isCompact) 28.dp else 34.dp).clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = 0.05f)), contentAlignment = Alignment.Center) {
+                    Text(text = stock.symbol.take(4), color = Color.White, fontSize = if (isCompact) 8.sp else 10.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(text = stock.symbol, color = Color.White, fontSize = if (isCompact) 12.sp else 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (!isCompact) {
+                        Text(text = stock.companyName, color = TextMuted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 }
             }
-        }
-        StockLineChart(pricesString = stock.historyData, isPositive = isPositive, modifier = Modifier.width(60.dp).height(20.dp).padding(horizontal = 4.dp))
-        Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
-            Text(text = formatCurrency(stock.currentPrice, currency), color = Color.White, fontSize = if (isCompact) 12.sp else 14.sp, fontWeight = FontWeight.Bold)
-            Text(text = "${if (isPositive) "+" else ""}${String.format(Locale.US, "%.2f", stock.dailyChangePct)}%", color = trendColor, fontSize = if (isCompact) 9.sp else 11.sp, fontWeight = FontWeight.Bold)
-        }
-        if (onRemoveClick != null) {
-            IconButton(onClick = onRemoveClick, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, null, tint = TextMuted, modifier = Modifier.size(12.dp)) }
+            
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                StockLineChart(pricesString = stock.historyData, isPositive = isPositive, modifier = Modifier.width(50.dp).height(20.dp).padding(horizontal = 4.dp))
+                IconButton(onClick = onChartClick, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.AutoGraph, null, tint = BrandViolet, modifier = Modifier.size(14.dp))
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
+                Text(text = formatCurrency(stock.currentPrice, currency), color = Color.White, fontSize = if (isCompact) 12.sp else 14.sp, fontWeight = FontWeight.Bold)
+                Text(text = "${if (isPositive) "+" else ""}${String.format(Locale.US, "%.2f", stock.dailyChangePct)}%", color = trendColor, fontSize = if (isCompact) 9.sp else 11.sp, fontWeight = FontWeight.Bold)
+            }
+            if (onRemoveClick != null) {
+                IconButton(onClick = onRemoveClick, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, null, tint = TextMuted, modifier = Modifier.size(12.dp)) }
+            }
         }
     }
 }
@@ -573,17 +643,27 @@ fun BuySellBottomSheet(
     stock: StockPrice,
     viewModel: TradingViewModel,
     stats: PortfolioStats,
+    initialIsBuy: Boolean = true,
+    initialIsExpanded: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
-    var isBuy by remember { mutableStateOf(true) }
-    var sharesInput by remember { mutableStateOf("") }
-    var orderType by remember { mutableStateOf("Market") } // "Market", "Limit", "Stop-Loss", "GTT"
-    var isDelivery by remember { mutableStateOf(true) } // CNC vs MIS
-    var customPriceInput by remember { mutableStateOf(String.format(Locale.US, "%.2f", stock.currentPrice)) }
-    var isExpanded by remember { mutableStateOf(false) }
+    var isBuy by remember(stock.symbol) { mutableStateOf(initialIsBuy) }
+    var sharesInput by remember(stock.symbol) { mutableStateOf("") }
+    var orderType by remember(stock.symbol) { mutableStateOf("Market") } // "Market", "Limit", "Stop-Loss", "GTT"
+    var isDelivery by remember(stock.symbol) { mutableStateOf(true) } // CNC vs MIS
+    var customPriceInput by remember(stock.symbol) { mutableStateOf(String.format(Locale.US, "%.2f", stock.currentPrice)) }
+    var targetPriceInput by remember(stock.symbol) { mutableStateOf("") }
+    var stopLossPriceInput by remember(stock.symbol) { mutableStateOf("") }
+    var isTrailing by remember(stock.symbol) { mutableStateOf(false) }
+    var trailingGapInput by remember(stock.symbol) { mutableStateOf("") }
+    var isBracketOrder by remember(stock.symbol) { mutableStateOf(false) }
+    var isExpanded by remember(stock.symbol) { mutableStateOf(initialIsExpanded) }
     var activeEduTab by remember { mutableStateOf("Market") }
+    var showIntradayUnlockDialog by remember { mutableStateOf(false) }
+    var isAdLoadingInsideSheet by remember { mutableStateOf(false) }
 
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val holdings by viewModel.holdings.collectAsStateWithLifecycle(emptyList())
     val tickerNews by viewModel.getNewsForSymbol(stock.symbol).collectAsStateWithLifecycle(emptyList())
     val currentHolding = holdings.find { it.symbol == stock.symbol }
@@ -594,760 +674,357 @@ fun BuySellBottomSheet(
     val totalOrderValue = shares * price
 
     val scrollState = rememberScrollState()
+    val isLevUnlocked = stats.isPremium || (userProfile?.leverageUnlockedUntil ?: 0L) > System.currentTimeMillis()
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(if (isExpanded) 0.92f else 0.72f) // Extra room for the new product toggle
+            .fillMaxHeight(if (isExpanded) 0.95f else 0.65f)
             .navigationBarsPadding()
             .pointerInput(Unit) {
                 detectVerticalDragGestures { _, dragAmount ->
-                    if (dragAmount > 15f) {
-                        if (isExpanded) {
-                            isExpanded = false
-                        } else {
-                            onDismiss()
-                        }
-                    } else if (dragAmount < -15f) {
-                        isExpanded = true
-                    }
+                    if (dragAmount > 20f) { if (isExpanded) isExpanded = false else onDismiss() }
+                    else if (dragAmount < -20f) isExpanded = true
                 }
             }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) {
-                focusManager.clearFocus()
-            }
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focusManager.clearFocus() }
             .animateContentSize()
             .testTag("buy_sell_bottom_sheet"),
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isBuy) Color(0xFF062319) else Color(0xFF280C11)
-        ),
-        border = BorderStroke(1.5.dp, if (isBuy) AccentGreen.copy(alpha = 0.6f) else AccentRose.copy(alpha = 0.6f))
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isBuy) Color(0xFF0A1F16) else Color(0xFF220A10)),
+        border = BorderStroke(1.dp, (if (isBuy) AccentGreen else AccentRose).copy(alpha = 0.4f))
     ) {
-        Column(
-            modifier = Modifier
-                .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 8.dp)
-                .fillMaxSize()
-        ) {
-            // Sliding handle / expand indicator
-            Box(
-                modifier = Modifier
-                    .width(40.dp)
-                    .height(4.dp)
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
-                    .align(Alignment.CenterHorizontally)
-                    .clickable { isExpanded = !isExpanded }
-            )
-
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp).fillMaxSize()) {
+            // Sliding Handle
+            Box(modifier = Modifier.width(36.dp).height(4.dp).background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(2.dp)).align(Alignment.CenterHorizontally))
+            
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Expand/Collapse Header Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    IconButton(
-                        onClick = { isExpanded = !isExpanded },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                            contentDescription = "Toggle Expand",
-                            tint = Color.White
-                        )
-                    }
-                    Text(
-                        text = if (isExpanded) "Detailed Trade Desk" else "Quick Trade Desk",
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                }
-
-                TextButton(
-                    onClick = onDismiss,
-                    contentPadding = PaddingValues(0.dp),
-                    modifier = Modifier.height(24.dp)
-                ) {
-                    Text("Close", color = TextSubtle, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Main Header info
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = stock.symbol, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                        if (ownedShares > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(AccentGreen.copy(alpha = 0.15f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = "Holding: ${String.format(Locale.US, "%.2f", ownedShares)} shares",
-                                    color = AccentGreen,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                    Text(text = stock.companyName, color = TextMuted, fontSize = 12.sp)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = formatCurrency(stock.currentPrice, stats.currency),
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (stock.sentimentBias != 0.0) {
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 50.dp, height = 5.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(Color.White.copy(alpha = 0.1f))
-                            ) {
-                                val bias = stock.sentimentBias.toFloat()
-                                val alignment = if (bias >= 0) Alignment.CenterEnd else Alignment.CenterStart
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .fillMaxWidth(kotlin.math.abs(bias).coerceIn(0.1f, 1f))
-                                        .align(alignment)
-                                        .background(if (bias >= 0) AccentGreen else AccentRose)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (stock.sentimentBias > 0.3) "BULLISH" else if (stock.sentimentBias < -0.3) "BEARISH" else "NEUTRAL",
-                                color = if (stock.sentimentBias > 0.3) AccentGreen else if (stock.sentimentBias < -0.3) AccentRose else TextMuted,
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
+            // OVERHAULED CONDENSED HEADER
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = stock.symbol, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
                             Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(onClick = { viewModel.navigateToChart(stock.symbol) }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.AutoGraph, null, tint = BrandViolet, modifier = Modifier.size(18.dp))
+                            }
                         }
-                        val isPositive = stock.dailyChangePct >= 0
-                        Text(
-                            text = "${if (isPositive) "+" else ""}${String.format(Locale.US, "%.2f", stock.dailyChangePct)}%",
-                            color = if (isPositive) AccentGreen else AccentRose,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(text = stock.companyName, color = TextMuted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
+                }
+                
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(text = formatCurrency(stock.currentPrice, stats.currency), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    val isPositive = stock.dailyChangePct >= 0
+                    Text(text = "${if (isPositive) "+" else ""}${String.format(Locale.US, "%.2f", stock.dailyChangePct)}%", color = if (isPositive) AccentGreen else AccentRose, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                IconButton(onClick = { isExpanded = !isExpanded }, modifier = Modifier.size(32.dp).background(Color.White.copy(alpha = 0.05f), CircleShape)) {
+                    Icon(if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp, null, tint = Color.White)
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // --- SCROLLABLE MIDDLE BODY ---
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(scrollState)
-            ) {
-                // Expanded Mode Section
+            // --- SCROLLABLE BODY ---
+            Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(scrollState)) {
+                
                 if (isExpanded) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Minimized Chart and Stats in Detailed Mode
+                    Card(modifier = Modifier.fillMaxWidth().height(120.dp).padding(bottom = 16.dp), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.3f)), border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))) {
+                        Box(modifier = Modifier.padding(8.dp)) { StockLineChart(pricesString = stock.historyData, isPositive = stock.dailyChangePct >= 0, showIndicators = true, modifier = Modifier.fillMaxSize()) }
+                    }
+                    
+                    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Prev Close" to formatCurrency(stock.previousClose, stats.currency), "High" to formatCurrency(stock.highPrice, stats.currency), "Low" to formatCurrency(stock.lowPrice, stats.currency)).forEach { (l, v) ->
+                            Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.03f)).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(l, color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                Text(v, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
 
-                    // Custom StockLineChart showing SMA indicators
-                    Text(
-                        text = "Historical Trend (with 5-Period Simple Moving Average)",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(130.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = DarkBg),
-                        border = BorderStroke(1.dp, DarkBorder)
-                    ) {
-                        Box(modifier = Modifier.padding(12.dp)) {
-                            StockLineChart(
-                                pricesString = stock.historyData,
-                                isPositive = stock.dailyChangePct >= 0,
-                                showIndicators = true,
-                                modifier = Modifier.fillMaxSize()
+                // 1. DENSE CONTROL GRID
+                Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.03f)).border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp)).padding(12.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Quantity Input (Standard Text Box as requested)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("QUANTITY", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OutlinedTextField(
+                                value = sharesInput,
+                                onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) sharesInput = it },
+                                modifier = Modifier.fillMaxWidth().height(44.dp).testTag("trade_quantity_input"),
+                                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = BrandViolet, unfocusedBorderColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                                textStyle = LocalTextStyle.current.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(8.dp)
                             )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Detailed stock indicators Grid
-                    Text(
-                        text = "Key Market Statistics",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(
-                            "Prev Close" to formatCurrency(stock.previousClose, stats.currency),
-                            "Daily High" to formatCurrency(stock.highPrice, stats.currency),
-                            "Daily Low" to formatCurrency(stock.lowPrice, stats.currency)
-                        ).forEach { (label, value) ->
-                            Card(
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = DarkBg),
-                                border = BorderStroke(1.dp, DarkBorder)
-                            ) {
-                                Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(label, color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(value, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(
-                            "Market Cap" to getMarketCap(stock.symbol, stats.currency),
-                            "Avg Volume" to getVolume(stock.symbol),
-                            "Volatility" to if (stock.symbol == "TSLA" || stock.symbol == "BTC" || stock.symbol == "ETH") "High" else "Moderate"
-                        ).forEach { (label, value) ->
-                            Card(
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = DarkBg),
-                                border = BorderStroke(1.dp, DarkBorder)
-                            ) {
-                                Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(label, color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(value, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Interactive Educational Academy tabs
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = DarkBg),
-                        border = BorderStroke(1.dp, DarkBorder)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(imageVector = Icons.Default.Info, contentDescription = "Academy info", tint = BrandViolet, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("TradeLab Academy: Understanding Order Types", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
-                            }
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Scrollable/clickable tab row
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                listOf("Market", "Limit", "Stop-Loss", "GTT").forEach { tab ->
-                                    val selected = activeEduTab == tab
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(if (selected) BrandViolet.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.03f))
-                                            .border(1.dp, if (selected) BrandViolet else Color.Transparent, RoundedCornerShape(8.dp))
-                                            .clickable { activeEduTab = tab }
-                                            .padding(vertical = 6.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(tab, color = if (selected) BrandViolet else Color.White.copy(alpha = 0.6f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            val explanation = when (activeEduTab) {
-                                "Market" -> "Executes immediately at the best available market price. Perfect for rapid entry but vulnerable to sudden slippage."
-                                "Limit" -> "Executes only if the price drops to or below your limit target (when buying) or rises to your limit target (when selling). Guarantees the price, but may never trigger if market misses your target."
-                                "Stop-Loss" -> "Automated trigger that executes a trade once price hits your threshold. Crucial for locking in profits or cutting losses short before they spiral."
-                                "GTT" -> "Good-Till-Triggered order remains active indefinitely (until custom trigger price hits or you cancel), rather than expiring at the end of the day."
-                                else -> ""
-                            }
-                            Text(explanation, color = TextSubtle, fontSize = 11.sp, lineHeight = 14.sp)
-                        }
-                    }
-
-                    if (tickerNews.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Specific Ticker Insights",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        )
-                        tickerNews.take(3).forEach { news ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = DarkBg),
-                                border = BorderStroke(1.dp, if (news.isAiRefined) BrandViolet.copy(alpha = 0.3f) else DarkBorder)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(if (news.sentiment == "BULLISH") AccentGreen.copy(alpha = 0.2f) else AccentRose.copy(alpha = 0.2f))
-                                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(
-                                                text = news.sentiment,
-                                                color = if (news.sentiment == "BULLISH") AccentGreen else AccentRose,
-                                                fontSize = 7.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        if (news.isAiRefined) {
-                                            Text("👑 PRO INSIGHT", color = AccentYellow, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold)
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                        }
-                                        Text(news.source, color = BrandViolet, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(news.title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                    if (news.isAiRefined && stats.isPremium) {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = news.summary,
-                                            color = TextSubtle,
-                                            fontSize = 10.sp,
-                                            lineHeight = 13.sp,
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(BrandViolet.copy(alpha = 0.05f))
-                                                .padding(6.dp)
-                                        )
-                                    } else {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(news.summary, color = TextSubtle, fontSize = 10.sp, lineHeight = 13.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // BUY / SELL TAB SWITCH (Neon green for buy, Neon rose for sell)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(DarkBg)
-                        .padding(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (isBuy) AccentGreen.copy(alpha = 0.2f) else Color.Transparent)
-                            .border(1.dp, if (isBuy) AccentGreen else Color.Transparent, RoundedCornerShape(10.dp))
-                            .clickable { isBuy = true }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "BUY",
-                            color = if (isBuy) AccentGreen else Color.White.copy(alpha = 0.5f),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (!isBuy) AccentRose.copy(alpha = 0.2f) else Color.Transparent)
-                            .border(1.dp, if (!isBuy) AccentRose else Color.Transparent, RoundedCornerShape(10.dp))
-                            .clickable { isBuy = false }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "SELL",
-                            color = if (!isBuy) AccentRose else Color.White.copy(alpha = 0.5f),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // NEW: PRODUCT TYPE TOGGLE (CNC vs MIS)
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("PRODUCT TYPE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Info",
-                            tint = TextMuted,
-                            modifier = Modifier.size(12.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(DarkBg).padding(2.dp)) {
-                        listOf(true to "CNC (Delivery)", false to "MIS (Intraday)").forEach { (isDel, label) ->
-                            val selected = isDelivery == isDel
-                            Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (selected) Color.White.copy(alpha = 0.08f) else Color.Transparent).clickable { isDelivery = isDel }.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
-                                Text(label, color = if (selected) Color.White else Color.White.copy(alpha = 0.4f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                    // Educational Warning for MIS
-                    if (!isDelivery) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "⚠️ MIS/Intraday: Used for same-day trading with higher leverage. Positions are auto-squared off before market close (3:20 PM IST). Penalty applies for failed auto-squareoff.",
-                            color = AccentYellow,
-                            fontSize = 10.sp,
-                            lineHeight = 13.sp
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "💎 CNC/Delivery: Pay full value to hold shares for multiple days. T+1 Settlement cycle applies. You can still exit on the same day if desired.",
-                            color = BrandViolet,
-                            fontSize = 10.sp,
-                            lineHeight = 13.sp
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // INPUTS: Order Type, Units (Shares), Custom price if Limit/Stop/GTT
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Order Type Selector (Market, Limit, Stop-Loss, GTT)
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(text = "ORDER TYPE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(DarkBg)
-                                .padding(2.dp)
-                        ) {
-                            listOf("Market", "Limit", "Stop-Loss", "GTT").forEach { type ->
-                                val selected = orderType == type
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (selected) Color.White.copy(alpha = 0.08f) else Color.Transparent)
-                                        .clickable { orderType = type }
-                                        .padding(vertical = 10.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = if (type == "Stop-Loss") "Stop" else type,
-                                        color = if (selected) Color.White else Color.White.copy(alpha = 0.4f),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Number of units input
-                    Column(modifier = Modifier.weight(1.2f)) {
-                        Text(text = "QUANTITY (SHARES)", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        OutlinedTextField(
-                            value = sharesInput,
-                            onValueChange = { sharesInput = it },
-                            placeholder = { Text("0.0", color = TextMuted) },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = DarkBg,
-                                unfocusedContainerColor = DarkBg,
-                                focusedBorderColor = if (isBuy) AccentGreen else AccentRose,
-                                unfocusedBorderColor = DarkBorder,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            ),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth().testTag("trade_quantity_input")
-                        )
-                    }
-
-                    // Custom Price Input for Limit/Stop/GTT Order
-                    if (orderType != "Market") {
+                        
+                        // Transaction Toggle
                         Column(modifier = Modifier.weight(1f)) {
-                            val fieldLabel = when (orderType) {
-                                "Limit" -> "LIMIT PRICE"
-                                "Stop-Loss" -> "STOP PRICE"
-                                else -> "GTT TRIGGER"
+                            Text("ACTION", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(modifier = Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).background(DarkBg).padding(2.dp)) {
+                                Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(6.dp)).background(if (isBuy) AccentGreen.copy(alpha = 0.2f) else Color.Transparent).clickable { isBuy = true }, contentAlignment = Alignment.Center) {
+                                    Text("BUY", color = if (isBuy) AccentGreen else Color.White.copy(alpha = 0.4f), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                }
+                                Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(6.dp)).background(if (!isBuy) AccentRose.copy(alpha = 0.2f) else Color.Transparent).clickable { isBuy = false }, contentAlignment = Alignment.Center) {
+                                    Text("SELL", color = if (!isBuy) AccentRose else Color.White.copy(alpha = 0.4f), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                }
                             }
-                            Text(text = fieldLabel, color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Product Toggle
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("PRODUCT", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(modifier = Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).background(DarkBg).padding(2.dp)) {
+                                Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(6.dp)).background(if (isDelivery) Color.White.copy(alpha = 0.1f) else Color.Transparent).clickable { isDelivery = true }, contentAlignment = Alignment.Center) {
+                                    Text("CNC", color = if (isDelivery) Color.White else Color.White.copy(alpha = 0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(6.dp)).background(if (!isDelivery) Color.White.copy(alpha = 0.1f) else Color.Transparent).clickable { if (isLevUnlocked) isDelivery = false else showIntradayUnlockDialog = true }, contentAlignment = Alignment.Center) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("MIS", color = if (!isDelivery) Color.White else Color.White.copy(alpha = 0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        if (!isLevUnlocked) Icon(Icons.Default.Lock, null, tint = Color.White.copy(alpha = 0.3f), modifier = Modifier.size(8.dp).padding(start = 2.dp))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Order Type
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("TYPE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(modifier = Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).background(DarkBg).padding(2.dp).horizontalScroll(rememberScrollState())) {
+                                listOf("Market", "Limit", "Stop-Loss", "GTT").forEach { type ->
+                                    val sel = orderType == type
+                                    Box(modifier = Modifier.width(60.dp).fillMaxHeight().clip(RoundedCornerShape(6.dp)).background(if (sel) BrandViolet.copy(alpha = 0.2f) else Color.Transparent).clickable { orderType = type }, contentAlignment = Alignment.Center) {
+                                        Text(if (type == "Stop-Loss") "Stop" else type, color = if (sel) BrandViolet else Color.White.copy(alpha = 0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (orderType != "Market") {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text("PRICE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(6.dp))
                             OutlinedTextField(
                                 value = customPriceInput,
                                 onValueChange = { customPriceInput = it },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = DarkBg,
-                                    unfocusedContainerColor = DarkBg,
-                                    focusedBorderColor = if (isBuy) AccentGreen else AccentRose,
-                                    unfocusedBorderColor = DarkBorder,
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White
-                                ),
+                                modifier = Modifier.fillMaxWidth().height(44.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = BrandViolet, unfocusedBorderColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                                textStyle = LocalTextStyle.current.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth().testTag("trade_limit_price_input")
+                                shape = RoundedCornerShape(8.dp)
                             )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Quick Sizing Percentage Buttons Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("QUICK SIZE:", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    listOf("25%", "50%", "100%").forEach { pct ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.White.copy(alpha = 0.05f))
-                                .clickable {
-                                    val ratio = when (pct) {
-                                        "25%" -> 0.25
-                                        "50%" -> 0.50
-                                        else -> 1.0
-                                    }
-                                    val currentPrice = if (orderType != "Market") {
-                                        customPriceInput.toDoubleOrNull() ?: stock.currentPrice
-                                    } else {
-                                        stock.currentPrice
-                                    }
-                                    if (isBuy) {
-                                        val safeRatio = if (pct == "100%") 0.95 else ratio
-                                        val allocatedCash = stats.cash * safeRatio
-                                        if (currentPrice > 0) {
-                                            val calculatedShares = allocatedCash / currentPrice
-                                            sharesInput = String.format(Locale.US, "%.4f", calculatedShares)
-                                        }
-                                    } else {
-                                        sharesInput = String.format(Locale.US, "%.4f", ownedShares * ratio)
-                                    }
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(pct, color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Order Metrics calculation card
+                // 2. HIGH PROMINENCE FINANCIAL STATUS BAR
+                val isLevActive = !isDelivery && isLevUnlocked
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = DarkBg),
-                    border = BorderStroke(1.dp, DarkBorder)
+                    colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(text = "Total Order Value", color = TextSubtle, fontSize = 12.sp)
-                            Text(
-                                text = formatCurrency(totalOrderValue, stats.currency),
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(text = "Available Cash", color = TextSubtle, fontSize = 12.sp)
-                            Text(
-                                text = formatCurrency(stats.cash, stats.currency),
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                    val effectiveOrderValue = if (isLevActive) totalOrderValue / 5.0 else totalOrderValue
+                    val sttRate = if (isDelivery) 0.001 else 0.00025
+                    val stt = totalOrderValue * sttRate
+                    val miscCharges = totalOrderValue * 0.0001
+                    val isShielded = stats.brokerageCredits >= 20 || stats.isPremium
+                    val brokerageFee = if (isShielded) 0.0 else totalOrderValue * 0.0005
+                    val totalCharges = stt + miscCharges + brokerageFee
 
-                        // Brokerage Shield Wallet Overlay
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val isShielded = stats.brokerageCredits >= 20
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column {
+                                Text(if (isLevActive) "MARGIN REQUIRED (5x)" else "ORDER VALUE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                Text(formatCurrency(effectiveOrderValue, stats.currency), color = if (isLevActive) AccentGreen else Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("CASH IN HAND", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                Text(formatCurrency(stats.cash, stats.currency), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(10.dp))
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                        Spacer(modifier = Modifier.height(10.dp))
+                        
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Brokerage Fees Shield", color = TextSubtle, fontSize = 11.sp)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(if (isShielded) AccentGreen.copy(alpha = 0.15f) else AccentYellow.copy(alpha = 0.15f))
-                                        .padding(horizontal = 4.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = if (isShielded) "ACTIVE" else "NO CREDITS",
-                                        color = if (isShielded) AccentGreen else AccentYellow,
-                                        fontSize = 8.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                Text("EST. CHARGES (TAX/FEE)", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(if (isShielded) AccentGreen.copy(alpha = 0.15f) else AccentYellow.copy(alpha = 0.15f)).padding(horizontal = 5.dp, vertical = 2.dp)) {
+                                    Text(if (isShielded) "🛡️ SHIELDED" else "🎫 FEE UNLOCKED", color = if (isShielded) AccentGreen else AccentYellow, fontSize = 7.sp, fontWeight = FontWeight.ExtraBold)
                                 }
                             }
-                            Text(
-                                text = if (isShielded) "Waived (Spent 20🎫)" else "0.05% Deduct cash",
-                                color = if (isShielded) AccentGreen else TextSubtle,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text(formatCurrency(totalCharges, stats.currency), color = TextSubtle, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
+                    }
+                }
 
-                        // Concentration / Sizing Warning to enforce realistic practicing
-                        if (isBuy && totalOrderValue > (stats.totalValue * 0.15)) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(AccentYellow.copy(alpha = 0.1f))
-                                    .border(1.dp, AccentYellow.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                                    .padding(10.dp)
-                            ) {
-                                Text(
-                                    text = "⚠️ Risk Warning: This single order represents over 15% of your total practising budget. We recommend sizing smaller (e.g. ₹1,000) to protect against unexpected downturns.",
-                                    color = AccentYellow,
-                                    fontSize = 10.sp,
-                                    lineHeight = 13.sp
-                                )
+                // Quick Sizing Buttons
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("25%", "50%", "100%").forEach { pct ->
+                        val ratio = if (pct == "25%") 0.25 else if (pct == "50%") 0.5 else 1.0
+                        Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.05f)).clickable {
+                            val curPrice = if (orderType != "Market") customPriceInput.toDoubleOrNull() ?: stock.currentPrice else stock.currentPrice
+                            if (isBuy) {
+                                val allocated = stats.cash * (if (pct == "100%") 0.95 else ratio)
+                                sharesInput = if (curPrice > 0) (allocated / curPrice).toInt().toString() else ""
+                            } else sharesInput = (ownedShares * ratio).toInt().toString()
+                        }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                            Text(pct, color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                if (isExpanded) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    
+                    // BRACKET / INSTITUTIONAL SECTION
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("BRACKET ORDER (PRO)", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Switch(checked = isBracketOrder, onCheckedChange = { if (stats.isPremium) { isBracketOrder = it; if (it && orderType == "Market") orderType = "Limit" } else viewModel.triggerPaywall() }, colors = SwitchDefaults.colors(checkedThumbColor = BrandViolet, checkedTrackColor = BrandViolet.copy(alpha = 0.3f)))
+                    }
+                    
+                    if (isBracketOrder) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            listOf("TARGET" to targetPriceInput, "STOP LOSS" to stopLossPriceInput).forEach { (l, v) ->
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(l, color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    OutlinedTextField(value = v, onValueChange = { if (l == "TARGET") targetPriceInput = it else stopLossPriceInput = it }, modifier = Modifier.fillMaxWidth().height(44.dp), colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = if (l == "TARGET") AccentGreen else AccentRose, unfocusedBorderColor = DarkBorder, focusedTextColor = Color.White, unfocusedTextColor = Color.White), shape = RoundedCornerShape(10.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                                }
+                            }
+                        }
+                    }
+
+                    if (tickerNews.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Text("INSIGHTS", color = BrandViolet, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                        tickerNews.take(2).forEach { news ->
+                            Column(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.02f)).border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp)).padding(10.dp)) {
+                                Text(news.title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(news.summary, color = TextSubtle, fontSize = 10.sp, lineHeight = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             }
                         }
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(20.dp))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // --- FIXED FOOTER ---
-            // Action Execution Button
-            val hasValidAmount = shares > 0
-            val hasEnoughCash = !isBuy || (totalOrderValue <= stats.cash)
-            val canExecute = hasValidAmount && hasEnoughCash
-
+            // FIXED FOOTER
+            val canExec = shares > 0 && (isBuy.not() || totalOrderValue <= stats.cash)
             Button(
                 onClick = {
-                    viewModel.setTradeShares(sharesInput)
-                    viewModel.setOrderType(orderType)
-                    viewModel.setDeliveryMode(isDelivery)
-                    if (orderType != "Market") {
-                        viewModel.setTriggerPrice(customPriceInput)
-                    }
-                    if (isBuy) {
-                        viewModel.executeBuy()
-                    } else {
-                        viewModel.executeSell()
-                    }
+                    viewModel.setTradeShares(sharesInput); viewModel.setOrderType(orderType); viewModel.setDeliveryMode(isDelivery)
+                    if (orderType != "Market") viewModel.setTriggerPrice(customPriceInput)
+                    if (isBracketOrder) { viewModel.setTargetPrice(targetPriceInput); viewModel.setStopLossPrice(stopLossPriceInput) }
+                    viewModel.setIsTrailing(isTrailing); if (isTrailing) viewModel.setTrailingGap(trailingGapInput)
+                    if (isBuy) viewModel.executeBuy() else viewModel.executeSell()
                     onDismiss()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .testTag("execute_trade_button"),
-                enabled = canExecute,
+                modifier = Modifier.fillMaxWidth().height(52.dp).testTag("execute_trade_button"),
+                enabled = canExec,
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isBuy) AccentGreen else AccentRose,
-                    disabledContainerColor = Color.White.copy(alpha = 0.05f)
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = if (isBuy) AccentGreen else AccentRose, disabledContainerColor = Color.White.copy(alpha = 0.05f))
             ) {
-                Text(
-                    text = if (isBuy) "CONFIRM BUY ORDER" else "CONFIRM SELL ORDER",
-                    color = if (canExecute) DarkBg else TextMuted,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                )
+                Text(text = if (isBuy) "CONFIRM BUY" else "CONFIRM SELL", color = if (canExec) Color.Black else TextMuted, fontWeight = FontWeight.Black, fontSize = 14.sp)
             }
+        }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth().height(36.dp),
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text(text = "CANCEL", color = TextSubtle, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            }
+        // Just-in-Time Intraday Suite Unlock Dialog
+        if (showIntradayUnlockDialog) {
+            AlertDialog(
+                onDismissRequest = { if (!isAdLoadingInsideSheet) showIntradayUnlockDialog = false },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Default.Bolt, contentDescription = null, tint = BrandViolet, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Unlock Intraday Suite ⚡", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Practice like a pro! 1 ad unlocks the full Intraday Suite (MIS mode + 5x Buying Power) for the rest of today's market session.",
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
+                        )
+                        if (isAdLoadingInsideSheet) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                                CircularProgressIndicator(color = BrandViolet, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text("Connecting to sponsor...", color = BrandViolet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    val currentContext = androidx.compose.ui.platform.LocalContext.current
+                    Button(
+                        onClick = {
+                            isAdLoadingInsideSheet = true
+                            val activity = currentContext as? com.ashwathai.tradelab.MainActivity
+                            if (activity != null) {
+                                activity.loadAndShowRewardedAd(
+                                    adType = com.ashwathai.tradelab.MainActivity.AdType.PROFILE_LEVERAGE,
+                                    onAdLoaded = { isAdLoadingInsideSheet = false },
+                                    onAdFailed = { err: String ->
+                                        isAdLoadingInsideSheet = false
+                                        viewModel.showFeedback("Ad Failed: $err. Unlocking via offline fallback.")
+                                        viewModel.unlockIntradaySession()
+                                        showIntradayUnlockDialog = false
+                                    },
+                                    onUserEarnedReward = {
+                                        viewModel.unlockIntradaySession()
+                                        showIntradayUnlockDialog = false
+                                    }
+                                )
+                            } else {
+                                isAdLoadingInsideSheet = false
+                                viewModel.unlockIntradaySession()
+                                showIntradayUnlockDialog = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isAdLoadingInsideSheet
+                    ) {
+                        Text("WATCH AD", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showIntradayUnlockDialog = false }, enabled = !isAdLoadingInsideSheet) {
+                        Text("CANCEL", color = TextSubtle)
+                    }
+                },
+                containerColor = DarkSurfaceElevated
+            )
         }
     }
 }

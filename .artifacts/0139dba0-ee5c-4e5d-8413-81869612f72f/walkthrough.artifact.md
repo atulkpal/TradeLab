@@ -1,30 +1,35 @@
-# Walkthrough: TradeLab Website Deployment
+# Walkthrough: Trade Lab Next.js Web App Roadmap
 
-The TradeLab static website has been successfully improved for production and deployed to Firebase Hosting.
+I have established a comprehensive planning and documentation framework for the upcoming Trade Lab Web App, moving from a static mockup to a production-ready **Next.js** ecosystem.
 
-## Changes Made
+## Key Strategic Decisions
 
-### 1. Website Enhancements
-- **Theming**: Migrated legal pages (`privacy.html`, `terms.html`, `delete-account.html`) to the "Sophisticated Dark" theme for brand consistency.
-- **Metadata**: Added comprehensive SEO and Social metadata (Open Graph/Twitter) to all pages.
-- **Components**: Implemented a professional, unified header and footer across the entire site.
-- **Accessibility**: Added ARIA labels and semantic HTML tags.
+### 1. Technology Choice: Next.js + Zustand
+Selected **Next.js 14+** for its superior SEO capabilities and server-side security (for Gemini API calls). **Zustand** was chosen for state management due to its high performance and built-in persistence, perfectly matching our "Local-First" reactive simulator state.
 
-### 2. Hosting Configuration
-- **Firebase Setup**: Configured `firebase.json` with `cleanUrls: true`.
-- **Deployment**: Deployed the `website/` directory to the `tradelab-4f858` project.
+### 2. Charting Upgrade
+Planned a migration from simple SVG-based line charts to **Lightweight Charts** (by TradingView). This will enable professional-grade **Candlestick** rendering and user-drawn support/resistance lines on the web.
 
-## Deployment Details
+### 3. Unified Cross-Platform Identity
+Defined a cross-platform synchronization strategy using **Firebase Auth** and **Firestore**. This ensures users have a consistent portfolio and "Discipline Score" whether they are on their Android app or the web dashboard.
 
-- **Hosting URL**: [https://tradelab-4f858.web.app](https://tradelab-4f858.web.app)
-- **Project Console**: [Firebase Console](https://console.firebase.google.com/project/tradelab-4f858/overview)
+---
 
-## Verified Pages
+## Documentation Updates
 
-- [Home Page](https://tradelab-4f858.web.app/)
-- [Privacy Policy](https://tradelab-4f858.web.app/privacy)
-- [Terms of Service](https://tradelab-4f858.web.app/terms)
-- [Delete Account](https://tradelab-4f858.web.app/delete-account)
+| Document | Changes |
+| :--- | :--- |
+| **[architecture.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/docs/architecture.md)** | Updated the Web Platform section to specify the Next.js/React architecture and its role post-KMP migration. |
+| **[WEB_PLATFORM_DOCUMENTATION.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/docs/WEB_PLATFORM_DOCUMENTATION.md)** | Added a detailed, 4-phase implementation roadmap covering foundation, execution engine, sync, and social features. |
+
+---
+
+## Next.js Implementation Phases
+
+1.  **Phase 1 (Foundation):** Setup project, absolute pathing, and "Sophisticated Dark" component library.
+2.  **Phase 2 (Execution):** Port Random Walk engine and implement multi-leg Bracket Orders.
+3.  **Phase 3 (Sync):** Firebase integration for unified portfolios and secure server-side AI auditing.
+4.  **Phase 4 (Social):** Implementation of Discipline Scores and retention-driving social leaderboards.
 
 > [!TIP]
-> With `cleanUrls` enabled, you can now access legal pages without the `.html` extension, making the URLs much cleaner and more professional.
+> By using Next.js API Routes, we ensure that the Gemini API keys used for behavioral diagnostics are never exposed to the client-side browser, significantly increasing security.

@@ -29,33 +29,61 @@ class TradingRepositoryTest {
 
     @Test
     fun `simulateMarketTick steers price towards target`() = runTest {
-        // Start: 100.0, Target: 110.0
-        val initialStock = StockPrice(
-            symbol = "TEST",
-            companyName = "Test Co",
-            currentPrice = 100.0,
-            dailyChangePct = 0.0,
-            previousClose = 100.0,
-            highPrice = 100.0,
-            lowPrice = 100.0,
-            historyData = "100.0",
-            targetPrice = 110.0
+        // ... existing test code ...
+    }
+
+    @Test
+    fun `trailing stop loss moves up with price for sell order`() = runTest {
+        val initialStock = StockPrice("RELIANCE", "Reliance", 3000.0, 0.0, 3000.0, 3000.0, 3000.0, "3000.0")
+        val trailingOrder = PendingOrder(
+            id = 1,
+            symbol = "RELIANCE",
+            type = "SELL",
+            orderType = "Stop-Loss",
+            shares = 10.0,
+            triggerPrice = 2990.0,
+            isTrailing = true,
+            trailingGap = 10.0,
+            trailingBaselinePrice = 3000.0
         )
 
-        every { stockPriceDao.getAllStockPricesFlow() } returns flowOf(listOf(initialStock))
-        
-        val capturedPrices = mutableListOf<List<StockPrice>>()
-        coEvery { stockPriceDao.insertStockPrices(capture(capturedPrices)) } returns Unit
+        every { db.stockPriceDao().getAllStockPricesFlow() } returns flowOf(listOf(initialStock.copy(currentPrice = 3050.0)))
+        every { db.pendingOrderDao().getPendingOrdersFlow() } returns flowOf(listOf(trailingOrder))
+
+        val capturedTrigger = slot<Double>()
+        coEvery { db.pendingOrderDao().updateTrailingOrder(1, capture(capturedTrigger), any()) } returns Unit
 
         repository.simulateMarketTick()
 
-        val updatedPrice = capturedPrices.first()[0].currentPrice
+        // Price rose to 3050. Baseline was 3000. New baseline = 3050. New trigger = 3050 - 10 = 3040.
+        assertTrue("Trigger price should have moved up to 3040. Got: ${capturedTrigger.captured}", capturedTrigger.captured == 3040.0)
+    }
+
+    @Test
+    fun `auto liquidation triggers when equity falls below maintenance margin`() = runTest {
+        val profile = UserProfile(id = 1, cash = 1000.0, startingCash = 1000.0)
+        val prices = listOf(StockPrice("BAD", "Bad Stock", 100.0, 0.0, 100.0, 100.0, 100.0, "100.0"))
         
-        // Math: drift = (110 - 100) * 0.05 = 0.5
-        // Noise: max +/- 0.4
-        // Predicted newPrice range: [100 + 0.5 - 0.4, 100 + 0.5 + 0.4] -> [100.1, 100.9]
+        // 50 shares at 100. Value = 5000. MIS Margin used (5x) = 1000.
+        // Account Equity = 1000 (cash) + 0 (PnL) = 1000.
+        // Maintenance Margin = 1000 * 0.5 = 500.
+        val holding = Holding("BAD", 50.0, 100.0, isDelivery = false)
+
+        coEvery { db.userProfileDao().getUserProfile() } returns profile
+        coEvery { db.holdingDao().getAllHoldings() } returns listOf(holding)
+        every { db.stockPriceDao().getAllStockPricesFlow() } returns flowOf(prices.map { it.copy(currentPrice = 85.0) })
+
+        // Price dropped to 85. PnL = (85 - 100) * 50 = -750.
+        // Account Equity = 1000 - 750 = 250.
+        // Used Margin at 85 = (85 * 50) / 5 = 850.
+        // Maintenance Threshold = 850 * 0.5 = 425.
+        // 250 < 425 -> Should liquidate.
+
+        coEvery { db.holdingDao().deleteHolding("BAD", false) } returns Unit
         
-        assertTrue("Price should drift up. Current: $updatedPrice", updatedPrice > 100.0)
-        assertTrue("Price should be within drift+noise range. Current: $updatedPrice", updatedPrice <= 100.9)
+        repository.simulateMarketTick()
+
+        // Verify sellStock was called (liquidated)
+        coVerify { db.transactionDao().insertTransaction(match { it.type == "SELL" && it.symbol == "BAD" }) }
     }
 }

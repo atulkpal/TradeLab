@@ -145,7 +145,7 @@ fun PortfolioShareCard(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "ashwathai.com/tradelab",
+                    text = "Download on Play Store",
                     color = BrandViolet,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold

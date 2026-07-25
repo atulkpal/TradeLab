@@ -110,6 +110,12 @@ fun formatPnL(value: Double, currency: String): String {
 }
 
 
+fun formatLedgerAmount(value: Double, currency: String): String {
+    val symbol = if (currency == "INR") "₹" else "$"
+    return "$symbol${String.format("%,.4f", value)}"
+}
+
+
 fun calculateRSI(prices: List<Double>, period: Int = 14): Double {
     if (prices.size <= period) return 50.0
     var gains = 0.0

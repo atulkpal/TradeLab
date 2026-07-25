@@ -79,6 +79,9 @@ class TradingViewModel @Inject constructor(
     val accountSnapshots: StateFlow<List<AccountSnapshot>> = repository.accountSnapshots
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val ledgerEntries: StateFlow<List<LedgerEntry>> = repository.ledgerEntries
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun getNewsForSymbol(symbol: String): Flow<List<MarketNews>> {
         return repository.getNewsBySymbolFlow(symbol)
     }
@@ -189,7 +192,7 @@ class TradingViewModel @Inject constructor(
     val isWatchlistSearchVisible: StateFlow<Boolean> = _isWatchlistSearchVisible.asStateFlow()
 
     // Order flow custom states
-    private val _orderType = MutableStateFlow("Market") // Market, Limit, GTT
+    private val _orderType = MutableStateFlow("Market") // Market, Limit, GTT, Bracket
     val orderType: StateFlow<String> = _orderType.asStateFlow()
 
     private val _isDelivery = MutableStateFlow(true)
@@ -197,6 +200,29 @@ class TradingViewModel @Inject constructor(
 
     private val _triggerPriceInput = MutableStateFlow("")
     val triggerPriceInput: StateFlow<String> = _triggerPriceInput.asStateFlow()
+
+    private val _dismissBottomSheetTrigger = MutableSharedFlow<Unit>(replay = 0)
+    val dismissBottomSheetTrigger: SharedFlow<Unit> = _dismissBottomSheetTrigger.asSharedFlow()
+
+    fun navigateToChart(symbol: String) {
+        selectStock(symbol)
+        selectTab("Charts")
+        viewModelScope.launch {
+            _dismissBottomSheetTrigger.emit(Unit)
+        }
+    }
+
+    private val _targetPriceInput = MutableStateFlow("")
+    val targetPriceInput: StateFlow<String> = _targetPriceInput.asStateFlow()
+
+    private val _stopLossPriceInput = MutableStateFlow("")
+    val stopLossPriceInput: StateFlow<String> = _stopLossPriceInput.asStateFlow()
+
+    private val _isTrailingInput = MutableStateFlow(false)
+    val isTrailingInput: StateFlow<Boolean> = _isTrailingInput.asStateFlow()
+
+    private val _trailingGapInput = MutableStateFlow("")
+    val trailingGapInput: StateFlow<String> = _trailingGapInput.asStateFlow()
 
     // Post-trade ratings
     data class TradeRating(
@@ -216,13 +242,52 @@ class TradingViewModel @Inject constructor(
     private val _postTradeRating = MutableStateFlow<TradeRating?>(null)
     val postTradeRating: StateFlow<TradeRating?> = _postTradeRating.asStateFlow()
 
-    // Global Leaderboard Flow
-    val globalLeaderboard: StateFlow<List<LeaderboardEntry>> = leaderboardManager.getTopUsersFlow()
+    // Global Leaderboard Sort Mode
+    private val _leaderboardSortMode = MutableStateFlow("XP") // "XP" or "Discipline"
+    val leaderboardSortMode: StateFlow<String> = _leaderboardSortMode.asStateFlow()
+
+    // Global Leaderboard Flow - Reactive to sort mode
+    val globalLeaderboard: StateFlow<List<LeaderboardEntry>> = _leaderboardSortMode
+        .flatMapLatest { mode ->
+            val sortByField = if (mode == "XP") "xp" else "disciplineScore"
+            leaderboardManager.getTopUsersFlow(sortByField)
+        }
         .catch { e -> 
             android.util.Log.e("TradingViewModel", "Error in globalLeaderboard flow", e)
             emit(emptyList()) 
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setLeaderboardSort(mode: String) {
+        _leaderboardSortMode.value = mode
+    }
+
+    fun shareDisciplineChallenge() {
+        val statsVal = portfolioStats.value
+        val score = statsVal.disciplineScore
+        val text = "I just reached a $score/100 Discipline Score on Trade Lab! 🎯 Can you match my risk management skills? Join me in the arena: https://play.google.com/store/apps/details?id=com.ashwathai.tradelab #TradeLab #InvestSmart"
+        
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(android.content.Intent.EXTRA_TEXT, text)
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val chooser = android.content.Intent.createChooser(intent, "Challenge a Friend")
+        chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+    }
+
+    fun shareAppInvite() {
+        val text = "🚀 Join me on Trade Lab! It's a realistic paper trading arena where we learn position sizing and risk management with virtual budgets. Download now and compete on the global leaderboard! https://play.google.com/store/apps/details?id=com.ashwathai.tradelab"
+        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(android.content.Intent.EXTRA_TEXT, text)
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val chooser = android.content.Intent.createChooser(intent, "Invite Friend to Trade Lab")
+        chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+    }
 
     // Derived State: The selected StockPrice details
     val selectedStock: StateFlow<StockPrice?> = combine(stockPrices, _selectedStockSymbol) { prices, symbol ->
@@ -236,6 +301,7 @@ class TradingViewModel @Inject constructor(
         var holdingsValue = 0.0
         var totalCostBasis = 0.0
         var todayPnL = 0.0
+        var usedMargin = 0.0
 
         for (holding in activeHoldings) {
             val liveStock = prices.find { it.symbol == holding.symbol }
@@ -243,22 +309,38 @@ class TradingViewModel @Inject constructor(
             val prevClose = liveStock?.previousClose ?: livePrice
             
             val totalShares = holding.shares + holding.sharesT1
+            val totalSharesAbs = kotlin.math.abs(totalShares)
+            
             val convertedLivePrice = getConvertedStockPrice(livePrice, holding.symbol, profile.currency)
             val convertedPrevClose = getConvertedStockPrice(prevClose, holding.symbol, profile.currency)
             val convertedAvgPrice = getConvertedStockPrice(holding.averagePrice, holding.symbol, profile.currency)
             
-            holdingsValue += (totalShares * convertedLivePrice)
-            totalCostBasis += (totalShares * holding.averagePrice)
-            
-            // Refined Today's P&L calculation (Point 13)
-            // 1. Settled Shares P&L = shares * (Live - Prev Close)
-            val settledPnL = holding.shares * (convertedLivePrice - convertedPrevClose)
-            
-            // 2. T1 Shares P&L = sharesT1 * (Live - Avg Purchase Price)
-            // This prevents mid-day buys from inheriting the whole day's P&L jump
-            val t1PnL = holding.sharesT1 * (convertedLivePrice - convertedAvgPrice)
-            
-            todayPnL += (settledPnL + t1PnL)
+            if (!holding.isDelivery) {
+                // MIS positions use 5x margin
+                usedMargin += (totalSharesAbs * convertedLivePrice) / 5.0
+            }
+
+            if (totalShares >= 0) {
+                // LONG POSITION
+                holdingsValue += (totalShares * convertedLivePrice)
+                totalCostBasis += (totalShares * convertedAvgPrice)
+                
+                val settledPnL = holding.shares * (convertedLivePrice - convertedPrevClose)
+                val t1PnL = holding.sharesT1 * (convertedLivePrice - convertedAvgPrice)
+                todayPnL += (settledPnL + t1PnL)
+            } else {
+                // SHORT POSITION (Shares are negative)
+                // P/L = (Entry - Live) * |Shares|
+                val openShortPnL = (convertedAvgPrice - convertedLivePrice) * totalSharesAbs
+                holdingsValue += openShortPnL // Unrealized profit is treated as value
+                
+                // For shorts, the "cost basis" is effectively the margin blocked, but let's keep it consistent
+                // totalCostBasis += 0 // Margin is already in profile.cash as reduced amount
+                
+                // Today's P/L for Short = (YesterdayClose - Live) * |Shares|
+                val dailyShortPnL = (convertedPrevClose - convertedLivePrice) * totalSharesAbs
+                todayPnL += dailyShortPnL
+            }
         }
 
         val totalValue = profile.cash + holdingsValue
@@ -269,6 +351,9 @@ class TradingViewModel @Inject constructor(
         // Today's percentage is relative to total value at start of day
         val valueAtStartOfDay = totalValue - todayPnL
         val todayPnLPct = if (valueAtStartOfDay > 0) (todayPnL / valueAtStartOfDay) * 100.0 else 0.0
+
+        val isLeverageUnlocked = profile.isPremium || profile.leverageUnlockedUntil > System.currentTimeMillis()
+        val buyingPower = if (isLeverageUnlocked) profile.cash * 5.0 else profile.cash
 
         PortfolioStats(
             totalValue = totalValue,
@@ -290,7 +375,11 @@ class TradingViewModel @Inject constructor(
             isPremium = profile.isPremium,
             fnoTokens = profile.fnoTokens,
             portfolioResetsCount = profile.portfolioResetsCount,
-            shouldShowShieldDialog = profile.shouldShowShieldDialog
+            shouldShowShieldDialog = profile.shouldShowShieldDialog,
+            usedMargin = usedMargin,
+            buyingPower = buyingPower,
+            disciplineScore = profile.disciplineScore,
+            activeBadges = profile.activeBadges
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PortfolioStats())
 
@@ -379,6 +468,14 @@ class TradingViewModel @Inject constructor(
                         e.printStackTrace()
                     }
                 }
+                
+                // Intraday Square-off check
+                try {
+                    repository.checkAutoSquareOff()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
                 kotlinx.coroutines.delay(15000)
             }
         }
@@ -428,7 +525,7 @@ class TradingViewModel @Inject constructor(
         val xp = profile.xp
         
         viewModelScope.launch {
-            leaderboardManager.syncUserStats(email, name, xp, stats.totalValue)
+            leaderboardManager.syncUserStats(email, name, xp, stats.totalValue, stats.disciplineScore)
         }
     }
 
@@ -602,6 +699,22 @@ class TradingViewModel @Inject constructor(
         _triggerPriceInput.value = price
     }
 
+    fun setTargetPrice(price: String) {
+        _targetPriceInput.value = price
+    }
+
+    fun setStopLossPrice(price: String) {
+        _stopLossPriceInput.value = price
+    }
+
+    fun setIsTrailing(isTrailing: Boolean) {
+        _isTrailingInput.value = isTrailing
+    }
+
+    fun setTrailingGap(gap: String) {
+        _trailingGapInput.value = gap
+    }
+
     fun clearTradeRating() {
         _postTradeRating.value = null
     }
@@ -715,7 +828,12 @@ class TradingViewModel @Inject constructor(
                     type = "BUY",
                     orderType = orderTypeVal,
                     shares = shares,
-                    triggerPrice = triggerPrice
+                    triggerPrice = triggerPrice,
+                    isDelivery = _isDelivery.value,
+                    targetPrice = _targetPriceInput.value.toDoubleOrNull(),
+                    stopLossPrice = _stopLossPriceInput.value.toDoubleOrNull(),
+                    isTrailing = _isTrailingInput.value,
+                    trailingGap = _trailingGapInput.value.toDoubleOrNull() ?: 0.0
                 )
                 repository.insertPendingOrder(order)
                 val statsVal = portfolioStats.value
@@ -724,6 +842,8 @@ class TradingViewModel @Inject constructor(
                 showFeedback("Pending ${orderTypeVal} BUY order placed successfully!")
                 _tradeSharesInput.value = ""
                 _triggerPriceInput.value = ""
+                _targetPriceInput.value = ""
+                _stopLossPriceInput.value = ""
             }
         }
     }
@@ -810,7 +930,12 @@ class TradingViewModel @Inject constructor(
                     type = "SELL",
                     orderType = orderTypeVal,
                     shares = shares,
-                    triggerPrice = triggerPrice
+                    triggerPrice = triggerPrice,
+                    isDelivery = _isDelivery.value,
+                    targetPrice = _targetPriceInput.value.toDoubleOrNull(),
+                    stopLossPrice = _stopLossPriceInput.value.toDoubleOrNull(),
+                    isTrailing = _isTrailingInput.value,
+                    trailingGap = _trailingGapInput.value.toDoubleOrNull() ?: 0.0
                 )
                 repository.insertPendingOrder(order)
                 val statsVal = portfolioStats.value
@@ -819,6 +944,8 @@ class TradingViewModel @Inject constructor(
                 showFeedback("Pending ${orderTypeVal} SELL order placed successfully!")
                 _tradeSharesInput.value = ""
                 _triggerPriceInput.value = ""
+                _targetPriceInput.value = ""
+                _stopLossPriceInput.value = ""
             }
         }
     }
@@ -1240,6 +1367,14 @@ class TradingViewModel @Inject constructor(
         }
     }
 
+    fun unlockIntradaySession() {
+        viewModelScope.launch {
+            repository.unlockIntradaySession()
+            showFeedback("Intraday Session Pass unlocked! Practice with 5x leverage.")
+            triggerConfetti()
+        }
+    }
+
     fun setShouldShowShieldDialog(enabled: Boolean) {
         viewModelScope.launch {
             repository.updateShieldDialogPreference(enabled)
@@ -1368,7 +1503,11 @@ data class PortfolioStats(
     val isPremium: Boolean = false,
     val fnoTokens: Int = 0,
     val portfolioResetsCount: Int = 0,
-    val shouldShowShieldDialog: Boolean = true
+    val shouldShowShieldDialog: Boolean = true,
+    val usedMargin: Double = 0.0,
+    val buyingPower: Double = 0.0,
+    val disciplineScore: Int = 75,
+    val activeBadges: String = ""
 )
 
 data class Lecture(

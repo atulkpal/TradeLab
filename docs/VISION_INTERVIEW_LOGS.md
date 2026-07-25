@@ -5,8 +5,8 @@ This document aggregates the comprehensive product vision, strategic calibration
 ---
 
 ## 1. Absolute Target User Persona
-- **Who they are:** Beginner to early intermediate individuals (specifically targeting the **16–18 age range**—students fresh out of high school or college, or retail newcomers).
-- **Current Status:** They have acquired surface-level knowledge (exploring finance blogs, watching trading YouTube channels, reading tutorials), but have **never placed a single trade**.
+- **Who they are:** Beginner to early intermediate individuals (specifically targeting the **16–35+ age range**—students fresh out of college, or retail newcomers looking for professional-grade simulation).
+- **Current Status:** They have acquired surface-level knowledge (exploring finance blogs, watching trading YouTube channels, reading tutorials), but have **never placed a single trade** or are struggling with emotional discipline in real markets.
 - **Psychological Barrier:** They are highly anxious and finicky about taking the first step. They want to test their skills in a safe **swimming pool** before jumping into the real, deep **ocean**.
 - **Parental Appeal:** The structured, educational nature of the app gains active parent endorsement, as children learn real risk allocation and financial literacy without risking actual family capital.
 

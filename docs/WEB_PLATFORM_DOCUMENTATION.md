@@ -148,30 +148,25 @@ While SVGs are lightweight and great for prototypes, you can easily swap the vec
 *   **Recharts:** For highly readable, stylized, smooth Material 3 line charts.
 *   **Lightweight Charts (by TradingView):** If you want to offer professional candle/line charts with live overlay tools for power users.
 
-### Step 5: Secure Your API Keys
-In Next.js, never expose your private API keys in client-side code. Instead, route your Gemini AI requests through a secure **Next.js API Route**:
+## 6. Detailed Next.js Implementation Roadmap
 
-*File: `app/api/ai-audit/route.ts`*
-```typescript
-import { GoogleGenAI } from '@google/genai';
-import { NextResponse } from 'next/server';
+To scale Trade Lab into a professional web destination, we follow this multi-phase development track:
 
-export async function POST(request: Request) {
-  const { transactions, holdings } = await request.json();
-  
-  // Read key safely from server environment variables (.env.local)
-  const apiKey = process.env.GEMINI_API_KEY;
-  const ai = new GoogleGenAI({ apiKey });
+### Phase 1: Institutional Foundation (Next.js & TypeScript)
+*   **Infrastructure:** Set up a Next.js 14+ App Router project with absolute pathing and strict linting.
+*   **Component Atomization:** Port existing static HTML segments into reusable React components (Dashboard, OrderTicket, Watchlist, Sidebar).
+*   **Production State:** Implement **Zustand** with persistence middleware to manage the complex simulation state without re-renders.
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: `Audit these trades for behavioral biases: ${JSON.stringify(transactions)}`,
-    });
-    return NextResponse.json({ audit: response.text });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to generate diagnostic' }, { status: 500 });
-  }
-}
-```
-In your frontend components, simply query `/api/ai-audit` to execute the behavior analysis securely!
+### Phase 2: Professional Execution Engine
+*   **Math Port:** Migrate the Random Walk and Steering logic to a dedicated `useMarketSimulation` hook.
+*   **Chart Upgrade:** Replace SVG polylines with **Lightweight Charts** (by TradingView) to support native Candlestick rendering and drawing tools.
+*   **Bracket Orders:** Implement multi-leg execution logic (Entry + StopLoss + TakeProfit) matching the Android Track B definitions.
+
+### Phase 3: Cross-Platform Synchronization
+*   **Firebase Integration:** Connect Firebase Auth for unified user identity across Android and Web.
+*   **Sync Logic:** Use Firestore to store real-time portfolio snapshots, allowing a user to start a trade on their phone and finish it on their laptop.
+*   **Secure API:** Migrate Gemini behavioral diagnostics to Next.js API Routes to keep API keys server-side.
+
+### Phase 4: Social & Retention
+*   **Social Scores:** Display the quantified **Discipline Score** and global leaderboards.
+*   **Market Events:** Implement server-sent events (SSE) or WebSockets for live breaking news notifications.

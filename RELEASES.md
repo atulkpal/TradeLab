@@ -4,6 +4,27 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [1.3.0] - Social Maturity & Global Arena
+**Release Date:** July 25, 2026  
+**Version Code:** `5`  
+**Status:** 🟡 RELEASE CANDIDATE
+
+### Summary of Changes
+Introduction of the social competition layer and quantified investor maturity metrics to drive user retention and viral growth.
+
+### Core Features
+- **Investor Maturity Engine:** 0-100 Discipline Score quantifying risk management behavior.
+- **Dynamic Leaderboards:** Multi-sort support (Wealth vs. Maturity) and top 100 visibility.
+- **Social Badges:** Quantified milestones for Sizing, Patience, and Sector Exploration.
+- **Viral Growth hooks:** "Discipline Challenge" sharing and friend invite system.
+
+### Build Artifacts
+- **Debug APK:** `app-debug.apk`
+- **Release APK:** `app-release.apk`
+- **App Bundle:** `app-release.aab`
+
+---
+
 ## [1.2.0] - Pre-Launch Polish & Advanced Realism
 **Release Date:** July 23, 2026  
 **Version Code:** `4`  

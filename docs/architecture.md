@@ -59,9 +59,10 @@ The current app utilizes a localized Clean MVVM structure divided into three dis
     *   `HoldingEntity`: Tracks shares held, average purchase price, and ticker codes.
     *   `TransactionEntity`: Historic logs of executions (BUY/SELL) with timestamps and execution prices.
     *   `WatchlistEntity`: User-curated stocks marked for quick monitoring.
-    *   `StockPriceEntity`: Simulates current asset market rates, high/low parameters, and fluctuation spreads. Supports **Sentiment Bias** multipliers.
+    *   `StockPriceEntity`: Simulates current asset market rates, high/low parameters, and fluctuation spreads. Supports **Sentiment Bias** multipliers and utilizes a **Unified OHLCV History Format** (`timestamp|O|H|L|C|V`) for professional-grade visualization across all asset classes, including indices.
     *   `AccountSnapshotEntity`: Persists daily total values to generate historical Equity Curves.
     *   `MarketNewsEntity`: Stores real-world and simulated headlines with sentiment metadata.
+    *   `LedgerEntryEntity`: A high-precision (4 decimal) account statement tracking every cash movement (Principal, Taxes, Charges, Rewards).
 *   **DAOs (`Daos.kt`):** Type-safe interfaces containing SQL queries for Room database compilation.
 *   **AppDatabase (`AppDatabase.kt`):** Coordinates SQLite file-handle instantiation and manages destructive/non-destructive migrations.
 
@@ -76,13 +77,20 @@ The current app utilizes a localized Clean MVVM structure divided into three dis
 ### C. Presentation Layer (`com.ashwathai.tradelab.ui` & `MainActivity.kt`)
 *   **TradingViewModel:** Emits unified UI state flows using Kotlin `StateFlow`. Exposes functions for buying, selling, resetting profile configurations, and simulating market tick price shifts.
 *   **Gesture-Based Navigation**: Utilizes a synchronized `HorizontalPager` and `BottomNavBar` setup. The pager handles smooth screen transitions while maintaining bidirectional state sync with the ViewModel.
+*   **Charts Terminal**: A dedicated screen for deep technical analysis, allowing users to search for any asset and inspect price action using a high-performance **Interactive Zoom & Pan** engine.
 *   **Jetpack Compose Views:** Lightweight, stateless layouts that observe the ViewModel states. Native **Android Canvas DrawScopes** are used to draw beautiful high-contrast charts directly from pricing data streams.
+*   **Overhauled Buy/Sell Desk**: A hyper-compact, quantity-first order ticket design. Reorganizes controls into a dense grid and features a high-prominence **Financial Status Bar** for instant margin and cash awareness.
 *   **Market TV Dashboard**: A persistent `BreakingNewsTicker` bar pinned globally below the fixed-height header, delivering real-time sentiment and channel branding (CNBC/Zee).
 
 ### F. Institutional Analytics & Sentiment Logic
 *   **Sector Heatmap**: Dynamic grouping logic that calculates portfolio weights by industry (IT, Banking, Energy) and renders a multi-segment heatbar.
 *   **Equity Curve Persistence**: An `AccountSnapshot` system that stores daily total account values in Room, visualizing long-term growth trends.
 *   **Sentiment Math (Option B)**: The simulation engine is "News-Aware." It applies a velocity multiplier (`driftDelta`) based on real-world news sentiment, accelerating drift toward anchors by up to 3x.
+*   **Realistic Cost Engine**: Reactively calculates **STT (Securities Transaction Tax)**, transaction charges, and brokerage for all trades. STT rates dynamically shift based on product type (CNC vs. MIS).
+*   **Brokerage Shield**: A "Watch-to-Earn" gamified mechanism that allows users to waive the 0.05% brokerage fee by consuming credits earned via on-demand rewarded ads.
+*   **Discipline Score Engine**: A proprietary quantification algorithm (`DisciplineCalculator`) that evaluates retail behavior (position sizing, holding time, emotional bias detection via Gemini) and assigns a social "Maturity Score."
+*   **Margin & Leverage Engine**: Simulates institutional buying power (up to 5x for MIS) with a dedicated liquidation manager to handle margin calls and maintenance triggers.
+*   **Precision Tradebook**: An atomic logging system that consolidated transactions into a single statement entry with detailed breakdowns of cost components, ensuring 100% transparency.
 
 ---
 
@@ -153,7 +161,9 @@ To maintain the offline-first experience while allowing seamless transitions to 
     *   *Option A (Maximum Reuse - Compose Multiplatform):* Build the iOS UI in Compose. The exact same Compose UI files in the shared module render natively on iOS.
     *   *Option B (Premium Platform Polish - SwiftUI):* Export the shared ViewModels to Swift using objective-C/Swift framework boundaries. Build the views natively in SwiftUI observing the shared StateFlow streams.
 *   **Web Presentation:**
-    *   Compile the shared Kotlin code to Kotlin/Wasm to render the UI on an HTML5 canvas, or use Kotlin/JS wrappers to hook into a React/Tailwind frontend.
+    *   **Architecture:** A modern **Next.js 14+** application utilizing **React** for component modularization and **Zustand** for high-performance reactive state management.
+    *   **Stack:** TypeScript (Type safety), Tailwind CSS (Theming), Framer Motion (Animations), and Lightweight Charts (Institutional-grade visualization).
+    *   **Execution:** Initially utilizes native browser logic (Next.js API routes) to interface with Gemini. Post-KMP migration, it will utilize the shared Kotlin core compiled to **Kotlin/Wasm** for the business logic layer while retaining the React/Next.js frontend for UI and SEO optimization.
 
 #### Step 5: UI Layer Modularization & Whitelabel Layout
 To simplify future whitelabel configurations, the UI layer under `com.ashwathai.tradelab.ui` is organized into standalone feature modules:
@@ -173,7 +183,8 @@ To simplify future whitelabel configurations, the UI layer under `com.ashwathai.
 
 ## 4. Architectural Best Practices for Future Agents
 
-When adding new code or editing existing structures, you **must** adhere to these architectural rules:
+When adding new code or editing existing structures, you **must** adhere to these architectural and workflow rules:
+0.  **Branching Policy:** All Android development MUST occur on the `develop` branch. Website development MUST occur on the `website` branch. `main` is for production only.
 1.  **Dependency Injection (Hilt):** Components MUST use constructor injection. Avoid using static singletons (e.g., `getInstance()`) inside business logic or ViewModels. All dependencies (Database, DAOs, Firestore, Repositories) must be provided via Hilt modules in the `di` package.
 2.  **Framework Quarantine:** Keep Kotlin files in `com.ashwathai.tradelab.data` completely free of references to Android system frameworks (e.g., `android.util.Log`, Android Views). Inject a `Context` only if absolutely necessary using `@ApplicationContext`.
 3.  **Background Task Management:** Never place infinite `while(true)` loops or periodic background timers inside a `ViewModel`'s `init` block. Move these to an explicit `startBackgroundTasks()` function. This prevents test runners from hanging while waiting for the app to become "idle."

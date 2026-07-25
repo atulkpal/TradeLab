@@ -230,6 +230,7 @@ data class TabItem(val name: String, val icon: androidx.compose.ui.graphics.vect
 val MainTabs = listOf(
     TabItem("Portfolio", Icons.Default.Home),
     TabItem("Watchlist", Icons.Default.FormatListBulleted),
+    TabItem("Charts", Icons.Default.AutoGraph),
     TabItem("Commodities", Icons.Default.TrendingUp),
     TabItem("F&O", Icons.Default.Analytics),
     TabItem("Academy", Icons.Default.School),

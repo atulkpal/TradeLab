@@ -1,9 +1,6 @@
-# Tasks: TradeLab Website Production Readiness
+# Tasks: Phase 2 Documentation Update
 
-- [x] Prepare Common Components (Header & Footer snippets)
-- [x] Update `index.html` (Metadata, Footer, ARIA)
-- [x] Update `privacy.html` (Theme migration, Header, Footer, Metadata)
-- [x] Update `terms.html` (Theme migration, Header, Footer, Metadata)
-- [x] Update `delete-account.html` (Theme migration, Header, Footer, Metadata)
-- [x] Refine `styles.css` (Consistent typography and spacing)
-- [x] Verification & Link Check
+- [x] Update `docs/epics_and_sprints.md` (Add Epics 17, 18, 19)
+- [x] Update `docs/architecture.md` (Institutional Analytics & Margin Engine)
+- [x] Update `AGENTS.md` (Update Active Milestones)
+- [x] Final Verification

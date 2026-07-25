@@ -3,6 +3,25 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [1.3.0] - Social Maturity & Global Arena - 2026-07-25
+
+### Added
+- **Investor Maturity Engine (Track C)**:
+  - Implemented a proprietary **0-100 Discipline Score** algorithm that rewards healthy position sizing (max 12% allocation), portfolio diversification (3+ sectors), and long-term holding times.
+  - Added dynamic **Discipline Badges** (e.g., "Sizing Master", "Patience King") to the user profile based on quantified behavioral milestones.
+- **Global Leaderboard Upgrades**:
+  - Introduced a **Competitive Toggle** allowing users to sort the arena by Wealth (XP) or Maturity (Discipline Score).
+  - Increased leaderboard capacity to the **top 100 practitioners** globally.
+- **Viral Discipline Challenge**:
+  - Added a **Share My Score** hook that generates social-friendly competitive messages to challenge friends to beat your risk management stats.
+  - Implemented a "Challenge a Friend" invite card in the Academy to drive arena growth.
+
+### Changed
+- Refactored `TradingRepository` to integrate the `DisciplineCalculator` and recalculate maturity on every execution.
+- Migrated Room database to **Version 20** to support persistent discipline metrics.
+
+---
+
 ## [1.2.0] - Pre-Launch Polish & Advanced Realism - 2026-07-23
 
 ### Added

@@ -387,9 +387,15 @@ fun FoDeskScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(text = "$selectedTicker UNDERLYING", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text(text = formatCurrency(currentPrice, stats.currency), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { viewModel.navigateToChart(selectedTicker) }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.AutoGraph, null, tint = BrandViolet, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(text = "$selectedTicker UNDERLYING", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Text(text = formatCurrency(currentPrice, stats.currency), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
                 
                 // Show token badge if using token

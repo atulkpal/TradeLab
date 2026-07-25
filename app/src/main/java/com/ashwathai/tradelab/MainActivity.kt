@@ -96,7 +96,8 @@ class MainActivity : ComponentActivity() {
         PROFILE_INDICATORS,
         PROFILE_SHIELD_MAX,
         WATCHLIST_CREATE,
-        PORTFOLIO_RESET
+        PORTFOLIO_RESET,
+        PROFILE_LEVERAGE
     }
 
     fun getAdUnitId(adType: AdType): String {
@@ -112,6 +113,7 @@ class MainActivity : ComponentActivity() {
                 AdType.PROFILE_SHIELD_MAX -> "ca-app-pub-4153575596488132/2225726124"
                 AdType.WATCHLIST_CREATE -> "ca-app-pub-4153575596488132/5777269963"
                 AdType.PORTFOLIO_RESET -> "ca-app-pub-4153575596488132/5777269963"
+                AdType.PROFILE_LEVERAGE -> "ca-app-pub-4153575596488132/5777269963"
             }
         }
     }
@@ -227,9 +229,18 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showTradeSheet by remember { mutableStateOf(false) }
+    var tradeSheetIsBuy by remember { mutableStateOf(true) }
+    var tradeSheetIsExpanded by remember { mutableStateOf(false) }
 
     // Active Quiz dialogue anchor (for Learn-to-Earn Academy or deep link triggers)
     var activeQuizLevelId by remember { mutableStateOf<Int?>(null) }
+
+    // Trigger sheet dismissal from VM
+    LaunchedEffect(Unit) {
+        viewModel.dismissBottomSheetTrigger.collect {
+            showTradeSheet = false
+        }
+    }
 
     // Trigger snackbar on message update
     LaunchedEffect(feedbackMessage) {
@@ -337,6 +348,8 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             latestNews = latestNews,
                             onTickerClick = { symbol ->
                                 viewModel.selectStock(symbol)
+                                tradeSheetIsBuy = true
+                                tradeSheetIsExpanded = true
                                 showTradeSheet = true
                             }
                         )
@@ -344,16 +357,23 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             viewModel = viewModel,
                             stats = stats,
                             latestNews = latestNews,
-                            onTickerClick = { symbol ->
+                            onTickerClick = { symbol, isBuy, isExpanded ->
                                 viewModel.selectStock(symbol)
+                                tradeSheetIsBuy = isBuy
+                                tradeSheetIsExpanded = isExpanded
                                 showTradeSheet = true
                             }
+                        )
+                        "Charts" -> ChartScreen(
+                            viewModel = viewModel
                         )
                         "Commodities" -> CommoditiesScreen(
                             viewModel = viewModel,
                             stats = stats,
                             onTickerClick = { symbol ->
                                 viewModel.selectStock(symbol)
+                                tradeSheetIsBuy = true
+                                tradeSheetIsExpanded = true
                                 showTradeSheet = true
                             }
                         )
@@ -738,6 +758,8 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                     stock = currentStock,
                     viewModel = viewModel,
                     stats = stats,
+                    initialIsBuy = tradeSheetIsBuy,
+                    initialIsExpanded = tradeSheetIsExpanded,
                     onDismiss = { showTradeSheet = false }
                 )
             }

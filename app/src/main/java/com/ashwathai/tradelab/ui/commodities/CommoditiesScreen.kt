@@ -486,35 +486,41 @@ fun CommoditiesScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = item.symbol.replace("GLOBAL_", "").replace("MCX_", ""),
-                                            color = Color.White,
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(if (activeSubTab == "MCX") Color(0xFF00C853).copy(alpha = 0.12f) else Color(0xFF2979FF).copy(alpha = 0.12f))
-                                                .padding(horizontal = 5.dp, vertical = 2.dp)
-                                        ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    IconButton(onClick = { viewModel.navigateToChart(sym) }, modifier = Modifier.size(24.dp)) {
+                                        Icon(Icons.Default.AutoGraph, null, tint = BrandViolet, modifier = Modifier.size(14.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Column {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
-                                                text = if (activeSubTab == "MCX") "MCX" else "GLOBAL",
-                                                color = if (activeSubTab == "MCX") Color(0xFF00C853) else Color(0xFF2979FF),
-                                                fontSize = 8.sp,
+                                                text = item.symbol.replace("GLOBAL_", "").replace("MCX_", ""),
+                                                color = Color.White,
+                                                fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(if (activeSubTab == "MCX") Color(0xFF00C853).copy(alpha = 0.12f) else Color(0xFF2979FF).copy(alpha = 0.12f))
+                                                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = if (activeSubTab == "MCX") "MCX" else "GLOBAL",
+                                                    color = if (activeSubTab == "MCX") Color(0xFF00C853) else Color(0xFF2979FF),
+                                                    fontSize = 8.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
                                         }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = item.companyName,
+                                            color = TextSubtle,
+                                            fontSize = 11.sp
+                                        )
                                     }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = item.companyName,
-                                        color = TextSubtle,
-                                        fontSize = 11.sp
-                                    )
                                 }
 
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -525,7 +531,11 @@ fun CommoditiesScreen(
                                         .size(width = 60.dp, height = 30.dp)
                                         .padding(horizontal = 4.dp)
                                 ) {
-                                    val points = item.historyData.split(",").mapNotNull { it.toDoubleOrNull() }
+                                    val points = if (item.historyData.contains("|")) {
+                                        item.historyData.split(";").mapNotNull { it.split("|").getOrNull(4)?.toDoubleOrNull() }
+                                    } else {
+                                        item.historyData.split(",").mapNotNull { it.toDoubleOrNull() }
+                                    }
                                     if (points.size > 1) {
                                         Canvas(modifier = Modifier.fillMaxSize()) {
                                             val min = points.minOrNull() ?: 0.0

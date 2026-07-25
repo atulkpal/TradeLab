@@ -1,9 +1,9 @@
 # Trade Lab — Go-To-Market (GTM), Competitive Analysis & Launch Strategy
 
 **Prepared for:** Ashwath AI  
-**Focus Audience:** Gen Z and Young Millennials (16–25 Years Old)  
-**Aesthetic Theme:** Sophisticated Dark (Neon Highlights & Live Vector Charts)  
-**Core Value Proposition:** Realistic micro-budget training & AI behavioral diagnostic auditing to build disciplined investor habits.
+**Focus Audience:** Gen Z and Millennials (16–35+ Years Old)
+**Aesthetic Theme:** Sophisticated Dark (Neon Highlights & Live Vector Charts)
+**Core Value Proposition:** Realistic micro-budget training & AI behavioral diagnostic auditing to build disciplined investor habits for modern retail practitioners.
 
 ---
 

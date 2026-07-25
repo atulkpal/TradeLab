@@ -21,6 +21,7 @@ data class UserProfile(
     val indicatorsUnlockedUntil: Long = 0L,
     val aiAuditCredits: Int = 3,
     val fnoTokens: Int = 0,
+    val leverageUnlockedUntil: Long = 0L, // Ad-rewarded 5x leverage expiry
     val portfolioResetsCount: Int = 0,
     val hasAcceptedSimDisclaimer: Boolean = false,
     val isWatchlistCompactMode: Boolean = false,
@@ -32,15 +33,19 @@ data class UserProfile(
     val userUniqueId: String = "",
     val profilePictureUrl: String = "",
     val isEmailVerified: Boolean = false,
-    val isPhoneVerified: Boolean = false
+    val isPhoneVerified: Boolean = false,
+    val disciplineScore: Int = 75,
+    val lastDisciplineUpdate: Long = System.currentTimeMillis(),
+    val activeBadges: String = "" // Comma-separated list
 )
 
-@Entity(tableName = "holdings")
+@Entity(tableName = "holdings", primaryKeys = ["symbol", "isDelivery"])
 data class Holding(
-    @PrimaryKey val symbol: String,
+    val symbol: String,
     val shares: Double,
     val averagePrice: Double,
-    val sharesT1: Double = 0.0 // Shares bought today, settling T+1
+    val sharesT1: Double = 0.0, // Shares bought today, settling T+1
+    val isDelivery: Boolean = true // True = CNC, False = MIS (Intraday)
 )
 
 @Entity(tableName = "transactions")
@@ -70,7 +75,7 @@ data class StockPrice(
     val previousClose: Double,
     val highPrice: Double,
     val lowPrice: Double,
-    val historyData: String, // Comma-separated list of historical prices (e.g. "180.1,181.2,183.0,...") for line chart
+    val historyData: String, // OHLCV segments separated by ';'. Segment format: "timestamp|O|H|L|C|V"
     val targetPrice: Double? = null, // The real-world "Anchor" price we steer towards
     val sentimentBias: Double = 0.0 // -1.0 (Bearish) to 1.0 (Bullish) influenced by real news
 )
@@ -96,6 +101,13 @@ data class PendingOrder(
     val shares: Double,
     val triggerPrice: Double,
     val status: String = "PENDING", // "PENDING", "EXECUTED", "CANCELLED"
+    val isDelivery: Boolean = true,
+    val targetPrice: Double? = null, // For Bracket Orders
+    val stopLossPrice: Double? = null, // For Bracket Orders
+    val isTrailing: Boolean = false,
+    val trailingGap: Double = 0.0,
+    val trailingBaselinePrice: Double? = null, // High watermark for SELL SL, Low watermark for BUY SL
+    val parentOrderId: Int? = null, // To link OCO legs in Bracket Orders
     val timestamp: Long = System.currentTimeMillis()
 )
 
@@ -125,4 +137,16 @@ data class AccountSnapshot(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val totalValue: Double,
     val timestamp: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "ledger_entries")
+data class LedgerEntry(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val timestamp: Long = System.currentTimeMillis(),
+    val description: String,
+    val type: String, // "DEBIT", "CREDIT"
+    val amount: Double,
+    val runningBalance: Double,
+    val symbol: String? = null,
+    val refId: Int? = null // Optional link to Transaction ID
 )

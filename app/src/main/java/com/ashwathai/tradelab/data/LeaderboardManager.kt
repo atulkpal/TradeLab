@@ -15,6 +15,7 @@ data class LeaderboardEntry(
     val userName: String = "Anonymous",
     val xp: Int = 0,
     val portfolioValue: Double = 0.0,
+    val disciplineScore: Int = 75,
     val rank: String = ""
 )
 
@@ -24,7 +25,7 @@ class LeaderboardManager @Inject constructor(
 ) {
     private val leaderboardCollection = db.collection("leaderboard")
 
-    suspend fun syncUserStats(userId: String, userName: String, xp: Int, portfolioValue: Double) {
+    suspend fun syncUserStats(userId: String, userName: String, xp: Int, portfolioValue: Double, disciplineScore: Int) {
         if (userId.isBlank()) return
         
         val data = mapOf(
@@ -32,6 +33,7 @@ class LeaderboardManager @Inject constructor(
             "userName" to userName,
             "xp" to xp,
             "portfolioValue" to portfolioValue,
+            "disciplineScore" to disciplineScore,
             "lastUpdated" to System.currentTimeMillis()
         )
         
@@ -42,10 +44,10 @@ class LeaderboardManager @Inject constructor(
         }
     }
 
-    fun getTopUsersFlow(): Flow<List<LeaderboardEntry>> = callbackFlow {
+    fun getTopUsersFlow(sortBy: String = "xp"): Flow<List<LeaderboardEntry>> = callbackFlow {
         val listener = leaderboardCollection
-            .orderBy("xp", Query.Direction.DESCENDING)
-            .limit(20)
+            .orderBy(sortBy, Query.Direction.DESCENDING)
+            .limit(100)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     android.util.Log.e("LeaderboardManager", "Firestore error: ${error.message}", error)

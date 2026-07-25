@@ -17,9 +17,10 @@ import androidx.room.RoomDatabase
         PendingOrder::class,
         AppNotification::class,
         MarketNews::class,
-        AccountSnapshot::class
+        AccountSnapshot::class,
+        LedgerEntry::class
     ],
-    version = 16,
+    version = 21,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -33,6 +34,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun appNotificationDao(): AppNotificationDao
     abstract fun marketNewsDao(): MarketNewsDao
     abstract fun accountSnapshotDao(): AccountSnapshotDao
+    abstract fun ledgerDao(): LedgerDao
 
     companion object {
         @Volatile

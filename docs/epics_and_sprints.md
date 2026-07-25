@@ -46,9 +46,86 @@ This document defines the development roadmap for **Trade Lab**. It breaks down 
  ├─────────────────────────────────────────────────────────────┤
  │  EPIC 15: Real-World News & Option B Influence [100% COMP.] │
  ├─────────────────────────────────────────────────────────────┤
- │  EPIC 16: Pre-Launch Polish & Advanced Realism [90% COMP.]  │
+ │  EPIC 16: Pre-Launch Polish & Advanced Realism [100% COMP.] │
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 17: Track A — Institutional Visualization [100% COMP.]│
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 18: Track B — Margin & Bracket Orders     [100% COMP.]│
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 19: Track C — Social Discipline Scores     [100% COMP.] │
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 20: Next.js Web App Platform               [DEFERRED] │
  └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Epic 20: Next.js Web App Platform (Status: ⏸️ Deferred)
+Transition from a static sandbox to a professional-grade, responsive Next.js application with full Android feature parity.
+
+### Sprint 20.1: Institutional Foundation (Next.js & TypeScript)
+*   [ ] **Infrastructure**: Initialize Next.js 14+ App Router project with absolute pathing and strict linting.
+*   [ ] **Component Atomization**: Port existing static HTML segments into reusable React components (Dashboard, OrderTicket, Watchlist, Sidebar).
+*   [ ] **Production State**: Implement **Zustand** with persistence middleware to manage simulation state.
+
+### Sprint 20.2: Professional Execution Engine
+*   [ ] **Math Port**: Migrate Random Walk and Steering logic to a dedicated `useMarketSimulation` hook.
+*   [ ] **Chart Upgrade**: Replace SVG polylines with **Lightweight Charts** (by TradingView) for Candlestick rendering.
+*   [ ] **Bracket Orders**: Implement multi-leg execution logic (Entry + StopLoss + TakeProfit).
+
+### Sprint 20.3: Cross-Platform Synchronization
+*   [ ] **Firebase Integration**: Connect Firebase Auth for unified user identity across Android and Web.
+*   [ ] **Sync Logic**: Use Firestore to store real-time portfolio snapshots for cross-device parity.
+*   [ ] **Secure AI API**: Migrate Gemini diagnostics to Next.js API Routes to protect server-side keys.
+
+### Sprint 20.4: Social & Retention
+*   [ ] **Social Scores**: Display quantified Discipline Scores and global leaderboards.
+*   [ ] **Market Events**: Implement server-sent events (SSE) for live breaking news notifications.
+
+---
+
+## Epic 17: Track A — Institutional Visualization (Status: 🟢 Complete)
+Transition from simple line charts to professional-grade technical analysis tools.
+
+### Sprint 17.1: Candlestick Engine
+*   [x] **OHLC Migration**: Refactor `StockPrice.historyData` to support Open-High-Low-Close data structures.
+*   [x] **Native Candlestick Renderer**: Implement a high-performance Canvas renderer for color-coded candles and wicks.
+*   [x] **Volume Bars**: Add a bottom-aligned volume histogram to the main chart.
+
+### Sprint 17.2: Advanced Indicators & Zoom
+*   [x] **MACD Oscillator**: Add a dedicated sub-graph for Moving Average Convergence Divergence.
+*   [x] **Bollinger Bands**: Implement standard deviation overlays on the main price chart.
+*   [x] **Interactive Zoom**: Add horizontal scaling gestures to inspect specific timeframes.
+
+---
+
+## Epic 18: Track B — Margin & Bracket Orders (Status: 🟢 Complete)
+Implement professional-grade risk management and institutional order types.
+
+### Sprint 18.1: Leverage & Margin Engine
+*   [x] **Buying Power Multipliers**: Implement 5x leverage for Intraday (MIS) trades.
+*   [x] **Margin Maintenance Logic**: Track used margin and available buying power in real-time.
+*   [x] **Auto-Liquidation Logic**: Implement automatic position square-off if margin falls below safety thresholds.
+
+### Sprint 18.2: Institutional Order Types (BO/CO)
+*   [x] **Bracket Orders (BO)**: Create a multi-leg entry system (Entry + Target + StopLoss).
+*   [x] **Trailing Stop-Loss**: Implement logic to adjust SL price automatically as profit increases.
+*   [x] **OCO Logic**: Support "One Cancels Other" for simultaneous profit and loss triggers.
+
+---
+
+## Epic 19: Track C — Social Discipline Scores (Status: 🟢 Complete)
+Quantify investor maturity and introduce social competition.
+
+### Sprint 19.1: The Discipline Score Algorithm
+*   [x] **Quantified Maturity**: Design an algorithm deriving a score (0-100) based on position sizing, audit results, and holding times.
+*   [x] **Discipline Badges**: Award dynamic profile badges (e.g., "Sizing Master", "Patience King") based on scores.
+
+### Sprint 19.2: Social Leaderboards & Firebase Sync
+*   [x] **Cloud Profile Sync**: Move Discipline Scores and basic profile metadata to Firebase Firestore.
+*   [x] **Global Leaderboards**: Display the top 100 most disciplined traders globally with multi-sort (Wealth vs Maturity).
+*   [x] **Precision Ledger**: Implement a consolidated tradebook tracking Component breakdowns to 4 decimal places.
+*   [x] **Viral Growth**: Support "Discipline Challenge" sharing and friend-invitation hooks.
 
 ---
 
