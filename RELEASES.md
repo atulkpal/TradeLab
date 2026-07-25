@@ -6,7 +6,7 @@ This document serves as the authoritative history of all production and candidat
 
 ## [1.3.0] - Social Maturity & Global Arena
 **Release Date:** July 25, 2026  
-**Version Code:** `5`  
+**Version Code:** `4`  
 **Status:** 🟢 STABLE
 
 ### Summary of Changes
@@ -27,8 +27,7 @@ Introduction of the social competition layer and quantified investor maturity me
 
 ## [1.2.0] - Pre-Launch Polish & Advanced Realism
 **Release Date:** July 23, 2026  
-**Version Code:** `4`  
-**Status:** 🟡 RELEASE CANDIDATE
+**Status:** ⚪ INTERNAL CANDIDATE (Skipped for v1.3.0)
 
 ### Summary of Changes
 Final polish before launch, focusing on social virality and professional trading desk mechanics.

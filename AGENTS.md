@@ -72,7 +72,7 @@ The **Architectural Modernization** has been successfully verified:
 
 ## 4. Current Work & Next Milestones
 
-We have successfully completed **Phase 1 (Foundations)**, the **Pre-Launch Polish**, and the **Social Arena**. The app is now at **v1.3.0 (Build 5)** and ready for production distribution.
+We have successfully completed **Phase 1 (Foundations)**, the **Pre-Launch Polish**, and the **Social Arena**. The app is now at **v1.3.0 (Build 4)** and ready for production distribution.
 
 ### What is Active Right Now (Post-Launch & Multi-Platform Prep)
 *   **Track A (UI/UX & Charts):** native **Candlestick** rendering and institutional overlays are stable. Future work includes Volume Profiles and advanced Fibonacci tools.
