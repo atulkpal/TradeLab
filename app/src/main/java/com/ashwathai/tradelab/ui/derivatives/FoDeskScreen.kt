@@ -318,11 +318,27 @@ fun FoDeskScreen(
     val liveStock = stockPrices.find { it.symbol == selectedTicker }
     val currentPrice = liveStock?.currentPrice ?: 100.0
 
-    // Generate option strikes spaced around current price
-    val strikes = remember(currentPrice) {
-        listOf(0.95, 0.98, 0.99, 1.0, 1.01, 1.02, 1.05).map {
-            val mult = if (selectedTicker == "AAPL" || selectedTicker == "TSLA" || selectedTicker == "MSFT") 1.0 else 5.0
-            Math.round(currentPrice * it / mult).toDouble() * mult
+    // F&O lot size per underlying (standard Indian exchange + US)
+    val fnoLotSizes = remember {
+        mapOf(
+            "RELIANCE" to 250, "TCS" to 125, "INFY" to 600,
+            "HDFCBANK" to 275, "ICICIBANK" to 2750, "SBIN" to 300,
+            "TATAMOTORS" to 300, "LT" to 150, "WIPRO" to 1000,
+            "BHARTIARTL" to 900, "ITC" to 2000, "BAJFINANCE" to 50,
+            "AAPL" to 100, "TSLA" to 100, "MSFT" to 100
+        )
+    }
+    val selectedLotSize = fnoLotSizes[selectedTicker] ?: 100
+
+    // Generate option strikes using STRIKE_INTERVALS from repository
+    val strikes = remember(currentPrice, selectedTicker) {
+        val interval = TradingRepository.STRIKE_INTERVALS[selectedTicker] ?: 10.0
+        val numStrikes = 7
+        val mid = Math.round(currentPrice / interval).toDouble() * interval
+        val start = mid - (numStrikes / 2) * interval
+        (0 until numStrikes).map { i ->
+            val s = start + i * interval
+            Math.round(s / interval).toDouble() * interval
         }.distinct().sorted()
     }
 
@@ -334,6 +350,8 @@ fun FoDeskScreen(
     var orderLots by remember { mutableStateOf(1) }
     var isBuyOrder by remember { mutableStateOf(true) }
     var isDelivery by remember { mutableStateOf(true) } // Carry Forward vs Intraday
+    var fnoOrderType by remember { mutableStateOf("Market") } // Market, Limit, Stop-Loss, GTT
+    var fnoCustomPriceInput by remember { mutableStateOf("") }
 
     // Synchronize selected strike details if ticker changes
     LaunchedEffect(selectedTicker, currentPrice) {
@@ -394,7 +412,23 @@ fun FoDeskScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(text = "$selectedTicker UNDERLYING", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(text = formatCurrency(currentPrice, stats.currency), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = formatCurrency(currentPrice, stats.currency), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(BrandViolet.copy(alpha = 0.12f))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Lot: $selectedLotSize",
+                                    color = BrandViolet,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
                 
@@ -641,6 +675,35 @@ fun FoDeskScreen(
                         }
                     }
 
+                    // ORDER TYPE SELECTOR
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text("ORDER TYPE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(modifier = Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(12.dp)).background(DarkBg).padding(2.dp).horizontalScroll(rememberScrollState())) {
+                            listOf("Market", "Limit", "Stop-Loss", "GTT").forEach { type ->
+                                val sel = fnoOrderType == type
+                                Box(modifier = Modifier.width(72.dp).fillMaxHeight().clip(RoundedCornerShape(10.dp)).background(if (sel) BrandViolet.copy(alpha = 0.15f) else Color.Transparent).clickable { fnoOrderType = type }, contentAlignment = Alignment.Center) {
+                                    Text(if (type == "Stop-Loss") "Stop" else type, color = if (sel) BrandViolet else Color.White.copy(alpha = 0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        if (fnoOrderType != "Market") {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = fnoCustomPriceInput,
+                                onValueChange = { fnoCustomPriceInput = it },
+                                modifier = Modifier.fillMaxWidth().height(44.dp),
+                                placeholder = { Text("Trigger price", color = TextMuted, fontSize = 12.sp) },
+                                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = BrandViolet, unfocusedBorderColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                                textStyle = LocalTextStyle.current.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider(color = DarkBorder, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(12.dp))
@@ -665,7 +728,7 @@ fun FoDeskScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "$lots Lot\n(${lots * 100} qty)",
+                                    text = "$lots Lot\n(${lots * selectedLotSize} qty)",
                                     color = if (isSel) BrandViolet else Color.White,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
@@ -678,7 +741,7 @@ fun FoDeskScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Premium outflows or Collateral Details
-                    val shareQty = orderLots * 100.0
+                    val shareQty = orderLots * selectedLotSize.toDouble()
                     val totalPremiumCost = shareQty * activeOptionPremium
                     val collateralCost = if (!isBuyOrder) activeOptionStrike * shareQty * 0.1 else 0.0
 
@@ -745,13 +808,18 @@ fun FoDeskScreen(
                     // Execute Button
                     Button(
                         onClick = {
-                            val cashRequired = if (isBuyOrder) totalPremiumCost else collateralCost
+                            val baseCost = if (isBuyOrder) totalPremiumCost else collateralCost
+                            val sttRate = if (isDelivery) 0.001 else 0.00025
+                            val estCharges = baseCost * (sttRate + 0.0001 + 0.0005)
+                            val cashRequired = baseCost + estCharges
                             if (stats.cash < cashRequired) {
-                                viewModel.showFeedback("Failed: Insufficient Cash Balance for this derivative order!")
+                                viewModel.showFeedback("Failed: Insufficient Cash Balance for this derivative order! Required: ${formatCurrency(cashRequired, stats.currency)} including charges.")
                                 return@Button
                             }
 
                             viewModel.setDeliveryMode(isDelivery)
+                            viewModel.setOrderType(fnoOrderType)
+                            if (fnoOrderType != "Market") viewModel.setTriggerPrice(fnoCustomPriceInput)
 
                             if (!stats.isPremium && stats.fnoTokens > 0) {
                                 // Spend token first

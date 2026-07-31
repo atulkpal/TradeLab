@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ashwathai.tradelab.data.*
+import com.ashwathai.tradelab.rememberLaunchPromo
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
 import com.ashwathai.tradelab.ui.theme.*
@@ -66,6 +67,8 @@ fun WatchlistScreen(
 
     var showAdConfirmationDialog by remember { mutableStateOf(false) }
     var isAdLoading by remember { mutableStateOf(false) }
+
+    val promo = rememberLaunchPromo()
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val mainActivity = context as? com.ashwathai.tradelab.MainActivity
@@ -351,9 +354,10 @@ fun WatchlistScreen(
             }
         }
 
-        // Educational Context Tip
+        // Educational Context Tip - Adaptive
         var isTipDismissed by remember { mutableStateOf(false) }
-        if (!isTipDismissed) {
+        val adaptiveTip by viewModel.adaptiveGuidanceText.collectAsStateWithLifecycle()
+        if (!isTipDismissed && adaptiveTip.isNotEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 shape = RoundedCornerShape(16.dp),
@@ -364,8 +368,8 @@ fun WatchlistScreen(
                     Icon(Icons.Default.School, null, tint = BrandViolet, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("RISK EDUCATION DISCIPLINE", color = BrandViolet, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                        Text("Practice disciplined sizing: Never allocate more than 10% of your account to a single ticker.", color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp, lineHeight = 14.sp)
+                        Text("RISK • ACTION • DISCIPLINE", color = BrandViolet, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text(adaptiveTip, color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp, lineHeight = 14.sp)
                     }
                     IconButton(onClick = { isTipDismissed = true }, modifier = Modifier.size(20.dp)) { Icon(Icons.Default.Close, null, tint = TextMuted, modifier = Modifier.size(12.dp)) }
                 }
@@ -469,7 +473,7 @@ fun WatchlistScreen(
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                                 modifier = Modifier.align(Alignment.End).testTag("watchlist_go_pro_button")
                             ) {
-                                Text("GO PRO • ₹99/mo", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("GO PRO • ${promo.priceLabel}", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -621,7 +625,7 @@ fun WatchlistStockRow(
             }
             
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                StockLineChart(pricesString = stock.historyData, isPositive = isPositive, modifier = Modifier.width(50.dp).height(20.dp).padding(horizontal = 4.dp))
+                StockLineChart(pricesString = stock.historyData, isPositive = isPositive, mini = true, modifier = Modifier.width(50.dp).height(20.dp).padding(horizontal = 4.dp))
                 IconButton(onClick = onChartClick, modifier = Modifier.size(24.dp)) {
                     Icon(Icons.Default.AutoGraph, null, tint = BrandViolet, modifier = Modifier.size(14.dp))
                 }
@@ -729,6 +733,24 @@ fun BuySellBottomSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Quick Exit button when user holds this stock
+            if (ownedShares > 0.0001) {
+                Button(
+                    onClick = {
+                        viewModel.exitPosition(stock.symbol)
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth().height(36.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRose.copy(alpha = 0.15f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.ExitToApp, null, tint = AccentRose, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("EXIT POSITION - ${String.format(Locale.US, "%.2f", ownedShares)} shares", color = AccentRose, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             // --- SCROLLABLE BODY ---
             Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(scrollState)) {

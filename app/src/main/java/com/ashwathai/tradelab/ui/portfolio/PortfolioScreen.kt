@@ -1,6 +1,7 @@
 package com.ashwathai.tradelab.ui.portfolio
 
 import com.ashwathai.tradelab.MainActivity
+import com.ashwathai.tradelab.rememberLaunchPromo
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -50,6 +51,7 @@ import com.ashwathai.tradelab.ui.theme.*
 import com.ashwathai.tradelab.ui.derivatives.GreeksDiagnosticsBox
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.abs
 
 @Composable
 fun PortfolioScreen(
@@ -410,6 +412,8 @@ fun BrokerageShieldDialog(
 ) {
     var checked by remember { mutableStateOf(false) }
 
+    val promo = rememberLaunchPromo()
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -481,7 +485,7 @@ fun BrokerageShieldDialog(
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                             modifier = Modifier.align(Alignment.End)
                         ) {
-                            Text("GO PRO • ₹99/mo", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text("GO PRO • ${promo.priceLabel}", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -542,6 +546,17 @@ fun HoldingsList(holdings: List<Holding>, stockPrices: List<StockPrice>, stats: 
             equityHoldings.forEach { HoldingItem(it, stockPrices, stats, onTickerClick, viewModel) }
             if (optionHoldings.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("F&O Derivatives", color = BrandViolet, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = { viewModel.exitAllFnoPositions() },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentRose.copy(alpha = 0.15f)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.height(26.dp)
+                    ) {
+                        Text("CLOSE ALL", color = AccentRose, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
                 GreeksDiagnosticsBox(optionHoldings, stockPrices, stats.currency)
                 optionHoldings.forEach { OptionHoldingItem(it, stockPrices, stats, viewModel) }
             }
@@ -558,7 +573,7 @@ fun HoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: Portfoli
     val costBasis = totalShares * holding.averagePrice
     val pnl = currentValue - costBasis
     val pnlPct = if (costBasis > 0) (pnl / costBasis) * 100.0 else 0.0
-    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(DarkSurface).border(1.dp, DarkBorder, RoundedCornerShape(16.dp)).clickable { onTickerClick(holding.symbol) }.padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(DarkSurface).border(1.dp, DarkBorder, RoundedCornerShape(16.dp)).clickable { onTickerClick(holding.symbol) }.padding(start = 10.dp, top = 10.dp, bottom = 10.dp, end = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { viewModel.navigateToChart(holding.symbol) }, modifier = Modifier.size(24.dp)) {
                 Icon(Icons.Default.AutoGraph, null, tint = BrandViolet, modifier = Modifier.size(14.dp))
@@ -569,10 +584,21 @@ fun HoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: Portfoli
                 Text("${String.format(Locale.US, "%.2f", totalShares)} shares", color = TextMuted, fontSize = 10.sp)
             }
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(formatCurrency(currentValue, stats.currency), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            val isUp = pnl >= 0
-            Text("${if (isUp) "+" else ""}${String.format(Locale.US, "%.2f", pnlPct)}%", color = if (isUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(formatCurrency(currentValue, stats.currency), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                val isUp = pnl >= 0
+                Text("${if (isUp) "+" else ""}${String.format(Locale.US, "%.2f", pnlPct)}%", color = if (isUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.width(6.dp))
+            Button(
+                onClick = { viewModel.exitPosition(holding.symbol) },
+                colors = ButtonDefaults.buttonColors(containerColor = AccentRose.copy(alpha = 0.15f)),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                modifier = Modifier.height(28.dp)
+            ) {
+                Text("SELL", color = AccentRose, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -618,6 +644,7 @@ fun OptionHoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: Po
 
 @Composable
 fun PositionsList(positions: List<Holding>, transactions: List<Transaction>, stockPrices: List<StockPrice>, stats: PortfolioStats, onTickerClick: (String) -> Unit, viewModel: TradingViewModel) {
+    val sortMode by viewModel.holdingsSortMode.collectAsState()
     if (positions.isEmpty()) {
         Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -629,7 +656,38 @@ fun PositionsList(positions: List<Holding>, transactions: List<Transaction>, sto
         }
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            positions.forEach { holding ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                Text("Sort:", color = TextMuted, fontSize = 9.sp)
+                Spacer(modifier = Modifier.width(4.dp))
+                listOf("default", "pnl", "value").forEach { mode ->
+                    TextButton(
+                        onClick = { viewModel.setHoldingsSortMode(mode) },
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                        modifier = Modifier.height(24.dp)
+                    ) {
+                        Text(
+                            when (mode) { "default" -> "Default"; "pnl" -> "P&L"; else -> "Value" },
+                            color = if (sortMode == mode) BrandViolet else TextMuted,
+                            fontSize = 9.sp,
+                            fontWeight = if (sortMode == mode) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+            val sortedPositions = when (sortMode) {
+                "pnl" -> positions.sortedByDescending { h ->
+                    val s = stockPrices.find { it.symbol == h.symbol }
+                    val p = s?.currentPrice ?: h.averagePrice
+                    (h.shares + h.sharesT1) * p - (h.shares + h.sharesT1) * h.averagePrice
+                }
+                "value" -> positions.sortedByDescending { h ->
+                    val s = stockPrices.find { it.symbol == h.symbol }
+                    val p = s?.currentPrice ?: h.averagePrice
+                    (h.shares + h.sharesT1) * p
+                }
+                else -> positions
+            }
+            sortedPositions.forEach { holding ->
                 val liveStock = stockPrices.find { it.symbol == holding.symbol }
                 val currentPrice = liveStock?.currentPrice ?: holding.averagePrice
                 val totalShares = holding.shares + holding.sharesT1
@@ -668,6 +726,15 @@ fun PositionsList(positions: List<Holding>, transactions: List<Transaction>, sto
                         val isUp = pnl >= 0
                         Text(formatPnL(pnl, stats.currency), color = if (isUp) AccentGreen else AccentRose, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text("${if (isUp) "+" else ""}${String.format(Locale.US, "%.2f", pnlPct)}%", color = if (isUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Button(
+                            onClick = { viewModel.exitPosition(holding.symbol) },
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentRose.copy(alpha = 0.15f)),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(24.dp)
+                        ) {
+                            Text("EXIT", color = AccentRose, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -707,7 +774,15 @@ fun PendingOrdersList(viewModel: TradingViewModel) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(order.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(order.orderType, color = BrandViolet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(order.orderType, color = BrandViolet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    if (order.orderType == "GTT") {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(AccentYellow.copy(alpha = 0.2f)).padding(horizontal = 4.dp, vertical = 1.dp)) {
+                                            Text("GTT", color = AccentYellow, fontSize = 7.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text("${order.shares.toInt()} shares @ ${formatCurrency(order.triggerPrice, stats.currency)}", color = TextSecondary, fontSize = 11.sp)

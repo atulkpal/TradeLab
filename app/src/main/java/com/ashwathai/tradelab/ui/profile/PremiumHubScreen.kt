@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ashwathai.tradelab.LaunchPromoBanner
+import com.ashwathai.tradelab.rememberLaunchPromo
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
 import com.ashwathai.tradelab.ui.common.formatCurrency
@@ -132,6 +134,9 @@ fun PremiumHubScreen(
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(20.dp))
+                val promo = rememberLaunchPromo()
+                LaunchPromoBanner(promo = promo)
+                Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = { viewModel.simulatePremiumPurchase() },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -139,7 +144,7 @@ fun PremiumHubScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
-                        text = "15-DAY FREE TRIAL • ₹99/mo",
+                        text = promo.ctaLabel,
                         color = Color.Black,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.ExtraBold

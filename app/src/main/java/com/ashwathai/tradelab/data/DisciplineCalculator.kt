@@ -18,15 +18,12 @@ class DisciplineCalculator @Inject constructor() {
         var patienceBonus = 0
 
         // 1. Position Sizing (50% weight impact)
-        // If a single trade exceeds 12% of total capital, penalize
         if (totalPortfolioValue > 0) {
             val tradePct = (lastTradeValue / totalPortfolioValue) * 100.0
             if (tradePct > 12.0) {
-                // Deduct 2 to 10 points depending on how much they over-sized
                 sizingPenalty = ((tradePct - 12.0) / 5.0).toInt().coerceIn(2, 10)
             } else if (tradePct in 1.0..10.0) {
-                // Reward for disciplined sizing
-                sizingPenalty = -2 // Negative penalty is a reward
+                sizingPenalty = -2
             }
         }
 
@@ -48,8 +45,43 @@ class DisciplineCalculator @Inject constructor() {
             }
         }
 
-        val newScore = currentProfile.disciplineScore - sizingPenalty + diversificationBonus + patienceBonus
+        // 4. Time Decay: -1pt per week of inactivity after 30 days
+        val decayPenalty = calculateTimeDecay(currentProfile)
+
+        val newScore = currentProfile.disciplineScore - sizingPenalty + diversificationBonus + patienceBonus - decayPenalty
         return newScore.coerceIn(0, 100)
+    }
+
+    fun calculateTimeDecay(profile: UserProfile): Int {
+        val now = System.currentTimeMillis()
+        val inactiveThreshold = 30L * 24 * 60 * 60 * 1000
+        val weekMs = 7L * 24 * 60 * 60 * 1000
+
+        val lastActivity = profile.lastActiveTimestamp
+        if (lastActivity <= 0L) return 0
+
+        val elapsed = now - lastActivity
+        if (elapsed <= inactiveThreshold) return 0
+
+        val extraWeeks = ((elapsed - inactiveThreshold) / weekMs).toInt()
+        return extraWeeks.coerceIn(1, 20)
+    }
+
+    fun getNextBadge(currentProfile: UserProfile, holdings: List<Holding>): String? {
+        val score = currentProfile.disciplineScore
+        val settledShares = holdings.sumOf { it.shares }
+        val totalShares = holdings.sumOf { it.shares + it.sharesT1 }
+        val settledPct = if (totalShares > 0) settledShares.toDouble() / totalShares else 0.0
+        val sectors = holdings.map { getIndustryForSymbol(it.symbol) }.distinct().size
+
+        return when {
+            score < 90 && score >= 80 -> "\"Sizing Master\" at 90+ (${90 - score} pts away)"
+            score < 80 && score >= 70 -> "\"Discipline Ninja\" at 80+ (${80 - score} pts away)"
+            score < 70 -> "Discipline Ninja at 80 (${80 - score} pts away)"
+            settledPct <= 0.9 && score >= 80 -> "\"Patience King\" when 90%+ shares settle"
+            sectors < 5 && score >= 80 -> "\"Sector Explorer\" with 5+ sectors (${5 - sectors} more)"
+            else -> null
+        }
     }
 
     fun evaluateBadges(score: Int, holdings: List<Holding>): List<String> {
@@ -70,7 +102,6 @@ class DisciplineCalculator @Inject constructor() {
         return badges
     }
 
-    // Duplicate mapping from Repository to keep logic contained, or we should move it to a shared Utility
     private val TICKER_INDUSTRY_MAP = mapOf(
         "RELIANCE" to "Energy & Petrochemicals",
         "TCS" to "IT Services",

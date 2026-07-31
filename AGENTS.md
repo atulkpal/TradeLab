@@ -99,6 +99,8 @@ For the full breakdown of upcoming epics, sprints, and detailed task boards, ple
 
 ## 6. Authoritative Document Iteration Process
 
+> **Agent Workflow:** Before starting any task, agents MUST read [`agent-skills.md`](./agent-skills.md) and invoke the appropriate skill from [`skills/`](./skills/).
+
 To maintain continuous alignment and prevent code-spec drift, all agents and developers must adhere to the following iteration loop:
 
 ```

@@ -11,6 +11,7 @@ import java.util.Calendar
 import java.util.TimeZone
 import java.net.URLEncoder
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.MediaType.Companion.toMediaType
@@ -32,6 +33,7 @@ class TradingRepository @Inject constructor(
     private val disciplineCalculator: DisciplineCalculator
 ) {
 
+    // Commodity lot sizes for MCX
     companion object {
         val INDIAN_TICKERS = listOf(
             "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC",
@@ -48,6 +50,23 @@ class TradingRepository @Inject constructor(
             "DIVISLAB", "LUPIN", "AUROPHARMA", "MAXHEALTH", "BIOCON", "GRASIM", "AMBUJACEM", "ACC",
             "SHREECEM", "DLF", "LODHA", "SOBHA", "INDIGO", "ZOMATO", "PAYTM", "NYKAA", "POLICYBZR"
         )
+
+        val COMMODITY_LOT_SIZES = mapOf(
+            "MCX_GOLD" to 10.0,
+            "MCX_SILVER" to 30.0,
+            "MCX_CRUDE" to 100.0,
+            "MCX_NATGAS" to 1250.0,
+            "MCX_COPPER" to 2500.0
+        )
+
+        val STRIKE_INTERVALS = mapOf(
+            "RELIANCE" to 50.0, "TCS" to 50.0, "INFY" to 20.0,
+            "HDFCBANK" to 50.0, "ICICIBANK" to 20.0, "SBIN" to 10.0,
+            "TATAMOTORS" to 10.0, "LT" to 50.0, "WIPRO" to 10.0,
+            "BHARTIARTL" to 10.0, "ITC" to 5.0, "BAJFINANCE" to 100.0
+        )
+
+        val COMMODITY_STT = 0.0001
     }
 
     var isSimulatedMode: Boolean = BuildConfig.DEBUG
@@ -80,6 +99,8 @@ class TradingRepository @Inject constructor(
     private val marketNewsDao = database.marketNewsDao()
     private val accountSnapshotDao = database.accountSnapshotDao()
     private val ledgerDao = database.ledgerDao()
+    private val candleEntryDao = database.candleEntryDao()
+    private val optionContractDao = database.optionContractDao()
 
     val userProfile: Flow<UserProfile?> = userProfileDao.getUserProfileFlow()
     val holdings: Flow<List<Holding>> = holdingDao.getAllHoldingsFlow()
@@ -250,12 +271,68 @@ class TradingRepository @Inject constructor(
                 StockPrice("BANKNIFTY", "Nifty Bank Index", 52500.0, -0.20, 52605.0, 52800.0, 52400.0, "$now|52605.00|52800.00|52400.00|52500.00|0"),
                 StockPrice("NIFTYIT", "Nifty IT Index", 38000.0, 0.15, 37943.0, 38100.0, 37850.0, "$now|37943.00|38100.00|37850.00|38000.00|0")
             )
-            stockPriceDao.insertStockPrices(initialStocks)
+            val seededStocks = initialStocks.map { stock ->
+                val parts = stock.historyData.split("|")
+                if (parts.size >= 6) {
+                    val ts = parts[0].toLongOrNull() ?: now
+                    val o = parts[1]; val h = parts[2]; val l = parts[3]; val c = parts[4]; val v = parts[5]
+                    val prevCandleTs = ts - 60000
+                    val prevCloseStr = String.format("%.2f", stock.previousClose)
+                    val newHistory = "$prevCandleTs|$prevCloseStr|$prevCloseStr|$prevCloseStr|$prevCloseStr|$v;$ts|$o|$h|$l|$c|$v"
+                    stock.copy(historyData = newHistory)
+                } else stock
+            }
+            stockPriceDao.insertStockPrices(seededStocks)
         }
 
         val wNames = watchlistV2Dao.getWatchlistNamesFlow().firstOrNull() ?: emptyList()
         if (wNames.isEmpty()) {
             watchlistV2Dao.insertWatchlistName(WatchlistName(1, "Trade Lab"))
+        }
+
+        // Generate historical candle data for all tickers
+        val allPrices = stockPriceDao.getAllStockPricesFlow().firstOrNull() ?: emptyList()
+        if (allPrices.isNotEmpty()) {
+            val existingCandles = candleEntryDao.getCandles(allPrices.first().symbol, "15m")
+            if (existingCandles.isEmpty()) {
+                generateHistoricalData(allPrices)
+            }
+        }
+    }
+
+    private suspend fun generateHistoricalData(prices: List<StockPrice>) = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        val thirtyDaysAgo = now - (30L * 24 * 60 * 60 * 1000)
+        val candleInterval = 15L * 60 * 1000
+        val totalCandles = 30 * 24 * 4
+
+        for (stock in prices) {
+            if (stock.symbol.contains("_CE_") || stock.symbol.contains("_PE_")) continue
+            var price = stock.currentPrice * (1.0 + (Random.nextDouble() - 0.5) * 0.1)
+            val candles = mutableListOf<CandleEntry>()
+
+            for (i in 0 until totalCandles) {
+                val ts = thirtyDaysAgo + i * candleInterval
+                val change = (Random.nextDouble() - 0.48) * 0.6
+                val open = price
+                val close = price * (1.0 + change / 100.0)
+                val high = maxOf(open, close) * (1.0 + Random.nextDouble() * 0.3 / 100.0)
+                val low = minOf(open, close) * (1.0 - Random.nextDouble() * 0.3 / 100.0)
+                price = close
+
+                candles.add(CandleEntry(
+                    symbol = stock.symbol,
+                    timestamp = ts,
+                    open = open,
+                    high = high,
+                    low = low,
+                    close = close,
+                    volume = Random.nextDouble() * 10000 + 1000,
+                    resolution = "15m"
+                ))
+            }
+
+            candleEntryDao.insertCandles(candles)
         }
     }
 
@@ -272,11 +349,22 @@ class TradingRepository @Inject constructor(
         val totalValueProfileCurrency = getConvertedStockPrice(totalValueStock, symbol, profile.currency)
         
         // --- REALISTIC CHARGES & TAXES ---
-        val sttRate = if (isDelivery) 0.001 else 0.00025
+        val isCommodity = isCommoditySymbol(symbol)
+        val sttRate = when {
+            isCommodity -> COMMODITY_STT
+            isDelivery -> 0.001
+            else -> 0.00025
+        }
         val stt = totalValueProfileCurrency * sttRate
         val miscCharges = totalValueProfileCurrency * 0.0001
         val brokerageFee = if (profile.isPremium || profile.brokerageCredits >= 20) 0.0 else totalValueProfileCurrency * 0.0005
         val creditsToConsume = if (!profile.isPremium && profile.brokerageCredits >= 20) 20 else 0
+
+        // Lot size enforcement for commodities
+        val lotSize = COMMODITY_LOT_SIZES[symbol]
+        if (lotSize != null && shares % lotSize > 0.0001) {
+            return@withContext Result.failure(Exception("$symbol trades in lots of ${lotSize.toInt()}. Please enter a valid lot multiple."))
+        }
 
         // --- COVERING vs LONG ENTRY LOGIC ---
         if (existingHolding != null && existingHolding.shares < -0.0001) {
@@ -411,7 +499,12 @@ class TradingRepository @Inject constructor(
         val totalValueProfileCurrency = getConvertedStockPrice(totalValueStock, symbol, profile.currency)
 
         // --- REALISTIC CHARGES & TAXES ---
-        val sttRate = if (isDelivery) 0.001 else 0.00025
+        val isCommodity = isCommoditySymbol(symbol)
+        val sttRate = when {
+            isCommodity -> COMMODITY_STT
+            isDelivery -> 0.001
+            else -> 0.00025
+        }
         val stt = totalValueProfileCurrency * sttRate
         val miscCharges = totalValueProfileCurrency * 0.0001
         val brokerageFee = if (profile.isPremium || profile.brokerageCredits >= 20) 0.0 else totalValueProfileCurrency * 0.0005
@@ -1012,9 +1105,9 @@ class TradingRepository @Inject constructor(
                 return@map stock
             }
 
-            // A. Random Noise (Reduced variance for premium feel)
-            // Random change between -0.4% and +0.4%
-            val noisePct = (Random.nextDouble() * 0.8) - 0.4
+            // A. Random Noise with tiered volatility
+            val volatilityPct = getSymbolVolatility(stock.symbol)
+            val noisePct = (Random.nextDouble() * volatilityPct * 2.0) - volatilityPct
             val noiseDelta = stock.currentPrice * (noisePct / 100.0)
 
             // B. Steering / Gravity Drift
@@ -1162,9 +1255,56 @@ class TradingRepository @Inject constructor(
         // 5. Margin & Institutional Order Processing (Track B)
         checkMarginMaintenance()
         processTrailingStopLosses()
-        
+
         generateContextualNews(updatedStandardPrices)
         matchPendingOrders()
+
+        // 6. EOD cleanup: Cancel expired Limit orders
+        cancelExpiredLimitOrders()
+
+        // 7. F&O Expiry check
+        checkOptionExpiry()
+    }
+
+    private suspend fun cancelExpiredLimitOrders() = withContext(Dispatchers.IO) {
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Kolkata"))
+        val hour = cal.get(Calendar.HOUR_OF_DAY)
+        val minute = cal.get(Calendar.MINUTE)
+        val totalMinutes = hour * 60 + minute
+
+        // After market close (3:30 PM IST = 930 mins), cancel all pending Limit orders
+        if (totalMinutes > 930 && !isSimulatedMode) {
+            val cutoff = System.currentTimeMillis()
+            val expired = pendingOrderDao.getExpiredPendingOrders(cutoff)
+            for (order in expired) {
+                pendingOrderDao.updateOrderStatus(order.id, "CANCELLED")
+                addNotification("Order Cancelled: Limit order for ${order.symbol} expired at market close.")
+            }
+        }
+    }
+
+    private suspend fun checkOptionExpiry() = withContext(Dispatchers.IO) {
+        val options = optionContractDao.getAllActiveContractsFlow().firstOrNull() ?: return@withContext
+        val now = System.currentTimeMillis()
+
+        for (contract in options) {
+            if (contract.expiry <= now) {
+                val holding = holdingDao.getHolding(contract.symbol, true)
+                    ?: holdingDao.getHolding(contract.symbol, false)
+                if (holding != null) {
+                    val totalShares = holding.shares + holding.sharesT1
+                    if (totalShares > 0.0001) {
+                        val profile = userProfileDao.getUserProfile() ?: continue
+                        val pnl = -totalShares * holding.averagePrice
+                        val settledCash = profile.cash + pnl
+                        userProfileDao.insertProfile(profile.copy(cash = settledCash))
+                        holdingDao.deleteHolding(holding)
+                        optionContractDao.deactivateContract(contract.symbol)
+                        addNotification("Option Expired: ${contract.symbol} expired worthless. P&L: ${String.format("%.2f", pnl)}")
+                    }
+                }
+            }
+        }
     }
 
     // --- MARGIN & MAINTENANCE LOGIC (Sprint 18.1) ---
@@ -1718,6 +1858,20 @@ class TradingRepository @Inject constructor(
         return TICKER_INDUSTRY_MAP[clean] ?: "Diversified"
     }
 
+    fun getSymbolVolatility(symbol: String): Double {
+        val upper = symbol.uppercase().trim()
+        return when {
+            upper.startsWith("MCX_") || upper.startsWith("GLOBAL_") -> 0.8
+            upper == "BTC" || upper == "ETH" || upper.endsWith("-USD") -> 1.5
+            else -> 0.3
+        }
+    }
+
+    fun isCommoditySymbol(symbol: String): Boolean {
+        val upper = symbol.uppercase().trim()
+        return upper.startsWith("MCX_") || upper.startsWith("GLOBAL_")
+    }
+
     // Pending Orders management methods
     suspend fun insertPendingOrder(order: PendingOrder) = withContext(Dispatchers.IO) {
         pendingOrderDao.insertPendingOrder(order)
@@ -1838,6 +1992,60 @@ class TradingRepository @Inject constructor(
         } else {
             false
         }
+    }
+
+    suspend fun exitOptionPosition(symbol: String, shares: Double): Result<String> = withContext(Dispatchers.IO) {
+        val optionContract = optionContractDao.getContract(symbol)
+        val stock = stockPriceDao.getStockPrice(symbol)
+        val holding = holdingDao.getHolding(symbol, true) ?: holdingDao.getHolding(symbol, false)
+        if (holding == null || stock == null) {
+            return@withContext Result.failure(Exception("Option position not found"))
+        }
+        val profile = userProfileDao.getUserProfile() ?: return@withContext Result.failure(Exception("Profile not found"))
+
+        val totalShares = holding.shares + holding.sharesT1
+        val exitShares = minOf(shares, totalShares)
+        val currentPremium = stock.currentPrice
+        val costBasis = holding.averagePrice
+        val pnl = exitShares * (currentPremium - costBasis)
+        val cashCredit = exitShares * currentPremium
+
+        val updatedProfile = profile.copy(cash = profile.cash + cashCredit)
+        userProfileDao.insertProfile(updatedProfile)
+
+        val remainingShares = totalShares - exitShares
+        if (remainingShares < 0.0001) {
+            holdingDao.deleteHolding(holding)
+            if (optionContract != null) {
+                optionContractDao.deactivateContract(optionContract.symbol)
+            }
+        } else {
+            holdingDao.insertHolding(holding.copy(shares = remainingShares))
+        }
+
+        val breakdown = "F&O EXIT $symbol\n" +
+                        "Entry: ${String.format("%.2f", costBasis)}\n" +
+                        "Exit: ${String.format("%.2f", currentPremium)}\n" +
+                        "P&L: ${String.format("%.2f", pnl)}"
+        recordLedgerEntry(breakdown, "CREDIT", cashCredit, updatedProfile.cash, symbol, null)
+
+        if (pnl >= 0) addNotification("Option position closed: $symbol profit +${String.format("%.2f", pnl)}")
+        else addNotification("Option position closed: $symbol loss ${String.format("%.2f", pnl)}")
+
+        Result.success("Closed $exitShares shares of $symbol")
+    }
+
+    suspend fun exitAllFnoPositions(): Result<String> = withContext(Dispatchers.IO) {
+        val holdings = holdingDao.getAllHoldings()
+        val optionHoldings = holdings.filter { it.symbol.contains("_CE_") || it.symbol.contains("_PE_") }
+        if (optionHoldings.isEmpty()) return@withContext Result.failure(Exception("No F&O positions to close"))
+        var closedCount = 0
+        for (h in optionHoldings) {
+            val totalShares = h.shares + h.sharesT1
+            val result = exitOptionPosition(h.symbol, totalShares)
+            if (result.isSuccess) closedCount++
+        }
+        Result.success("Closed $closedCount F&O positions")
     }
 
     private fun calculateNextMarketClose(from: Long): Long {

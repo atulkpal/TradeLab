@@ -39,6 +39,7 @@ fun StockLineChart(
     pricesString: String,
     isPositive: Boolean,
     showIndicators: Boolean = false,
+    mini: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val candles = remember(pricesString) {
@@ -179,29 +180,89 @@ fun StockLineChart(
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val width = size.width
                     val height = size.height
+                    val axisLeftPad = if (mini) 0f else 44f
+                    val axisBottomPad = if (mini) 0f else 20f
+                    val chartWidth = width - axisLeftPad
+                    val chartHeight = height - axisBottomPad
+
                     val points = prices.mapIndexed { index, price ->
-                        val x = index * (width / (prices.size - 1))
-                        val y = height - ((price - minPrice) / priceRange * height).toFloat()
+                        val x = if (mini) index * (width / (prices.size - 1).coerceAtLeast(1))
+                                else index * (chartWidth / (prices.size - 1).coerceAtLeast(1)) + axisLeftPad
+                        val y = chartHeight - ((price - minPrice) / priceRange * chartHeight).toFloat()
                         Offset(x, y)
                     }
 
-                    val strokeColor = if (isPositive) AccentGreen else AccentRose
-                    val gradientColor = if (isPositive) AccentGreenDark else AccentRoseDark
+                    if (!mini) {
+                        // Y-axis grid lines & labels
+                        val labelCount = 5
+                        (0 until labelCount).forEach { i ->
+                            val pct = i.toDouble() / (labelCount - 1)
+                            val price = minPrice + (priceRange * pct)
+                            val y = chartHeight - (pct * chartHeight).toFloat()
+                            drawLine(
+                                color = Color.White.copy(alpha = 0.06f),
+                                start = Offset(axisLeftPad, y),
+                                end = Offset(width, y),
+                                strokeWidth = 1f,
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))
+                            )
+                            drawContext.canvas.nativeCanvas.drawText(
+                                String.format("%.1f", price),
+                                axisLeftPad - 6f,
+                                y + 4f,
+                                android.graphics.Paint().apply {
+                                    color = 0x66FFFFFF
+                                    textSize = 20f
+                                    textAlign = android.graphics.Paint.Align.RIGHT
+                                }
+                            )
+                        }
 
-                    val fillPath = Path().apply {
-                        moveTo(0f, height)
-                        points.forEach { lineTo(it.x, it.y) }
-                        lineTo(width, height)
-                        close()
+                        // X-axis labels
+                        val xLabelCount = 4
+                        (0 until xLabelCount).forEach { i ->
+                            val idx = (i.toDouble() / (xLabelCount - 1) * (currentCandles.size - 1)).toInt().coerceIn(0, currentCandles.size - 1)
+                            val x = idx * (chartWidth / (currentCandles.size - 1)) + axisLeftPad
+                            val label = java.text.SimpleDateFormat("dd MMM", java.util.Locale.getDefault()).format(java.util.Date(currentCandles[idx].timestamp))
+                            drawLine(
+                                color = Color.White.copy(alpha = 0.04f),
+                                start = Offset(x, 0f),
+                                end = Offset(x, chartHeight),
+                                strokeWidth = 1f,
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))
+                            )
+                            drawContext.canvas.nativeCanvas.drawText(
+                                label,
+                                x,
+                                height - 4f,
+                                android.graphics.Paint().apply {
+                                    color = 0x44FFFFFF
+                                    textSize = 18f
+                                    textAlign = android.graphics.Paint.Align.CENTER
+                                }
+                            )
+                        }
                     }
-                    drawPath(
-                        path = fillPath,
-                        brush = Brush.verticalGradient(
-                            colors = listOf(gradientColor.copy(alpha = 0.3f), Color.Transparent),
-                            startY = 0f,
-                            endY = height
+
+                    val strokeColor = if (isPositive) AccentGreen else AccentRose
+
+                    if (!mini) {
+                        val gradientColor = if (isPositive) AccentGreenDark else AccentRoseDark
+                        val fillPath = Path().apply {
+                            moveTo(axisLeftPad, chartHeight)
+                            points.forEach { lineTo(it.x, it.y) }
+                            lineTo(chartWidth + axisLeftPad, chartHeight)
+                            close()
+                        }
+                        drawPath(
+                            path = fillPath,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(gradientColor.copy(alpha = 0.3f), Color.Transparent),
+                                startY = 0f,
+                                endY = chartHeight
+                            )
                         )
-                    )
+                    }
 
                     val linePath = Path().apply {
                         moveTo(points.first().x, points.first().y)
@@ -211,12 +272,15 @@ fun StockLineChart(
                 }
             }
 
+            if (!mini) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val width = size.width
                 val height = size.height
+                val axisLeftPad = 44f
+                val chartHeight = height - 20f
                 fun getPoint(price: Double, index: Int): Offset {
-                    val x = index * (width / (currentCandles.size - 1))
-                    val y = height - ((price - minPrice) / priceRange * height).toFloat()
+                    val x = index * ((width - axisLeftPad) / (currentCandles.size - 1)) + axisLeftPad
+                    val y = chartHeight - ((price - minPrice) / priceRange * chartHeight).toFloat()
                     return Offset(x, y)
                 }
 
@@ -263,7 +327,7 @@ fun StockLineChart(
                 if (activeIndex != null) {
                     val index = activeIndex!!
                     val point = getPoint(prices[index], index)
-                    drawLine(color = Color.White.copy(alpha = 0.3f), start = Offset(point.x, 0f), end = Offset(point.x, height), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
+                    drawLine(color = Color.White.copy(alpha = 0.3f), start = Offset(point.x, 0f), end = Offset(point.x, chartHeight), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
                     drawCircle(color = if (isPositive) AccentGreen else AccentRose, radius = 10f, center = point)
                     drawCircle(color = Color.White, radius = 5f, center = point)
                 }
@@ -283,9 +347,10 @@ fun StockLineChart(
                     }
                 }
             }
+            }
         }
 
-        if (showIndicators && (selectedIndicator == "RSI" || selectedIndicator == "MACD")) {
+        if (!mini && showIndicators && (selectedIndicator == "RSI" || selectedIndicator == "MACD")) {
             Spacer(modifier = Modifier.height(6.dp))
             val label = if (selectedIndicator == "RSI") "RSI (5)" else "MACD (12, 26, 9)"
             Text(text = label, color = Color.White.copy(alpha = 0.5f), fontSize = 8.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 4.dp))

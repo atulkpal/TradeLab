@@ -1,6 +1,7 @@
 package com.ashwathai.tradelab.ui.profile
 
 import com.ashwathai.tradelab.MainActivity
+import com.ashwathai.tradelab.rememberLaunchPromo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +30,7 @@ import androidx.compose.ui.zIndex
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -87,6 +89,9 @@ fun ProfileScreen(
     var adLoadFailedMessage by remember { mutableStateOf<String?>(null) }
     var adFailedType by remember { mutableStateOf<String?>(null) }
     var requestedRefundAmount by remember { mutableStateOf<Double?>(null) }
+
+    val promo = rememberLaunchPromo()
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val mainActivity = context as? MainActivity
@@ -223,7 +228,7 @@ fun ProfileScreen(
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = "UNLOCK PRO • ₹99/mo",
+                                text = "UNLOCK PRO • ${promo.priceLabel}",
                                 color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.ExtraBold
@@ -235,7 +240,7 @@ fun ProfileScreen(
                 if (!stats.isPremium) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "Pro tier includes 15-Day Free Trial, ₹0 Brokerage fees, unlimited watchlist sheets, and double quiz rewards.",
+                        text = "Pro tier includes ${promo.trialDays}-Day Free Trial, ₹0 Brokerage fees, unlimited watchlist sheets, and double quiz rewards.",
                         color = TextMuted,
                         fontSize = 10.sp,
                         lineHeight = 14.sp
@@ -433,11 +438,83 @@ fun ProfileScreen(
                             }
                         }
                     }
+                } else {
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                
+                // Badge Proximity Hint
+                val nextBadgeHint = remember(stats.disciplineScore) {
+                    when {
+                        stats.disciplineScore < 80 -> "Next Badge: Discipline Ninja at 80 (${80 - stats.disciplineScore} pts away)"
+                        stats.disciplineScore < 90 -> "Next Badge: Sizing Master at 90 (${90 - stats.disciplineScore} pts away)"
+                        else -> "All badges earned! Maintain your score to keep them."
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AccentYellow.copy(alpha = 0.06f))
+                        .border(1.dp, AccentYellow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Star, contentDescription = "Next Badge", tint = AccentYellow, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = nextBadgeHint,
+                            color = AccentYellow.copy(alpha = 0.8f),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
 
-        // 2.5 sponsor video / monetization terminal
+        // 2.6 Premium Bypass Audit
+        if (!stats.isPremium) {
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                border = BorderStroke(1.dp, AccentGreen.copy(alpha = 0.2f))
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Star, contentDescription = "Audit", tint = AccentGreen, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("PREMIUM BYPASS AUDIT", color = AccentGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text("Features you can access without Pro:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val bypassItems = listOf(
+                        "Futures & Options (via F&O Tokens + Academic Gate)" to !stats.isPremium, 
+                        "Commodities (via Sponsor Ad watch)" to !stats.isPremium,
+                        "Premium Indicators (via Sponsor Ad watch)" to !stats.isPremium,
+                        "Intraday Session Pass (via Sponsor Ad watch)" to !stats.isPremium,
+                        "Emergency Cash (via Sponsor Ad watch)" to !stats.isPremium
+                    )
+                    bypassItems.forEach { (label, _) ->
+                        Row(modifier = Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CheckCircle, null, tint = AccentGreen.copy(alpha = 0.6f), modifier = Modifier.size(12.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(label, color = TextMuted, fontSize = 10.sp)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(BrandViolet.copy(alpha = 0.06f)).border(1.dp, BrandViolet.copy(alpha = 0.15f), RoundedCornerShape(8.dp)).padding(10.dp)
+                    ) {
+                        Text("Upgrade to Pro to unlock all features instantly without ad-watch gates.", color = BrandViolet.copy(alpha = 0.8f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        // 2.5 sponsor video / monetization terminal (hidden for Pro users)
+        if (!stats.isPremium) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -756,7 +833,7 @@ fun ProfileScreen(
                             "✓ PRO ACTIVE: Intraday Suite unlocked."
                         } else if (levUnl) {
                             val expiry = userProfile?.leverageUnlockedUntil ?: 0L
-                            val sdf = java.text.SimpleDateFormat("MMM dd, hh:mm a", java.util.Locale.getDefault())
+                            val sdf = java.text.SimpleDateFormat("MMM dd, hh:mm a", LocalConfiguration.current.locales[0])
                             sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Kolkata")
                             "ACTIVE until ${sdf.format(java.util.Date(expiry))}"
                         } else {
@@ -820,9 +897,10 @@ fun ProfileScreen(
                                 fontWeight = FontWeight.ExtraBold
                             )
                         }
-                    }
                 }
             }
+            }
+        }
 
         // 3. Theme Settings Card
         Card(
@@ -1479,6 +1557,63 @@ fun ProfileScreen(
             Icon(Icons.Default.Logout, contentDescription = "Sign Out", modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Text("Sign Out", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Delete Account Button (opens the Play-compliant deletion request page)
+        OutlinedButton(
+            onClick = { showDeleteAccountDialog = true },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .testTag("profile_delete_account_button"),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, AccentRose.copy(alpha = 0.3f)),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentRose.copy(alpha = 0.8f))
+        ) {
+            Icon(Icons.Default.Delete, contentDescription = "Delete Account", modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Delete Account", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        }
+
+        if (showDeleteAccountDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteAccountDialog = false },
+                containerColor = DarkSurfaceElevated,
+                title = { Text("Delete Account?", color = Color.White, fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(
+                        text = "This will permanently delete your TradeLab account, including your Firebase account, leaderboard entry, and all local simulation data. This action cannot be undone.\n\nYou will be directed to our account deletion page to complete the request.",
+                        color = TextMuted,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteAccountDialog = false
+                            try {
+                                val intent = android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse("https://tradelab.ashwathai.com/delete-account.html")
+                                )
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                // No browser available
+                            }
+                        }
+                    ) {
+                        Text("Delete Account", color = AccentRose, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteAccountDialog = false }) {
+                        Text("Cancel", color = TextMuted)
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(30.dp))

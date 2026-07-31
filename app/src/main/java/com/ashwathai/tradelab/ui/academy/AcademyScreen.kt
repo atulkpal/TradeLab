@@ -75,6 +75,7 @@ fun AcademyScreen(
     var activeSubTab by remember { mutableStateOf("Lessons") }
     val quizModules by viewModel.quizModules.collectAsStateWithLifecycle()
     val missionsList by viewModel.missionsList.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -558,7 +559,7 @@ fun AcademyScreen(
                 }
 
                 displayLeaders.forEachIndexed { index, leader ->
-                    val isUser = leader.userId == (stats.completedLevels /* Using this as a proxy for UID if email is empty */) || leader.userName.contains("You") || leader.userId == viewModel.userProfile.value?.userEmail
+                    val isUser = leader.userId == (stats.completedLevels /* Using this as a proxy for UID if email is empty */) || leader.userName.contains("You") || leader.userId == hashUserId(userProfile?.userEmail.orEmpty())
                     val isKing = leader.userName.contains("👑 TradeLab") && !isUser
                     
                     Card(

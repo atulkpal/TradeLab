@@ -12,6 +12,8 @@ import androidx.room.RoomDatabase
         Transaction::class,
         WatchlistItem::class,
         StockPrice::class,
+        CandleEntry::class,
+        OptionContract::class,
         WatchlistName::class,
         WatchlistItemV2::class,
         PendingOrder::class,
@@ -20,7 +22,7 @@ import androidx.room.RoomDatabase
         AccountSnapshot::class,
         LedgerEntry::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +31,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun watchlistDao(): WatchlistDao
     abstract fun stockPriceDao(): StockPriceDao
+    abstract fun candleEntryDao(): CandleEntryDao
+    abstract fun optionContractDao(): OptionContractDao
     abstract fun watchlistV2Dao(): WatchlistV2Dao
     abstract fun pendingOrderDao(): PendingOrderDao
     abstract fun appNotificationDao(): AppNotificationDao

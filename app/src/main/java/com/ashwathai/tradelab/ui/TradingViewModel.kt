@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ashwathai.tradelab.data.*
 import com.ashwathai.tradelab.BuildConfig
+import com.ashwathai.tradelab.billing.SubscriptionConfig
 import com.ashwathai.tradelab.shared.TradingHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -302,6 +303,7 @@ class TradingViewModel @Inject constructor(
         var totalCostBasis = 0.0
         var todayPnL = 0.0
         var usedMargin = 0.0
+        var misCostBasis = 0.0
 
         for (holding in activeHoldings) {
             val liveStock = prices.find { it.symbol == holding.symbol }
@@ -318,6 +320,7 @@ class TradingViewModel @Inject constructor(
             if (!holding.isDelivery) {
                 // MIS positions use 5x margin
                 usedMargin += (totalSharesAbs * convertedLivePrice) / 5.0
+                misCostBasis += (totalSharesAbs * convertedAvgPrice)
             }
 
             if (totalShares >= 0) {
@@ -344,7 +347,8 @@ class TradingViewModel @Inject constructor(
         }
 
         val totalValue = profile.cash + holdingsValue
-        val totalProfitLoss = totalValue - profile.startingCash
+        val phantomMarginPnL = misCostBasis * 0.8
+        val totalProfitLoss = totalValue - profile.startingCash - phantomMarginPnL
         val profitLossPct = if (profile.startingCash > 0) (totalProfitLoss / profile.startingCash) * 100.0 else 0.0
         val openProfitLoss = holdingsValue - totalCostBasis
         
@@ -525,7 +529,7 @@ class TradingViewModel @Inject constructor(
         val xp = profile.xp
         
         viewModelScope.launch {
-            leaderboardManager.syncUserStats(email, name, xp, stats.totalValue, stats.disciplineScore)
+            leaderboardManager.syncUserStats(hashUserId(email), name, xp, stats.totalValue, stats.disciplineScore)
         }
     }
 
@@ -1160,7 +1164,7 @@ class TradingViewModel @Inject constructor(
             _showGoogleBilling.value = false
             _showPaywall.value = false
             _showProBenefits.value = false
-            showFeedback("Google Play: Subscription activated! 15 days free, then ₹99/mo.")
+            showFeedback("Google Play: Subscription activated! ${SubscriptionConfig.FREE_TRIAL_DAYS} days free, then ${SubscriptionConfig.displayPrice()}/mo.")
             repository.addNotification("TradeLab Pro subscription activated! Enjoy zero-brokerage, unlimited watchlist sheets, and double quiz rewards.")
         }
     }
@@ -1440,8 +1444,34 @@ class TradingViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             // Ensure stock price entry exists so buy/sell works
-            repository.insertOrUpdateOptionPrice(optionSymbol, strike, strike, isCall)
-            
+            val underlyingLive = stockPrices.value.find { it.symbol == optionSymbol.substringBefore("_") }?.currentPrice
+            repository.insertOrUpdateOptionPrice(optionSymbol, underlyingLive ?: strike, strike, isCall)
+
+            val orderTypeVal = _orderType.value
+            if (orderTypeVal != "Market") {
+                val triggerPrice = _triggerPriceInput.value.toDoubleOrNull()
+                if (triggerPrice == null || triggerPrice <= 0) {
+                    showFeedback("Please enter a valid trigger price")
+                    return@launch
+                }
+                val order = PendingOrder(
+                    symbol = optionSymbol,
+                    type = if (isBuy) "BUY" else "SELL",
+                    orderType = orderTypeVal,
+                    shares = shares,
+                    triggerPrice = triggerPrice,
+                    isDelivery = _isDelivery.value,
+                    targetPrice = _targetPriceInput.value.toDoubleOrNull(),
+                    stopLossPrice = _stopLossPriceInput.value.toDoubleOrNull(),
+                    isTrailing = _isTrailingInput.value,
+                    trailingGap = _trailingGapInput.value.toDoubleOrNull() ?: 0.0
+                )
+                repository.insertPendingOrder(order)
+                showFeedback("Pending ${orderTypeVal} F&O ${if (isBuy) "BUY" else "SELL"} order placed for $optionSymbol @ ${String.format("%.2f", triggerPrice)}")
+                onSuccess()
+                return@launch
+            }
+
             val result = if (isBuy) {
                 repository.buyStock(optionSymbol, shares, _isDelivery.value)
             } else {
@@ -1454,6 +1484,69 @@ class TradingViewModel @Inject constructor(
                 onSuccess()
             }.onFailure {
                 showFeedback(it.message ?: "Failed to execute option trade")
+            }
+        }
+    }
+
+    private val _selectedTimeframe = MutableStateFlow("15m")
+    val selectedTimeframe: StateFlow<String> = _selectedTimeframe.asStateFlow()
+
+    fun setTimeframe(timeframe: String) {
+        _selectedTimeframe.value = timeframe
+    }
+
+    private val _holdingsSortMode = MutableStateFlow("default")
+    val holdingsSortMode: StateFlow<String> = _holdingsSortMode.asStateFlow()
+
+    fun setHoldingsSortMode(mode: String) {
+        _holdingsSortMode.value = mode
+    }
+
+    val adaptiveGuidanceText: StateFlow<String> = combine(holdings, stockPrices, userProfile) { h, p, u ->
+        val totalValue = (u?.cash ?: 0.0) + h.sumOf { holding ->
+            val price = p.find { it.symbol == holding.symbol }?.currentPrice ?: holding.averagePrice
+            (holding.shares + holding.sharesT1) * price
+        }
+        val oversizedTrades = h.filter { holding ->
+            val price = p.find { it.symbol == holding.symbol }?.currentPrice ?: 0.0
+            val posValue = (holding.shares + holding.sharesT1) * price
+            posValue > 0 && totalValue > 0 && posValue / totalValue > 0.12
+        }
+        when {
+            oversizedTrades.isNotEmpty() -> "You've oversized positions in ${oversizedTrades.take(3).joinToString { it.symbol }}. Consider reducing to under 12% each."
+            (u?.disciplineScore ?: 0) >= 90 -> "Excellent discipline! You're in the top tier of traders."
+            h.isEmpty() -> "Start trading! Build a diversified portfolio across sectors."
+            h.size <= 2 -> "Your portfolio is concentrated in ${h.size} position(s). Diversify across sectors."
+            else -> "Practice disciplined sizing: Never allocate more than 12% of your account to a single ticker."
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Practice disciplined sizing.")
+
+    fun exitPosition(symbol: String) {
+        viewModelScope.launch {
+            val holdingsList = holdings.value
+            val holding = holdingsList.find { it.symbol == symbol }
+            if (holding != null) {
+                val totalShares = holding.shares + holding.sharesT1
+                if (totalShares > 0) {
+                    val result = repository.sellStock(symbol, totalShares)
+                    result.onSuccess {
+                        showFeedback("Position squared off successfully!")
+                        repository.addNotification("Squared off $totalShares shares of $symbol successfully.")
+                    }.onFailure {
+                        showFeedback(it.message ?: "Failed to square off position")
+                    }
+                }
+            }
+        }
+    }
+
+    fun exitAllFnoPositions() {
+        viewModelScope.launch {
+            val result = repository.exitAllFnoPositions()
+            result.onSuccess {
+                showFeedback(it)
+            }.onFailure {
+                showFeedback(it.message ?: "Failed to close F&O positions")
             }
         }
     }

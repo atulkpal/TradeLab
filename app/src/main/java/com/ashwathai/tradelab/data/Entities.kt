@@ -1,6 +1,7 @@
 package com.ashwathai.tradelab.data
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "user_profile")
@@ -75,9 +76,22 @@ data class StockPrice(
     val previousClose: Double,
     val highPrice: Double,
     val lowPrice: Double,
-    val historyData: String, // OHLCV segments separated by ';'. Segment format: "timestamp|O|H|L|C|V"
-    val targetPrice: Double? = null, // The real-world "Anchor" price we steer towards
-    val sentimentBias: Double = 0.0 // -1.0 (Bearish) to 1.0 (Bullish) influenced by real news
+    val historyData: String,
+    val targetPrice: Double? = null,
+    val sentimentBias: Double = 0.0
+)
+
+@Entity(tableName = "candle_entries", indices = [Index("symbol", "timestamp")])
+data class CandleEntry(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val symbol: String,
+    val timestamp: Long,
+    val open: Double,
+    val high: Double,
+    val low: Double,
+    val close: Double,
+    val volume: Double,
+    val resolution: String
 )
 
 @Entity(tableName = "watchlist_names")
@@ -107,8 +121,21 @@ data class PendingOrder(
     val isTrailing: Boolean = false,
     val trailingGap: Double = 0.0,
     val trailingBaselinePrice: Double? = null, // High watermark for SELL SL, Low watermark for BUY SL
-    val parentOrderId: Int? = null, // To link OCO legs in Bracket Orders
-    val timestamp: Long = System.currentTimeMillis()
+    val parentOrderId: Int? = null,
+    val timestamp: Long = System.currentTimeMillis(),
+    val validUntil: Long? = null
+)
+
+@Entity(tableName = "option_contracts")
+data class OptionContract(
+    @PrimaryKey val symbol: String,
+    val underlyingSymbol: String,
+    val optionType: String,
+    val strike: Double,
+    val expiry: Long,
+    val lotSize: Int,
+    val multiplier: Int = 100,
+    val isActive: Boolean = true
 )
 
 @Entity(tableName = "app_notifications")

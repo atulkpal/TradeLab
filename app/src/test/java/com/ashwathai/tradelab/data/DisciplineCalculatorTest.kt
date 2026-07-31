@@ -46,8 +46,8 @@ class DisciplineCalculatorTest {
         
         val newScore = calculator.calculateNewScore(defaultProfile, holdings, 0.0, totalValue)
         
-        // 75 + 5 (diversification) = 80
-        assertEquals(80, newScore)
+        // 75 + 5 (diversification) + 5 (patience, all shares settled) = 85
+        assertEquals(85, newScore)
     }
 
     @Test
