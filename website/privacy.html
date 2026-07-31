@@ -45,7 +45,7 @@
             <h1 class="font-['Space_Grotesk'] font-bold text-4xl md:text-5xl text-white mb-4">Privacy Policy</h1>
             <p class="text-slate-400 font-medium mb-12 flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Last Updated: July 19, 2026
+                Last Updated: July 31, 2026
             </p>
 
             <section class="space-y-8 text-slate-300 leading-relaxed">
@@ -56,50 +56,107 @@
                     <ul class="space-y-3 list-none">
                         <li class="flex gap-3">
                             <span class="text-cyan-400 font-bold">01.</span>
-                            <p><strong class="text-slate-100">Account Information:</strong> If you log in via Firebase (Google, Email, or Phone), we receive your basic profile info (name, email, profile picture).</p>
+                            <p><strong class="text-slate-100">Account Information:</strong> If you log in via Firebase (Google, Email, or Phone), we receive your basic profile info (name, email, profile picture). Your email address is stored in a hashed (one-way, non-reversible) form before being used as an identifier.</p>
                         </li>
                         <li class="flex gap-3">
                             <span class="text-cyan-400 font-bold">02.</span>
-                            <p><strong class="text-slate-100">Usage Data:</strong> We collect information about your trading simulations, quiz progress, and app interactions to provide the "Learn-to-Earn" features.</p>
+                            <p><strong class="text-slate-100">Usage Data:</strong> We collect information about your trading simulations, quiz progress, discipline score, and app interactions to provide the "Learn-to-Earn" features.</p>
                         </li>
                         <li class="flex gap-3">
                             <span class="text-cyan-400 font-bold">03.</span>
-                            <p><strong class="text-slate-100">Device Information:</strong> We may collect device IDs for advertising and analytics purposes.</p>
+                            <p><strong class="text-slate-100">Public Leaderboard Profile:</strong> Your display name and portfolio statistics are shared publicly on our global leaderboard. Your email address is never shared publicly.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-cyan-400 font-bold">04.</span>
+                            <p><strong class="text-slate-100">Device &amp; Diagnostic Information:</strong> We collect device identifiers and app activity for advertising, analytics, and crash reporting (Firebase Crashlytics).</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-cyan-400 font-bold">05.</span>
+                            <p><strong class="text-slate-100">Notifications:</strong> If you enable push notifications, we use Firebase Cloud Messaging to deliver alerts; we store a device token required to send them.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-cyan-400 font-bold">06.</span>
+                            <p><strong class="text-slate-100">Purchase Information:</strong> When you subscribe to TradeLab Pro, Google Play Billing shares purchase status with us so we can activate premium features. We do not store your payment card details.</p>
                         </li>
                     </ul>
                 </div>
 
                 <div class="card p-8 rounded-2xl border border-slate-800 bg-[#0D1527]/30">
                     <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">2. How We Use Information</h2>
-                    <p>We use the collected data to maintain your simulated portfolio, track educational progress, and process virtual capital rewards. We also use it to personalize ads via Google AdMob and manage subscriptions via Google Play Billing.</p>
+                    <p>We use the collected data to maintain your simulated portfolio, track educational progress, and process virtual capital rewards. We use your leaderboard name and statistics to power the public global leaderboard, and we use device identifiers to personalize ads via Google AdMob (see Section 5) and to process subscriptions via Google Play Billing. We do not sell your personal information.</p>
                 </div>
 
                 <div class="card p-8 rounded-2xl border border-slate-800 bg-[#0D1527]/30">
-                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">3. Third-Party Services</h2>
+                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">3. Information We Share</h2>
+                    <p class="mb-4">We share only the data required to operate the app and its public features:</p>
+                    <ul class="space-y-3 list-none">
+                        <li class="flex gap-3">
+                            <span class="text-cyan-400 font-bold">01.</span>
+                            <p><strong class="text-slate-100">Public Leaderboard:</strong> Your display name and portfolio statistics (total value, lifetime return, discipline score, and leaderboard rank) are visible to all users of the app.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-cyan-400 font-bold">02.</span>
+                            <p><strong class="text-slate-100">Service Providers:</strong> We share limited data with Google (Firebase, Crashlytics, AdMob, Play Billing, Cloud Messaging) strictly to provide authentication, analytics, ads, subscriptions, and notifications.</p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="text-cyan-400 font-bold">03.</span>
+                            <p><strong class="text-slate-100">Legal Compliance:</strong> We may disclose information if required by law or to protect our legal rights.</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card p-8 rounded-2xl border border-slate-800 bg-[#0D1527]/30">
+                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">4. Third-Party Services</h2>
                     <p class="mb-4">Our app integrates the following third-party services:</p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
-                            <h4 class="font-bold text-white text-sm mb-1">Google Firebase</h4>
-                            <p class="text-[11px] text-slate-500">Authentication & Analytics</p>
+                            <h4 class="font-bold text-white text-sm mb-1">Google Firebase Auth</h4>
+                            <p class="text-[11px] text-slate-500">Sign-in with Google, Email, or Phone</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+                            <h4 class="font-bold text-white text-sm mb-1">Google Firebase Crashlytics</h4>
+                            <p class="text-[11px] text-slate-500">Crash &amp; error reporting</p>
                         </div>
                         <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
                             <h4 class="font-bold text-white text-sm mb-1">Google AdMob</h4>
-                            <p class="text-[11px] text-slate-500">Rewarded Video Ads</p>
+                            <p class="text-[11px] text-slate-500">Rewarded video ads (personalized by default)</p>
                         </div>
                         <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
                             <h4 class="font-bold text-white text-sm mb-1">Google Play Billing</h4>
-                            <p class="text-[11px] text-slate-500">Premium Subscriptions</p>
+                            <p class="text-[11px] text-slate-500">TradeLab Pro subscriptions with 7-day free trial</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+                            <h4 class="font-bold text-white text-sm mb-1">Firebase Cloud Messaging</h4>
+                            <p class="text-[11px] text-slate-500">Push notifications (optional)</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="card p-8 rounded-2xl border border-slate-800 bg-[#0D1527]/30">
-                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">4. Security</h2>
-                    <p>We implement industry-standard security measures to protect your data. Since TradeLab is a simulator, no real financial data (bank accounts or real stock holdings) is ever processed by our app.</p>
+                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">5. Advertising &amp; Personalization</h2>
+                    <p class="mb-4">We show rewarded video ads through Google AdMob so you can earn virtual in-app rewards. By default, Google may personalize these ads based on your interests and activity. You can <strong class="text-slate-100">opt out of ad personalization</strong> at any time from your device settings:</p>
+                    <p class="mb-4">Android: <em class="text-slate-400">Settings → Privacy → Ads → "Delete advertising ID" / "Reset advertising ID"</em>, or toggle off personalized ads. You can also opt out of personalized advertising in the Google Ads Settings page.</p>
+                    <p>Note: Opting out of personalization does not stop ads; it shows non-personalized ads instead.</p>
                 </div>
 
                 <div class="card p-8 rounded-2xl border border-slate-800 bg-[#0D1527]/30">
-                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">5. Contact Us</h2>
+                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">6. Subscriptions &amp; Billing</h2>
+                    <p>TradeLab Pro is offered as a monthly subscription with a 7-day free trial at launch pricing of ₹49/month (regular price ₹99/month) through September 1, 2026. Payments are processed exclusively by Google Play Billing; we never see or store your card details. You can cancel at any time in the Play Store, and the subscription will not renew after the current period ends. Free-trial eligibility is determined by Google Play and is limited to one per user.</p>
+                </div>
+
+                <div class="card p-8 rounded-2xl border border-slate-800 bg-[#0D1527]/30">
+                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">7. Security</h2>
+                    <p>We implement industry-standard security measures to protect your data. Since TradeLab is a simulator, no real financial data (bank accounts or real stock holdings) is ever processed by our app. Email addresses are hashed before use as public identifiers, and no payment details are stored by us.</p>
+                </div>
+
+                <div class="card p-8 rounded-2xl border border-slate-800 bg-[#0D1527]/30">
+                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">8. Data Retention &amp; Deletion</h2>
+                    <p class="mb-4">We retain your data only as long as your TradeLab account is active or as required for legitimate business or legal purposes. When you request account deletion, we permanently erase your Firebase account, leaderboard entry, and associated data.</p>
+                    <p>You can request full account deletion at any time from the app (Profile → Delete Account) or via our dedicated page: <a href="delete-account.html" class="text-cyan-400 font-bold hover:underline">Trade Lab Account Deletion</a>.</p>
+                </div>
+
+                <div class="card p-8 rounded-2xl border border-slate-800 bg-[#0D1527]/30">
+                    <h2 class="font-['Space_Grotesk'] text-xl font-bold text-white mb-4">9. Contact Us</h2>
                     <p>If you have any questions about this policy, please contact us at <a href="mailto:ashwathai.dev@gmail.com" class="text-cyan-400 font-bold hover:underline">ashwathai.dev@gmail.com</a>.</p>
                 </div>
             </section>
@@ -112,7 +169,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div class="space-y-1 text-center md:text-left">
                     <p class="text-xs text-slate-500 font-medium">Copyright © 2026 Ashwath AI. All rights reserved.</p>
-                    <p class="text-[10px] text-slate-600 uppercase tracking-widest font-bold">Trade Lab Simulator v1.2.0</p>
+                    <p class="text-[10px] text-slate-600 uppercase tracking-widest font-bold">Trade Lab Simulator v1.5.0</p>
                 </div>
                 <div class="flex flex-wrap justify-center gap-6 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     <a href="index.html" class="hover:text-cyan-400 transition-colors">Home</a>
