@@ -1597,7 +1597,7 @@ fun ProfileScreen(
                             try {
                                 val intent = android.content.Intent(
                                     android.content.Intent.ACTION_VIEW,
-                                    android.net.Uri.parse("https://tradelab.ashwathai.com/delete-account.html")
+                                    android.net.Uri.parse("https://tradelab-4f858.web.app/delete-account.html")
                                 )
                                 context.startActivity(intent)
                             } catch (e: Exception) {
