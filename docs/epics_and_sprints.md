@@ -159,13 +159,13 @@ Ship the real Google Play subscription products with a time-boxed early-launch o
 *   [x] **Dynamic Pricing Text:** Replace all hardcoded "₹99 / 15-Day Free Trial" strings with "7-Day Free Trial" + dynamic price (₹49 + strikethrough ₹99 during promo).
 *   [x] **SubscriptionConfigTest:** Unit tests for promo window, product/price selection, and the Sep 1 cutoff edge.
 
-### Sprint 16.5: Store-Listing Compliance & Release v1.5.0 (Status: 🟡 In Progress)
+### Sprint 16.5: Store-Listing Compliance & Release v1.5.0 (Status: 🟢 Complete)
 Resolve Google Play policy/privacy gaps ahead of the v1.5.0 (Build 5) production release: stop exposing email addresses via the public leaderboard, add the Play-required in-app account deletion path, and align the website privacy policy with real data flows.
 
-*   [ ] **Leaderboard Privacy Hardening:** Key the public Firestore `leaderboard` collection by a SHA-256 hash of the user email (`hashUserId`), never the raw email; verified by known-vector unit tests.
-*   [ ] **In-App Account Deletion:** Add a "Delete Account" entry on the Profile screen that links to the Play-compliant deletion request page (`tradelab.ashwathai.com/delete-account.html`).
-*   [ ] **Privacy Policy Update:** Refresh `website/privacy.html` to disclose the Firestore leaderboard, Crashlytics, FCM, AdMob personalization, Play Billing, and retention/deletion process (website branch).
-*   [ ] **Release v1.5.0:** Version bump (versionCode 5 / 1.5.0), signed AAB verification, lint gate, Pixel 10 smoke test, and release docs.
+*   [x] **Leaderboard Privacy Hardening:** Key the public Firestore `leaderboard` collection by a SHA-256 hash of the user email (`hashUserId`), never the raw email; verified by known-vector unit tests.
+*   [x] **In-App Account Deletion:** Add a "Delete Account" entry on the Profile screen that links to the Play-compliant deletion request page (`https://tradelab-4f858.web.app/delete-account.html`).
+*   [x] **Privacy Policy Update:** Refresh `website/privacy.html` to disclose the Firestore leaderboard, Crashlytics, FCM, AdMob personalization, Play Billing, and retention/deletion process (website branch).
+*   [x] **Release v1.5.0:** Version bump (versionCode 5 / 1.5.0), signed AAB verification, lint gate, Pixel 10 smoke test, and release docs.
 
 ---
 
