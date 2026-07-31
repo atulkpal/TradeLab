@@ -16,8 +16,13 @@
 local.properties
 .env
 debug.keystore
+*.keystore
+/build
+/app/build/
+/shared/build/
 .idea/
 .firebase/
+.opencode/
 *.properties
 !gradle.properties
 !local.properties.example
