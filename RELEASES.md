@@ -4,6 +4,27 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [1.5.0] - Launch Pricing & Store-Listing Compliance
+**Release Date:** July 31, 2026  
+**Version Code:** `5`  
+**Status:** 🟡 RELEASE CANDIDATE
+
+### Summary of Changes
+Ship the real Google Play subscription products with a time-boxed ₹49 Early-Bird promo and resolve Play Store listing compliance gaps.
+
+### Core Features
+- **Real Subscription Products:** `tradelab_subs` (₹49 launch) & `trade_lab_subs_99` (₹99 regular), each with a **7-day free trial**.
+- **Early-Bird Promo:** ₹49/mo (50% OFF) for all subscribers through **2026-09-01 00:00 IST**; automatic flip to ₹99 after cutoff; existing ₹49 subscribers keep renewing at ₹49 via Play Billing.
+- **Promo Countdown UI:** Ticking "₹49 launch offer ends in DD:HH:MM:SS" banner on Paywall + Premium Hub.
+- **Privacy Hardening:** Public leaderboard IDs are SHA-256 hashes of emails (no PII exposure).
+- **Account Deletion:** In-app Delete Account entry linking to the Play-compliant deletion request page.
+
+### Build Artifacts
+- **Debug APK:** `app-debug.apk`
+- **Release AAB:** `app-release.aab` (signed with `app/tradelab-release.keystore`)
+
+---
+
 ## [1.3.0] - Social Maturity & Global Arena
 **Release Date:** July 25, 2026  
 **Version Code:** `4`  

@@ -150,6 +150,23 @@ Refine the UI for high-information density, fix pre-launch glitches, and impleme
 *   [x] **On-Demand Equity Curve**: Moved the performance chart to a demand-based pop-up with empty-state logic for new users.
 *   [x] **Extended Rewards**: Increased Commodities Desk access duration to 3 hours per ad watch.
 
+### Sprint 16.4: Launch Pricing — Real Product IDs & ₹49 Early-Bird Promo (Status: 🟢 Complete)
+Ship the real Google Play subscription products with a time-boxed early-launch offer: ₹99 is the true list price, but until **2026-09-01 00:00 IST** every subscriber gets a **7-day free trial + ₹49/mo (50% OFF)**. After the cutoff, the app automatically offers the ₹99 product. Lock-in is inherent to Play Billing — a ₹49 subscriber keeps renewing at ₹49; a ₹99 buyer pays ₹99.
+
+*   [x] **SubscriptionConfig:** Centralized `billing/SubscriptionConfig.kt` with the real Play Console product IDs (`tradelab_subs` = ₹49 launch, `trade_lab_subs_99` = ₹99 regular), `FREE_TRIAL_DAYS = 7`, and promo window ending **2026-09-01 00:00 IST** (Asia/Kolkata).
+*   [x] **Dynamic Product Selection:** Replace the placeholder `tradelab_pro_monthly` at the billing call site with `SubscriptionConfig.activeProductId()` — ₹49 product before Sep 1, ₹99 product on/after Sep 1.
+*   [x] **Promo Countdown:** Ticking countdown banner ("₹49 launch offer ends in DD:HH:MM:SS") on the Paywall dialog and Premium Hub CTA; UI auto-flips to ₹99 when the window closes.
+*   [x] **Dynamic Pricing Text:** Replace all hardcoded "₹99 / 15-Day Free Trial" strings with "7-Day Free Trial" + dynamic price (₹49 + strikethrough ₹99 during promo).
+*   [x] **SubscriptionConfigTest:** Unit tests for promo window, product/price selection, and the Sep 1 cutoff edge.
+
+### Sprint 16.5: Store-Listing Compliance & Release v1.5.0 (Status: 🟡 In Progress)
+Resolve Google Play policy/privacy gaps ahead of the v1.5.0 (Build 5) production release: stop exposing email addresses via the public leaderboard, add the Play-required in-app account deletion path, and align the website privacy policy with real data flows.
+
+*   [ ] **Leaderboard Privacy Hardening:** Key the public Firestore `leaderboard` collection by a SHA-256 hash of the user email (`hashUserId`), never the raw email; verified by known-vector unit tests.
+*   [ ] **In-App Account Deletion:** Add a "Delete Account" entry on the Profile screen that links to the Play-compliant deletion request page (`tradelab.ashwathai.com/delete-account.html`).
+*   [ ] **Privacy Policy Update:** Refresh `website/privacy.html` to disclose the Firestore leaderboard, Crashlytics, FCM, AdMob personalization, Play Billing, and retention/deletion process (website branch).
+*   [ ] **Release v1.5.0:** Version bump (versionCode 5 / 1.5.0), signed AAB verification, lint gate, Pixel 10 smoke test, and release docs.
+
 ---
 
 ## Epic 1: Local MVP Persistence & Engine (Status: 🟢 Complete)
@@ -467,6 +484,69 @@ Bridge the gap between simulation and reality with actual market headlines and m
 *   [x] Implement `sentimentBias` in the price simulation engine.
 *   [x] **Option B Math:** Stocks with strong "Bullish" real-world news drift toward their anchors **3x faster** than neutral stocks.
 *   [x] **Pro AI Summary:** Exclusively for Paid Members, use Google Gemini to read real news and generate an "Executive Impact Brief" and sentiment score.
+
+---
+
+## Epic 21: Developer Review Sprint (Status: 🟢 Complete)
+Comprehensive review and improvement sprint addressing 10 product areas including GTT orders, quick exit workflows, ledger redesign, adaptive guidance, charts, commodities, F&O accounting, premium experience, and cross-cutting improvements.
+
+### Sprint 21.1: Buy/Sell Dialog — GTT Fix & Quick Exit
+*   [x] Add `validUntil` field to `PendingOrder` entity for GTT persistence
+*   [x] Differentiate GTT (survives EOD) from Limit (cancelled at market close) in `matchPendingOrders()`
+*   [x] Add daily expiry cleanup for expired Limit orders in `simulateMarketTick()`
+*   [x] Add "Exit Position (Market)" button in BuySellBottomSheet when user holds the stock
+*   [x] Add GTT badge in PendingOrdersList UI
+
+### Sprint 21.2: Positions — Quick Exit
+*   [x] Add inline "SQUARE OFF" button per equity position row in `PositionsList`
+*   [x] Ensure one-tap market exit via `viewModel.sellStock()`
+
+### Sprint 21.3: Ledger Redesign
+*   [x] Group ledger entries by date bucket (Today, Yesterday, This Week, Older)
+*   [x] Add summary card at top: Total Credits, Total Debits, Net Flow
+*   [x] Add trade-type icons for scannability (BUY/SELL/FEE)
+*   [x] Show P&L per line item with improved information hierarchy
+
+### Sprint 21.4: Adaptive Risk/Action/Discipline Guidance
+*   [x] Replace static watchlist tip with behaviour-adaptive guidance
+*   [x] Add "X points from next badge" hint in Profile
+
+### Sprint 21.5: Charts — Historical Data & Timeframes
+*   [x] Add `CandleEntry` Room entity with proper schema
+*   [x] Generate 30 days of historical candle data on first launch
+*   [x] Add timeframe selector (15m, 1H, 4H, 1D, 1W) to ChartScreen
+*   [x] Add Y-axis price labels, X-axis time labels, grid lines
+*   [x] Add simulated data disclosure banner on chart screen
+
+### Sprint 21.6: Commodities Realism
+*   [x] Add lot size enforcement for MCX commodities
+*   [x] Add MCX-specific STT rate (0.01%)
+*   [x] Add commodity-specific volatility tuning (±0.8%)
+*   [x] Display lot size info on commodity quote cards
+*   [x] Add educational tooltip about MCX contract specifications
+
+### Sprint 21.7: F&O Accounting & Fixes
+*   [x] Add `OptionContract` entity with strike, expiry, lotSize, optionType fields
+*   [x] Fix premium accounting: track as asset, not cash expense
+*   [x] Implement expiry handling (auto-settle expired contracts)
+*   [x] Add real NSE strike intervals for major tickers
+*   [x] Add dynamic lot sizes per underlying
+
+### Sprint 21.8: F&O Exit — Dedicated Workflow
+*   [x] Add dedicated `exitOptionPosition()` method with proper P&L settlement
+*   [x] Add "Close All F&O Positions" batch button
+*   [x] Add expiry countdown badge on option holdings
+*   [x] Add auto-expiry settlement (value → 0 at expiry, P&L realized)
+
+### Sprint 21.9: Premium Ad-Free Experience
+*   [x] Audit all 10+ ad gates for `isPremium` bypass
+*   [x] Ensure premium users see "PRO" badges instead of ad/watch buttons
+*   [x] Remove stale `_showGoogleBilling` state
+
+### Sprint 21.10: Cross-cutting Improvements
+*   [x] Tiered simulation volatility: equities ±0.3%, commodities ±0.8%, crypto ±1.5%
+*   [x] Holdings sort toggle (by P&L, value, alphabetical)
+*   [x] Time-decay discipline score (1pt/week after 30 days inactivity)
 
 
 

@@ -3,6 +3,22 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [1.5.0] - Launch Pricing, Real Product IDs & Store-Listing Compliance - 2026-07-31
+
+### Added
+- **Launch Pricing (Sprint 16.4)**:
+  - Real Google Play subscription products: `tradelab_subs` (₹49 launch) and `trade_lab_subs_99` (₹99 regular), replacing the placeholder `tradelab_pro_monthly`.
+  - 7-day free trial on both products (replaces the old 15-day trial).
+  - Time-boxed ₹49/mo **Early-Bird promo (50% OFF)** valid through **2026-09-01 00:00 IST**, with an automatic client-side flip to ₹99 after the cutoff.
+  - Ticking launch countdown banner on the Paywall and Premium Hub; all subscription pricing text now derives from `SubscriptionConfig`.
+- **Store-Listing Compliance (Sprint 16.5)**:
+  - Leaderboard identity is now a SHA-256 hash of the user's email — email addresses are never written to or exposed via the public Firestore leaderboard.
+  - In-app **Delete Account** option on the Profile screen that links to the Play-compliant account deletion request page.
+- **Unit tests**: `SubscriptionConfigTest` (promo window, cutoff, pricing) and `hashUserId` vectors.
+
+### Fixed
+- Public Firestore leaderboard no longer exposes user email addresses as document IDs.
+
 ## [1.3.0] - Social Maturity & Global Arena - 2026-07-25
 
 ### Added
