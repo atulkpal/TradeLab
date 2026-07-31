@@ -34,6 +34,7 @@ import androidx.compose.ui.zIndex
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -54,6 +55,7 @@ import androidx.compose.ui.geometry.Size
 import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ashwathai.tradelab.data.*
+import com.ashwathai.tradelab.billing.SubscriptionConfig
 import kotlinx.coroutines.launch
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
@@ -644,6 +646,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
 
             // Paywall Dialog
             if (showPaywall) {
+                val promo = rememberLaunchPromo()
                 Dialog(onDismissRequest = { viewModel.dismissPaywall() }) {
                     Card(
                         modifier = Modifier
@@ -721,7 +724,11 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            LaunchPromoBanner(promo)
+
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             Button(
                                 onClick = { viewModel.simulatePremiumPurchase() },
@@ -729,7 +736,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth().testTag("upgrade_pro_button")
                             ) {
-                                Text("Start 15-Day Free Trial • ₹99/mo", color = DarkBg, fontWeight = FontWeight.Bold)
+                                Text(promo.ctaLabel, color = DarkBg, fontWeight = FontWeight.Bold)
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -1221,6 +1228,73 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
     }
 }
 
+data class LaunchPromoState(
+    val isActive: Boolean,
+    val countdown: String,
+    val ctaLabel: String,
+    val offerLine: String,
+    val renewalPrice: String,
+    val trialDays: Int,
+    val priceLabel: String
+)
+
+@Composable
+fun rememberLaunchPromo(): LaunchPromoState {
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            kotlinx.coroutines.delay(1000)
+        }
+    }
+    val isActive = SubscriptionConfig.isLaunchPromoActive(now)
+    val renewalPrice = SubscriptionConfig.monthlyPrice(now)
+    val ctaLabel = if (isActive) {
+        "7-Day Free Trial • ₹${SubscriptionConfig.LAUNCH_PRICE_INR}/mo (50% OFF, was ₹${SubscriptionConfig.REGULAR_PRICE_INR})"
+    } else {
+        "7-Day Free Trial • ₹${SubscriptionConfig.REGULAR_PRICE_INR}/mo"
+    }
+    return LaunchPromoState(
+        isActive = isActive,
+        countdown = SubscriptionConfig.countdownLabel(now),
+        ctaLabel = ctaLabel,
+        offerLine = "7-day free trial • Renews at $renewalPrice/month",
+        renewalPrice = renewalPrice,
+        trialDays = SubscriptionConfig.FREE_TRIAL_DAYS,
+        priceLabel = "₹${if (isActive) SubscriptionConfig.LAUNCH_PRICE_INR else SubscriptionConfig.REGULAR_PRICE_INR}/mo"
+    )
+}
+
+@Composable
+fun LaunchPromoBanner(promo: LaunchPromoState, modifier: Modifier = Modifier) {
+    if (!promo.isActive) return
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(AccentYellow.copy(alpha = 0.12f))
+            .border(1.dp, AccentYellow.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.Bolt,
+                contentDescription = null,
+                tint = AccentYellow,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "₹49 launch offer ends in ${promo.countdown}",
+                color = AccentYellow,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
 @Composable
 fun GoogleBillingDialog(
     show: Boolean,
@@ -1354,7 +1428,7 @@ fun GoogleBillingDialog(
     if (!BuildConfig.DEBUG && isFromPlayStore) {
         androidx.compose.runtime.LaunchedEffect(Unit) {
             activity?.let {
-                billingManager?.startBillingFlow(it, "tradelab_pro_monthly")
+                billingManager?.startBillingFlow(it, SubscriptionConfig.activeProductId())
             }
             onDismiss()
         }
@@ -1371,9 +1445,11 @@ fun GoogleBillingDialog(
     var isProcessing by remember { mutableStateOf(false) }
     var processingStep by remember { mutableStateOf(0) } // 0 = Idle, 1 = Connecting, 2 = Authenticating, 3 = Success
     
+    val promo = rememberLaunchPromo()
+
     val calendar = java.util.Calendar.getInstance()
-    calendar.add(java.util.Calendar.DAY_OF_YEAR, 15)
-    val renewalDateStr = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(calendar.time)
+    calendar.add(java.util.Calendar.DAY_OF_YEAR, promo.trialDays)
+    val renewalDateStr = java.text.SimpleDateFormat("dd MMM yyyy", LocalConfiguration.current.locales[0]).format(calendar.time)
 
     val scope = rememberCoroutineScope()
 
@@ -1446,7 +1522,7 @@ fun GoogleBillingDialog(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "15-day free trial • Renews at ₹99.00/month",
+                                text = promo.offerLine,
                                 color = Color(0xFF9AA0A6),
                                 fontSize = 12.sp
                             )
@@ -1466,7 +1542,7 @@ fun GoogleBillingDialog(
                                 .padding(12.dp)
                         ) {
                             Row(modifier = Modifier.fillMaxWidth()) {
-                                Text("Today – Day 15", color = Color(0xFF9AA0A6), fontSize = 11.sp)
+                                Text("Today – Day ${promo.trialDays}", color = Color(0xFF9AA0A6), fontSize = 11.sp)
                                 Spacer(modifier = Modifier.weight(1f))
                                 Text("₹0.00", color = Color(0xFF34A853), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
@@ -1474,7 +1550,7 @@ fun GoogleBillingDialog(
                             Row(modifier = Modifier.fillMaxWidth()) {
                                 Text("Starting $renewalDateStr", color = Color.White, fontSize = 11.sp)
                                 Spacer(modifier = Modifier.weight(1f))
-                                Text("₹99.00 / month", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("${promo.renewalPrice} / month", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
 
@@ -1613,7 +1689,7 @@ fun GoogleBillingDialog(
 
                         // Terms
                         Text(
-                            text = "By clicking 'SUBSCRIBE', you authorize Google Play to charge ₹99.00/mo automatically after your 15-day free trial. Cancel anytime in subscription settings.",
+                            text = "By clicking 'SUBSCRIBE', you authorize Google Play to charge ${promo.renewalPrice}/mo automatically after your ${promo.trialDays}-day free trial. Cancel anytime in subscription settings.",
                             color = Color(0xFF9AA0A6),
                             fontSize = 9.sp,
                             lineHeight = 12.sp
@@ -1711,6 +1787,8 @@ fun TradeLabProBenefitsDialog(
     currency: String
 ) {
     if (!show) return
+
+    val promo = rememberLaunchPromo()
 
     val symbol = if (currency == "INR") "₹" else "$"
 
@@ -1848,7 +1926,7 @@ fun TradeLabProBenefitsDialog(
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
-                        text = "Unlock 15-Day Free Trial • ₹99/mo",
+                        text = promo.ctaLabel,
                         color = Color.Black,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold

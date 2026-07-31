@@ -7,7 +7,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,9 +31,14 @@ fun ChartScreen(
     val stockPrices by viewModel.stockPrices.collectAsStateWithLifecycle()
     val selectedSymbol by viewModel.selectedStockSymbol.collectAsStateWithLifecycle()
     val selectedStock = stockPrices.find { it.symbol == selectedSymbol }
-    
+    val selectedTimeframe by viewModel.selectedTimeframe.collectAsStateWithLifecycle()
+
     var searchQuery by remember { mutableStateOf("") }
     var showSearchResults by remember { mutableStateOf(false) }
+    var showSimDisclaimer by remember { mutableStateOf(true) }
+    var showChartTypeMenu by remember { mutableStateOf(false) }
+
+    val timeframes = listOf("15m", "1H", "4H", "1D", "1W")
 
     Column(
         modifier = Modifier
@@ -114,6 +121,25 @@ fun ChartScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (selectedStock != null) {
+            // Simulated Data Disclosure Banner
+            if (showSimDisclaimer) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AccentYellow.copy(alpha = 0.08f)),
+                    border = BorderStroke(1.dp, AccentYellow.copy(alpha = 0.2f))
+                ) {
+                    Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Info, null, tint = AccentYellow, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Chart data is simulated for educational purposes. Prices do not reflect real market values.", color = AccentYellow.copy(alpha = 0.8f), fontSize = 9.sp, lineHeight = 12.sp, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { showSimDisclaimer = false }, modifier = Modifier.size(18.dp)) {
+                            Icon(Icons.Default.Clear, null, tint = AccentYellow.copy(alpha = 0.5f), modifier = Modifier.size(12.dp))
+                        }
+                    }
+                }
+            }
+
             // Header: Symbol & Price
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -149,7 +175,26 @@ fun ChartScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Timeframe Selector
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                timeframes.forEach { tf ->
+                    TextButton(
+                        onClick = { viewModel.setTimeframe(tf) },
+                        colors = ButtonDefaults.textButtonColors(contentColor = if (selectedTimeframe == tf) BrandViolet else TextMuted),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.height(28.dp).then(
+                            if (selectedTimeframe == tf) Modifier.border(1.dp, BrandViolet.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            else Modifier
+                        )
+                    ) {
+                        Text(tf, fontSize = 10.sp, fontWeight = if (selectedTimeframe == tf) FontWeight.Bold else FontWeight.Normal)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Detailed Technical Chart
             Box(

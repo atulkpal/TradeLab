@@ -10,6 +10,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
 
@@ -38,8 +39,24 @@ class LeaderboardManagerTest {
     }
 
     @Test
+    fun `hashUserId returns known sha256 vector and hides raw email`() {
+        assertEquals(
+            "973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b",
+            hashUserId("test@example.com")
+        )
+        assertNotEquals("test@example.com", hashUserId("test@example.com"))
+    }
+
+    @Test
+    fun `hashUserId is deterministic and handles blank input`() {
+        assertEquals(hashUserId("trader@ashwath.ai"), hashUserId("trader@ashwath.ai"))
+        assertEquals("", hashUserId(""))
+        assertEquals("", hashUserId("   "))
+    }
+
+    @Test
     fun `syncUserStats skips if userId is blank`() = runTest {
-        leaderboardManager.syncUserStats("", "Name", 100, 1000.0)
+        leaderboardManager.syncUserStats("", "Name", 100, 1000.0, 80)
         verify(exactly = 0) { collection.document(any()) }
     }
 
@@ -52,7 +69,7 @@ class LeaderboardManagerTest {
         every { collection.document("user123") } returns document
         every { document.set(any()) } returns task
         
-        leaderboardManager.syncUserStats("user123", "Trader", 500, 5000.0)
+        leaderboardManager.syncUserStats("user123", "Trader", 500, 5000.0, 85)
         
         verify { collection.document("user123") }
         verify { document.set(any()) }
@@ -62,7 +79,7 @@ class LeaderboardManagerTest {
     fun `getTopUsersFlow emits empty list on firestore error`() = runTest {
         val query = mockk<Query>(relaxed = true)
         every { collection.orderBy("xp", Query.Direction.DESCENDING) } returns query
-        every { query.limit(20) } returns query
+        every { query.limit(100) } returns query
         
         val listenerSlot = slot<EventListener<QuerySnapshot>>()
         every { query.addSnapshotListener(capture(listenerSlot)) } returns mockk(relaxed = true)

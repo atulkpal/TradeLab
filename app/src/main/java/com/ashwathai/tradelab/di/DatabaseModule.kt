@@ -45,4 +45,10 @@ object DatabaseModule {
 
     @Provides
     fun provideLedgerDao(database: AppDatabase) = database.ledgerDao()
+
+    @Provides
+    fun provideCandleEntryDao(database: AppDatabase) = database.candleEntryDao()
+
+    @Provides
+    fun provideOptionContractDao(database: AppDatabase) = database.optionContractDao()
 }

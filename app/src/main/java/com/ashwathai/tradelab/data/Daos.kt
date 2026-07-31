@@ -139,6 +139,9 @@ interface PendingOrderDao {
 
     @Query("UPDATE pending_orders SET triggerPrice = :triggerPrice, trailingBaselinePrice = :baselinePrice WHERE id = :id")
     suspend fun updateTrailingOrder(id: Int, triggerPrice: Double, baselinePrice: Double)
+
+    @Query("SELECT * FROM pending_orders WHERE status = 'PENDING' AND orderType = 'Limit' AND timestamp < :cutoffTimestamp")
+    suspend fun getExpiredPendingOrders(cutoffTimestamp: Long): List<PendingOrder>
 }
 
 @Dao
@@ -193,4 +196,43 @@ interface LedgerDao {
 
     @Query("DELETE FROM ledger_entries")
     suspend fun deleteAll()
+}
+
+@Dao
+interface CandleEntryDao {
+    @Query("SELECT * FROM candle_entries WHERE symbol = :symbol AND resolution = :resolution ORDER BY timestamp ASC")
+    fun getCandlesFlow(symbol: String, resolution: String): Flow<List<CandleEntry>>
+
+    @Query("SELECT * FROM candle_entries WHERE symbol = :symbol AND resolution = :resolution AND timestamp >= :since ORDER BY timestamp ASC")
+    suspend fun getCandlesSince(symbol: String, resolution: String, since: Long): List<CandleEntry>
+
+    @Query("SELECT * FROM candle_entries WHERE symbol = :symbol AND resolution = :resolution ORDER BY timestamp ASC")
+    suspend fun getCandles(symbol: String, resolution: String): List<CandleEntry>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCandles(candles: List<CandleEntry>)
+
+    @Query("DELETE FROM candle_entries WHERE symbol = :symbol")
+    suspend fun deleteCandlesBySymbol(symbol: String)
+
+    @Query("DELETE FROM candle_entries")
+    suspend fun deleteAll()
+}
+
+@Dao
+interface OptionContractDao {
+    @Query("SELECT * FROM option_contracts WHERE isActive = 1")
+    fun getAllActiveContractsFlow(): Flow<List<OptionContract>>
+
+    @Query("SELECT * FROM option_contracts WHERE underlyingSymbol = :underlying AND isActive = 1")
+    suspend fun getActiveContractsByUnderlying(underlying: String): List<OptionContract>
+
+    @Query("SELECT * FROM option_contracts WHERE symbol = :symbol LIMIT 1")
+    suspend fun getContract(symbol: String): OptionContract?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertContract(contract: OptionContract)
+
+    @Query("UPDATE option_contracts SET isActive = 0 WHERE symbol = :symbol")
+    suspend fun deactivateContract(symbol: String)
 }

@@ -513,6 +513,23 @@ fun CommoditiesScreen(
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             }
+                                            if (activeSubTab == "MCX") {
+                                                val lotSize = TradingRepository.COMMODITY_LOT_SIZES[sym] ?: 0.0
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(4.dp))
+                                                        .background(BrandViolet.copy(alpha = 0.1f))
+                                                        .padding(horizontal = 5.dp, vertical = 2.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "Lot: ${lotSize.toInt()}",
+                                                        color = BrandViolet,
+                                                        fontSize = 8.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
                                         }
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(

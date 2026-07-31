@@ -10,6 +10,12 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+fun hashUserId(rawId: String): String {
+    if (rawId.isBlank()) return ""
+    val digest = java.security.MessageDigest.getInstance("SHA-256")
+    return digest.digest(rawId.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+}
+
 data class LeaderboardEntry(
     val userId: String = "",
     val userName: String = "Anonymous",

@@ -39,9 +39,10 @@ The current app utilizes a localized Clean MVVM structure divided into three dis
 └────────────────────────────────────────────────────────┘
 
 ### D. Billing & Monetization Layer (`com.ashwathai.tradelab.billing`)
+*   **SubscriptionConfig:** Centralized pricing/subscription configuration. Defines the real Play Console product IDs (`tradelab_subs` = ₹49 launch, `trade_lab_subs_99` = ₹99 regular), the 7-day free trial, and the early-launch promo window (₹49 for all who subscribe through 2026-08-31, flipping to ₹99 at 2026-09-01 00:00 IST). `activeProductId()` selects the product for new purchases based on the date; existing ₹49 subscribers keep renewing at ₹49 via Play Billing's per-product pricing.
 *   **BillingManager:** A lifecycle-aware component that interfaces with the **Google Play Billing SDK**.
     *   Handles connection to the Google Play Store.
-    *   Queries for available subscription products (e.g., `tradelab_pro_monthly`).
+    *   Queries for available subscription products (both `tradelab_subs` and `trade_lab_subs_99`) and grants Pro entitlement for any active purchase.
     *   Launches the official Google Play purchase sheet.
     *   Acknowledges purchases to prevent automatic refunds.
     *   **Hybrid Logic:** Seamlessly switches between a high-fidelity simulation in Debug mode and the real SDK in Release mode.
