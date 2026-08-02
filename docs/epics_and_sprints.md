@@ -619,7 +619,7 @@ Expand the Learn-to-Earn Academy from 8 flat single-question modules into a two-
 *   [x] Fix the **F&O Academic Gate dead-lock**: `AcademyScoring.fnoAcademicUnlocked()` now checks the v2 beginner chapter ids `101,102,103` (which v2 actually awards via `completeTutorialLevel`), while still honoring legacy ids `1,2,3`. Previously the gate checked only legacy ids the v2 curriculum never writes, so F&O could never unlock through normal play.
 *   [x] Update the gate checklist UI in `FoDeskScreen.kt` to display the three beginner chapter titles.
 *   [x] Add `fnoAcademicUnlocked` unit cases to `AcademyScoringTest` (v2 full/partial, legacy full/partial).
-*   [x] Migrate decorative emoji to **27 VectorDrawables** (6 `ic_course_*` + 21 `ic_status_*`) across the quiz dialog, PRO dialog, F&O desk (TOKENS badge, MIS warning, EXECUTE button, bias labels), and Profile (level trophy, heart footer).
+*   [x] Migrate decorative emoji to **26 VectorDrawables** (6 `ic_course_*` + 20 `ic_status_*`) across the quiz dialog, PRO dialog, F&O desk (TOKENS badge, MIS warning, EXECUTE button, bias labels), and Profile (level trophy, heart footer).
 *   [x] Add `Trade Lab v1.5.0 (5)` version/build footer line under the Profile branding for bug-triage identification.
 *   [x] Add `biasIcon(totalDelta)` drawable-selection helper to `AcademyScoring` with unit coverage.
 

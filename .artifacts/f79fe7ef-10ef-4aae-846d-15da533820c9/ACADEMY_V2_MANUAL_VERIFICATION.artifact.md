@@ -140,4 +140,4 @@ This document provides a step-by-step checklist for testers to verify the functi
     - **Expected Result**: "Level 5: Master Risk Manager" shows a trophy icon (no emoji).
 - [ ] **Test Case 10.5: Icon Asset Inventory (automated)**
     - **Action**: Run `.\gradlew testDebugUnitTest`.
-    - **Expected Result**: `AcademyScoringTest` covers `courseIcon` (6 unique), `biasIcon` (3 distinct threshold drawables), and `fnoAcademicUnlocked` (v2 + legacy gate); all 27 VectorDrawables referenced by `courseIcon`/`biasIcon` resolve to existing `drawable` resources.
+    - **Expected Result**: `AcademyScoringTest` covers `courseIcon` (6 unique), `biasIcon` (3 distinct threshold drawables), and `fnoAcademicUnlocked` (v2 + legacy gate); all 26 VectorDrawables referenced by `courseIcon`/`biasIcon` resolve to existing `drawable` resources.
