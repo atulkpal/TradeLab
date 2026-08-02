@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
@@ -22,7 +24,7 @@ import androidx.room.RoomDatabase
         AccountSnapshot::class,
         LedgerEntry::class
     ],
-    version = 22,
+    version = 23,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -51,10 +53,18 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "paper_trader_db"
                 )
+                .addMigrations(MIGRATION_22_23)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
                 instance
+            }
+        }
+
+        // v22 -> v23: track claimed mission IDs so rewards can be claimed once
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE user_profile ADD COLUMN claimedMissions TEXT NOT NULL DEFAULT ''")
             }
         }
     }

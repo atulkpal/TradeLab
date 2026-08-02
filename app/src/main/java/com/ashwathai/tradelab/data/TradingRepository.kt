@@ -743,6 +743,29 @@ class TradingRepository @Inject constructor(
         userProfileDao.insertProfile(profile.copy(isArcadeMode = enabled))
     }
 
+    suspend fun getClaimedMissionIds(): Set<String> = withContext(Dispatchers.IO) {
+        val profile = userProfileDao.getUserProfile() ?: return@withContext emptySet()
+        profile.claimedMissions.split(",").filter { it.isNotBlank() }.toSet()
+    }
+
+    suspend fun claimMissionReward(missionId: Int, title: String, reward: Double) = withContext(Dispatchers.IO) {
+        val profile = userProfileDao.getUserProfile() ?: return@withContext
+        val claimed = profile.claimedMissions.split(",").filter { it.isNotBlank() }.toMutableSet()
+        if (!claimed.contains(missionId.toString())) {
+            claimed.add(missionId.toString())
+            val newClaimed = claimed.joinToString(",")
+            val newCash = profile.cash + reward
+            userProfileDao.insertProfile(
+                profile.copy(
+                    claimedMissions = newClaimed,
+                    cash = newCash,
+                    startingCash = profile.startingCash + reward
+                )
+            )
+            recordLedgerEntry("Mission Reward: $title", "CREDIT", reward, newCash)
+        }
+    }
+
     // Toggle Watchlist Membership
     suspend fun toggleWatchlist(symbol: String): Boolean = withContext(Dispatchers.IO) {
         val isPresent = watchlistDao.isWatchlisted(symbol)

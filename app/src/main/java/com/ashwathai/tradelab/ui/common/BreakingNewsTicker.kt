@@ -2,6 +2,7 @@ package com.ashwathai.tradelab.ui.common
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,11 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ashwathai.tradelab.data.MarketNews
+import com.ashwathai.tradelab.R
 import com.ashwathai.tradelab.ui.theme.*
 import kotlinx.coroutines.delay
 
@@ -120,12 +123,20 @@ fun BreakingNewsTicker(
         
         if (currentNews.isAiRefined) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "👑 PRO",
-                color = AccentYellow,
-                fontSize = 8.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(R.drawable.ic_status_crown),
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "PRO",
+                    color = AccentYellow,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
         }
     }
 }

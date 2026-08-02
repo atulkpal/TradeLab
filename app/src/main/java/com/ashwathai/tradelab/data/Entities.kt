@@ -37,7 +37,8 @@ data class UserProfile(
     val isPhoneVerified: Boolean = false,
     val disciplineScore: Int = 75,
     val lastDisciplineUpdate: Long = System.currentTimeMillis(),
-    val activeBadges: String = "" // Comma-separated list
+    val activeBadges: String = "", // Comma-separated list
+    val claimedMissions: String = "" // Comma-separated mission IDs that have been claimed
 )
 
 @Entity(tableName = "holdings", primaryKeys = ["symbol", "isDelivery"])

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -48,12 +50,15 @@ import androidx.compose.ui.geometry.Size
 import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ashwathai.tradelab.data.*
-import kotlinx.coroutines.launch
+import com.ashwathai.tradelab.R
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
 import com.ashwathai.tradelab.ui.QuizModule
+import com.ashwathai.tradelab.ui.AcademyCourse
+import com.ashwathai.tradelab.ui.ChapterModule
 import com.ashwathai.tradelab.ui.Lecture
 import com.ashwathai.tradelab.ui.Mission
+import com.ashwathai.tradelab.ui.AcademyScoring
 import com.ashwathai.tradelab.ui.theme.*
 import com.ashwathai.tradelab.ui.AuthScreen
 import com.ashwathai.tradelab.BuildConfig
@@ -74,7 +79,9 @@ fun AcademyScreen(
 ) {
     var activeSubTab by remember { mutableStateOf("Lessons") }
     val quizModules by viewModel.quizModules.collectAsStateWithLifecycle()
+    val academyCourses by viewModel.academyCourses.collectAsStateWithLifecycle()
     val missionsList by viewModel.missionsList.collectAsStateWithLifecycle()
+    val claimedMissions by viewModel.claimedMissions.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
     Column(
@@ -205,92 +212,43 @@ fun AcademyScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // List of Academy modules
-                quizModules.forEach { module ->
-                    val isCompleted = completedSet.contains(module.id.toString())
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp)
-                            .clickable { onOpenQuiz(module.id) }
-                            .testTag("academy_module_${module.id}"),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                        border = BorderStroke(1.dp, if (isCompleted) Color.White.copy(alpha = 0.05f) else BrandViolet.copy(alpha = 0.2f))
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = module.topic.uppercase(),
-                                        color = BrandViolet,
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = module.title,
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                
-                                if (isCompleted) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(BrandVioletDark)
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text(
-                                            text = "Earned!",
-                                            color = BrandViolet,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(BrandViolet.copy(alpha = 0.15f))
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    ) {
-                                        Text(
-                                            text = "+${formatCurrencyNoDecimals(module.rewardAmt, stats.currency)}",
-                                            color = BrandViolet,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = module.concept,
-                                color = TextSubtle,
-                                fontSize = 11.sp,
-                                lineHeight = 15.sp
-                            )
-                        }
-                    }
+                // List of Academy modules grouped by course
+                val displayCourses = if (academyCourses.isNotEmpty()) {
+                    academyCourses
+                } else if (quizModules.isNotEmpty()) {
+                    listOf(
+                        AcademyCourse(
+                            id = 1,
+                            title = "Stock Market Basics",
+                            tagline = "Foundational lessons for the Indian markets.",
+                            iconEmoji = "📈",
+                            tier = "BEGINNER",
+                            order = 1,
+                            chapters = quizModules
+                        )
+                    )
+                } else {
+                    emptyList()
                 }
-                
+
+                CourseDeck(
+                    courses = displayCourses,
+                    completedSet = completedSet,
+                    currency = stats.currency,
+                    onOpenChapter = { onOpenQuiz(it) }
+                )
+
                 Spacer(modifier = Modifier.height(30.dp))
             }
         } else if (activeSubTab == "Missions") {
             val completedSet = remember(stats.completedLevels) {
                 stats.completedLevels.split(",").filter { it.isNotBlank() }.toSet()
             }
+            val unlockedIds = remember(completedSet, academyCourses) {
+                AcademyScoring.unlockedCourseIds(academyCourses, completedSet)
+            }
             var showCertificateDialog by remember { mutableStateOf(false) }
-            val totalCount = quizModules.size
+            val totalCount = if (academyCourses.isNotEmpty()) academyCourses.sumOf { it.chapters.size } else quizModules.size
 
             Column(
                 modifier = Modifier
@@ -336,12 +294,23 @@ fun AcademyScreen(
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(
-                                text = if (totalCount > 0 && completedSet.size >= totalCount) "View Certificate 🎓" else "Locked (${completedSet.size}/$totalCount)",
-                                color = if (totalCount > 0 && completedSet.size >= totalCount) Color.White else TextSubtle,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            val unlockedCertificate = totalCount > 0 && completedSet.size >= totalCount
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (unlockedCertificate) {
+                                    Image(
+                                        painter = painterResource(R.drawable.ic_status_certificate),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                }
+                                Text(
+                                    text = if (unlockedCertificate) "View Certificate" else "Locked (${completedSet.size}/$totalCount)",
+                                    color = if (unlockedCertificate) Color.White else TextSubtle,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -355,20 +324,34 @@ fun AcademyScreen(
                     letterSpacing = 1.sp,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
+                Text(
+                    text = "Complete missions to grow your virtual wallet. Claim each reward once — it's yours forever.",
+                    color = TextSubtle,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Dynamic Missions Loading
                 missionsList.forEach { mission ->
-                    val isCompleted = when (mission.identifier) {
-                        "has_traded" -> stats.startingCash != stats.cash || stats.holdingsValue > 0
-                        "completed_3_modules" -> completedSet.size >= 3
-                        "has_calibrated" -> stats.riskLevel != "Moderate" || stats.startingCash != 25000.0
-                        else -> false
-                    }
+                    val evaluation = AcademyScoring.evaluateMission(
+                        mission = mission,
+                        completedSet = completedSet,
+                        academyCourses = academyCourses,
+                        unlockedIds = unlockedIds,
+                        stats = stats
+                    )
                     MissionRow(
                         title = mission.title,
                         desc = mission.desc,
-                        isCompleted = isCompleted,
-                        reward = mission.reward
+                        reward = mission.reward,
+                        rewardAmt = mission.rewardAmt,
+                        isCompleted = evaluation.isCompleted,
+                        isClaimed = claimedMissions.contains(mission.id.toString()),
+                        progress = evaluation.progress,
+                        target = evaluation.target,
+                        currency = stats.currency,
+                        onClaim = { viewModel.claimMission(mission) }
                     )
                 }
                 
@@ -551,7 +534,7 @@ fun AcademyScreen(
                 // If global leaders are empty, show local placeholder for better UX
                 val displayLeaders = if (globalLeaders.isEmpty()) {
                     listOf(
-                        LeaderboardEntry("bot", "👑 TradeLab Bot", 50000, 1000000.0, 95, "Rank #1"),
+                        LeaderboardEntry("bot", "TradeLab Bot", 50000, 1000000.0, 95, "Rank #1"),
                         LeaderboardEntry("you", "You (Trader)", userScore, stats.totalValue, stats.disciplineScore, "Rank #2")
                     )
                 } else {
@@ -560,7 +543,7 @@ fun AcademyScreen(
 
                 displayLeaders.forEachIndexed { index, leader ->
                     val isUser = leader.userId == (stats.completedLevels /* Using this as a proxy for UID if email is empty */) || leader.userName.contains("You") || leader.userId == hashUserId(userProfile?.userEmail.orEmpty())
-                    val isKing = leader.userName.contains("👑 TradeLab") && !isUser
+                    val isKing = leader.userName.contains("TradeLab") && !isUser
                     
                     Card(
                         modifier = Modifier
@@ -590,12 +573,22 @@ fun AcademyScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
-                                    Text(
-                                        text = leader.userName,
-                                        color = if (isUser) BrandViolet else if (isKing) AccentYellow else Color.White,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (isKing) {
+                                            Image(
+                                                painter = painterResource(R.drawable.ic_status_crown),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                        }
+                                        Text(
+                                            text = leader.userName,
+                                            color = if (isUser) BrandViolet else if (isKing) AccentYellow else Color.White,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                     if (leader.disciplineScore > 0) {
                                         Text(
                                             text = "Discipline: ${leader.disciplineScore}/100",
@@ -630,13 +623,320 @@ fun AcademyScreen(
     }
 }
 
+/**
+ * Single-open accordion course deck with progressive course unlocking.
+ * Course N unlocks only after every chapter of course N-1 is completed.
+ */
+@Composable
+fun CourseDeck(
+    courses: List<AcademyCourse>,
+    completedSet: Set<String>,
+    currency: String,
+    onOpenChapter: (Int) -> Unit
+) {
+    val ordered = remember(courses) { courses.sortedBy { it.order } }
+    val unlockedIds = remember(courses, completedSet) {
+        AcademyScoring.unlockedCourseIds(courses, completedSet)
+    }
+    var expandedCourseId by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    ordered.forEachIndexed { index, course ->
+        val isUnlocked = course.id in unlockedIds
+        val isExpanded = expandedCourseId == course.id
+        val chapters = course.chapters
+        val completedCount = chapters.count { completedSet.contains(it.id.toString()) }
+        val isCourseComplete = chapters.isNotEmpty() && completedCount == chapters.size
+        val tierColor = when (course.tier.uppercase()) {
+            "ADVANCED" -> AccentRose
+            "INTERMEDIATE" -> AccentYellow
+            else -> BrandViolet
+        }
+
+        val borderModifier = if (isExpanded && isUnlocked) {
+            Modifier.neonGlowPulse(tierColor)
+        } else {
+            Modifier.border(
+                1.dp,
+                if (isUnlocked) tierColor.copy(alpha = 0.35f) else DarkBorder,
+                RoundedCornerShape(20.dp)
+            )
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+                .premiumEntrance(index)
+                .testTag("academy_course_${course.id}")
+                .then(borderModifier)
+                .clickable {
+                    if (isExpanded) expandedCourseId = null else expandedCourseId = course.id
+                },
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isUnlocked) DarkSurface else DarkSurface.copy(alpha = 0.55f)
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Image(
+                            painter = painterResource(AcademyScoring.courseIcon(course.id)),
+                            contentDescription = course.title,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .padding(end = 10.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = course.title.uppercase(),
+                                color = if (isUnlocked) tierColor else TextMuted,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(tierColor.copy(alpha = 0.15f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = course.tier.uppercase(),
+                                        color = if (isUnlocked) tierColor else TextMuted,
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.6.sp
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = course.tagline.ifBlank { "Master this module to level up." },
+                                color = if (isUnlocked) TextSubtle else TextMuted,
+                                fontSize = 11.sp,
+                                lineHeight = 15.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    when {
+                        isCourseComplete -> Box(modifier = Modifier.size(40.dp)) {
+                            SparkleBurst(trigger = true, color = tierColor)
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Course complete",
+                                tint = tierColor,
+                                modifier = Modifier.size(18.dp).align(Alignment.Center)
+                            )
+                        }
+                        !isUnlocked -> Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = TextMuted,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        else -> RotatingChevron(
+                            expanded = isExpanded,
+                            modifier = Modifier.size(22.dp),
+                            tint = TextSubtle
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = if (isUnlocked) {
+                        "Progress: $completedCount of ${chapters.size} chapters"
+                    } else {
+                        "Preview — complete the previous course to earn rewards"
+                    },
+                    color = TextMuted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                ShimmerProgress(
+                    progress = if (chapters.isNotEmpty()) completedCount / chapters.size.toFloat() else 0f,
+                    color = if (isUnlocked) tierColor else tierColor.copy(alpha = 0.3f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                        .height(6.dp)
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = expandVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
+            exit = shrinkVertically(animationSpec = tween(260)) + fadeOut()
+        ) {
+            Column(modifier = Modifier.padding(top = 6.dp)) {
+                chapters.forEachIndexed { chapterIndex, module ->
+                    val isChapterCompleted = completedSet.contains(module.id.toString())
+                    Column(
+                        modifier = Modifier.premiumEntrance(chapterIndex, staggerMs = 40L, offsetY = 10.dp)
+                    ) {
+                        ChapterCard(
+                            module = module,
+                            isCompleted = isChapterCompleted,
+                            isLocked = !isUnlocked,
+                            currency = currency,
+                            onOpen = { onOpenChapter(module.id) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ChapterCard(
+    module: ChapterModule,
+    isCompleted: Boolean,
+    isLocked: Boolean = false,
+    currency: String,
+    onOpen: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clickable { onOpen() }
+            .testTag("academy_module_${module.id}"),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isLocked) DarkSurface.copy(alpha = 0.6f) else DarkSurface),
+        border = BorderStroke(1.dp, if (isCompleted) Color.White.copy(alpha = 0.05f) else if (isLocked) Color.White.copy(alpha = 0.06f) else BrandViolet.copy(alpha = 0.2f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = module.topic.uppercase(),
+                        color = if (isLocked) TextMuted else BrandViolet,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = module.title,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                when {
+                    isCompleted -> Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(BrandVioletDark)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "Earned!",
+                            color = BrandViolet,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    isLocked -> Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White.copy(alpha = 0.06f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Locked",
+                                tint = TextMuted,
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Preview",
+                                color = TextMuted,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    else -> Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(BrandViolet.copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "+${formatCurrencyNoDecimals(module.rewardAmt, currency)}",
+                            color = BrandViolet,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = module.concept,
+                color = TextSubtle,
+                fontSize = 11.sp,
+                lineHeight = 15.sp
+            )
+            if (module.quizzes.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_status_quiz),
+                        contentDescription = null,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Knowledge Check • ${module.quizzes.size} Questions",
+                        color = TextMuted,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun MissionRow(
     title: String,
     desc: String,
+    reward: String,
+    rewardAmt: Double,
     isCompleted: Boolean,
-    reward: String
+    isClaimed: Boolean,
+    progress: Int,
+    target: Int,
+    currency: String,
+    onClaim: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
@@ -644,37 +944,98 @@ fun MissionRow(
         colors = CardDefaults.cardColors(containerColor = DarkSurface),
         border = BorderStroke(1.dp, if (isCompleted) BrandViolet.copy(alpha = 0.3f) else DarkBorder)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                contentDescription = "Status",
-                tint = if (isCompleted) BrandViolet else TextSubtle,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    color = if (isCompleted) TextMuted else Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (isClaimed) Icons.Default.CheckCircle else if (isCompleted) Icons.Default.Verified else Icons.Default.RadioButtonUnchecked,
+                    contentDescription = "Status",
+                    tint = if (isClaimed) AccentGreen else if (isCompleted) BrandViolet else TextSubtle,
+                    modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = desc,
-                    color = TextSubtle,
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp
-                )
-                if (!isCompleted) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Reward: $reward",
-                        color = BrandViolet,
-                        fontSize = 10.sp,
+                        text = title,
+                        color = if (isClaimed) TextMuted else Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = desc,
+                        color = TextSubtle,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    if (target > 1) {
+                        LinearProgressIndicator(
+                            progress = { (progress.toFloat() / target).coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(5.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = if (isClaimed) AccentGreen else BrandViolet,
+                            trackColor = Color.White.copy(alpha = 0.05f)
+                        )
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Text(
+                            text = "$progress/$target complete",
+                            color = if (isClaimed) AccentGreen else TextMuted,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    if (!isClaimed) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Reward: $reward",
+                            color = BrandViolet,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+            if (isCompleted && !isClaimed) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = onClaim,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("mission_claim_${title}"),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_status_cash),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Claim +${formatCurrencyNoDecimals(rewardAmt, currency)}",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            } else if (isClaimed) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = AccentGreen,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Claimed ✓",
+                        color = AccentGreen,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

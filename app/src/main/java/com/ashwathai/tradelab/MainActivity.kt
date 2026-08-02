@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +61,8 @@ import kotlinx.coroutines.launch
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
 import com.ashwathai.tradelab.ui.QuizModule
+import com.ashwathai.tradelab.ui.QuizQuestion
+import com.ashwathai.tradelab.ui.AcademyScoring
 import com.ashwathai.tradelab.ui.Lecture
 import com.ashwathai.tradelab.ui.Mission
 import com.ashwathai.tradelab.ui.theme.*
@@ -776,20 +779,29 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
         activeQuizLevelId?.let { quizId ->
             val quizModules by viewModel.quizModules.collectAsStateWithLifecycle()
             val quiz = quizModules.find { it.id == quizId }
+            val academyCourses by viewModel.academyCourses.collectAsStateWithLifecycle()
             val completedSet = remember(stats.completedLevels) {
                 stats.completedLevels.split(",").filter { it.isNotBlank() }.toSet()
             }
+            val unlockedIds = remember(academyCourses, completedSet) {
+                AcademyScoring.unlockedCourseIds(academyCourses, completedSet)
+            }
+            val isChapterLocked = quiz != null && quiz.courseId !in unlockedIds
 
             if (quiz != null) {
                 var activeLectureIndex by remember(quizId) { mutableStateOf<Int?>(0) }
-                var selectedIndex by remember(quizId) { mutableStateOf<Int?>(null) }
+                var questionIndex by remember(quizId) { mutableStateOf(0) }
+                var answers by remember(quizId) { mutableStateOf<Map<Int, Int>>(emptyMap()) }
                 var showResult by remember(quizId) { mutableStateOf(false) }
-                var isCorrect by remember(quizId) { mutableStateOf(false) }
+                var quizComplete by remember(quizId) { mutableStateOf(false) }
                 var isAdLoading by remember(quizId) { mutableStateOf(false) }
                 var isWatchingFallbackAd by remember(quizId) { mutableStateOf(false) }
                 var adTimer by remember(quizId) { mutableStateOf(0) }
 
                 val isAlreadyCompleted = completedSet.contains(quizId.toString())
+                val questions = quiz.quizzes.ifEmpty {
+                    listOf(QuizQuestion(quiz.concept, listOf("True", "False"), 0))
+                }
 
                 Dialog(onDismissRequest = { activeQuizLevelId = null }) {
                     Card(
@@ -833,6 +845,17 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
+
+                            if (quiz.riskDisclosure.isNotBlank()) {
+                                Text(
+                                    text = quiz.riskDisclosure,
+                                    color = Color(0xFFF2C94C),
+                                    fontSize = 10.sp,
+                                    lineHeight = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
 
                             if (activeLectureIndex != null) {
                                 // --- LECTURES MODE ---
@@ -910,102 +933,372 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
 
                                 Spacer(modifier = Modifier.height(20.dp))
 
-                                Button(
-                                    onClick = { activeLectureIndex = null },
-                                    colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = "Start Knowledge Check 📝",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            } else {
-                                // --- QUIZ QUESTIONNAIRE MODE ---
-                                Text(
-                                    text = "KNOWLEDGE CHECK:",
-                                    color = TextMuted,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = quiz.question,
-                                    color = Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    lineHeight = 18.sp
-                                )
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                quiz.options.forEachIndexed { index, option ->
-                                    val isSel = selectedIndex == index
-                                    val itemBg = if (isSel) Color.White.copy(alpha = 0.05f) else Color.Transparent
-                                    val itemBorder = if (isSel) BrandViolet.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.05f)
-
-                                    Row(
+                                if (isChapterLocked) {
+                                    val currentCourseOrder = academyCourses.firstOrNull { it.id == quiz.courseId }?.order
+                                    val prevCourseTitle = academyCourses
+                                        .sortedBy { it.order }
+                                        .firstOrNull { currentCourseOrder != null && it.order < currentCourseOrder }
+                                        ?.title
+                                    Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 4.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(itemBg)
-                                            .border(1.dp, itemBorder, RoundedCornerShape(12.dp))
-                                            .clickable(enabled = !showResult) { selectedIndex = index }
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                            .testTag("locked_assessment"),
+                                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f)),
+                                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                                        shape = RoundedCornerShape(12.dp)
                                     ) {
-                                        RadioButton(
-                                            selected = isSel,
-                                            onClick = { if (!showResult) selectedIndex = index },
-                                            colors = RadioButtonDefaults.colors(selectedColor = BrandViolet, unselectedColor = TextSubtle),
-                                            enabled = !showResult
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = option,
-                                            color = Color.White,
-                                            fontSize = 12.sp,
-                                            lineHeight = 16.sp
-                                        )
+                                        Column(
+                                            modifier = Modifier.padding(14.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Lock,
+                                                contentDescription = "Assessment locked",
+                                                tint = TextMuted,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(
+                                                text = "Assessment Locked",
+                                                color = TextSecondary,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Spacer(modifier = Modifier.height(3.dp))
+                                            Text(
+                                                text = "Complete all chapters of ${prevCourseTitle ?: "the previous course"} to unlock this assessment & reward.",
+                                                color = TextMuted,
+                                                fontSize = 10.sp,
+                                                lineHeight = 14.sp,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    OutlinedButton(
+                                        onClick = { activeLectureIndex = null },
+                                        shape = RoundedCornerShape(12.dp),
+                                        border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.5f)),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandViolet),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .testTag("skip_lectures")
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Image(
+                                                painter = painterResource(R.drawable.ic_status_quiz),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "Skip Lectures → Take Assessment",
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Button(
+                                        onClick = { activeLectureIndex = null },
+                                        colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Image(
+                                                painter = painterResource(R.drawable.ic_status_quiz),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "Start Knowledge Check",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
                                     }
                                 }
+                            } else {
+                                // --- MULTI-QUESTION KNOWLEDGE CHECK ---
+                                val currentQuestion = questions.getOrNull(questionIndex.coerceAtMost(questions.size - 1))
+                                val selectedAnswer = answers[questionIndex]
 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                if (currentQuestion == null) {
+                                    Text(
+                                        text = "This chapter has no questions yet. Review the lectures and try again.",
+                                        color = TextMuted,
+                                        fontSize = 12.sp
+                                    )
+                                } else if (!quizComplete) {
+                                    Text(
+                                        text = "KNOWLEDGE CHECK:",
+                                        color = TextMuted,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Question ${questionIndex + 1} of ${questions.size}",
+                                        color = BrandViolet,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    LinearProgressIndicator(
+                                        progress = { (questionIndex + 1) / questions.size.toFloat() },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 6.dp)
+                                            .height(6.dp)
+                                            .clip(RoundedCornerShape(3.dp)),
+                                        color = BrandViolet,
+                                        trackColor = Color.White.copy(alpha = 0.05f)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = currentQuestion.question,
+                                        color = Color.White,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        lineHeight = 18.sp
+                                    )
 
-                                if (showResult) {
-                                    if (isCorrect) {
-                                        Card(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = CardDefaults.cardColors(containerColor = AccentGreenDark.copy(alpha = 0.2f)),
-                                            border = BorderStroke(1.dp, AccentGreen.copy(alpha = 0.4f)),
-                                            shape = RoundedCornerShape(12.dp)
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    currentQuestion.options.forEachIndexed { index, option ->
+                                        val isSel = selectedAnswer == index
+                                        val itemBg = if (isSel) Color.White.copy(alpha = 0.05f) else Color.Transparent
+                                        val itemBorder = if (isSel) BrandViolet.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.05f)
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 4.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(itemBg)
+                                                .border(1.dp, itemBorder, RoundedCornerShape(12.dp))
+                                                .clickable(enabled = !showResult) { answers = answers + (questionIndex to index) }
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Column(modifier = Modifier.padding(12.dp)) {
-                                                Text(
-                                                    text = "🎉 CORRECT ANSWER!",
-                                                    color = AccentGreen,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                Text(
-                                                    text = if (isAlreadyCompleted) {
-                                                        "Exceptional knowledge. You have already claimed this module's reward, but you maintain the discipline of a professional retail trader!"
-                                                    } else {
-                                                        "Exceptional knowledge. You've unlocked extra virtual capital to reinforce realistic trading habits!"
-                                                    },
-                                                    color = TextMuted,
-                                                    fontSize = 10.sp,
-                                                    lineHeight = 14.sp
-                                                )
+                                            RadioButton(
+                                                selected = isSel,
+                                                onClick = { if (!showResult) answers = answers + (questionIndex to index) },
+                                                colors = RadioButtonDefaults.colors(selectedColor = BrandViolet, unselectedColor = TextSubtle),
+                                                enabled = !showResult
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = option,
+                                                color = Color.White,
+                                                fontSize = 12.sp,
+                                                lineHeight = 16.sp
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    if (showResult) {
+                                        val wasCorrect = AcademyScoring.isCorrect(currentQuestion, selectedAnswer ?: -1)
+                                        if (wasCorrect) {
+                                            Card(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = CardDefaults.cardColors(containerColor = AccentGreenDark.copy(alpha = 0.2f)),
+                                                border = BorderStroke(1.dp, AccentGreen.copy(alpha = 0.4f)),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Column(modifier = Modifier.padding(12.dp)) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Image(
+                                                            painter = painterResource(R.drawable.ic_status_celebrate),
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(14.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(5.dp))
+                                                        Text(
+                                                            text = "CORRECT!",
+                                                            color = AccentGreen,
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                    if (currentQuestion.explanation.isNotBlank()) {
+                                                        Spacer(modifier = Modifier.height(4.dp))
+                                                        Text(
+                                                            text = currentQuestion.explanation,
+                                                            color = TextMuted,
+                                                            fontSize = 10.sp,
+                                                            lineHeight = 14.sp
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            Card(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = CardDefaults.cardColors(containerColor = AccentRoseDark.copy(alpha = 0.2f)),
+                                                border = BorderStroke(1.dp, AccentRose.copy(alpha = 0.4f)),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Column(modifier = Modifier.padding(12.dp)) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Image(
+                                                            painter = painterResource(R.drawable.ic_status_wrong),
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(14.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(5.dp))
+                                                        Text(
+                                                            text = "INCORRECT",
+                                                            color = AccentRose,
+                                                            fontSize = 11.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                    if (currentQuestion.explanation.isNotBlank()) {
+                                                        Spacer(modifier = Modifier.height(4.dp))
+                                                        Text(
+                                                            text = currentQuestion.explanation,
+                                                            color = TextMuted,
+                                                            fontSize = 10.sp,
+                                                            lineHeight = 14.sp
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
 
                                         Spacer(modifier = Modifier.height(16.dp))
 
+                                        val isLast = questionIndex >= questions.size - 1
+                                        Button(
+                                            onClick = {
+                                                if (isLast) {
+                                                    quizComplete = true
+                                                } else {
+                                                    questionIndex++
+                                                    showResult = false
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                if (isLast) {
+                                                    Image(
+                                                        painter = painterResource(R.drawable.ic_status_target),
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                }
+                                                Text(
+                                                    text = if (isLast) "See My Results" else "Next Question →",
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        Button(
+                                            onClick = { showResult = true },
+                                            enabled = selectedAnswer != null,
+                                            colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("Check Answer", color = Color.White, fontWeight = FontWeight.Bold)
+                                        }
+
+                                        Spacer(modifier = Modifier.height(10.dp))
+
+                                        TextButton(
+                                            onClick = { activeLectureIndex = 0 },
+                                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                                        ) {
+                                            Text("← Back to Lectures", color = BrandViolet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                } else {
+                                    // --- SCORE SUMMARY ---
+                                    val (correctCount, totalCount) = AcademyScoring.score(questions, answers)
+                                    val passed = AcademyScoring.passes(questions, answers)
+
+                                    Text(
+                                        text = "KNOWLEDGE CHECK COMPLETE:",
+                                        color = TextMuted,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Your Score: $correctCount / $totalCount",
+                                        color = if (passed) AccentGreen else AccentRose,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (passed) {
+                                            Image(
+                                                painter = painterResource(R.drawable.ic_status_celebrate),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(5.dp))
+                                        }
+                                        Text(
+                                            text = if (passed) {
+                                                "Chapter passed! You've mastered this topic."
+                                            } else {
+                                                "Keep going! Review the lectures and try again to unlock the reward."
+                                            },
+                                            color = TextMuted,
+                                            fontSize = 11.sp,
+                                            lineHeight = 15.sp
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    questions.forEachIndexed { index, q ->
+                                        val answered = answers[index]
+                                        val wasCorrect = AcademyScoring.isCorrect(q, answered ?: -1)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = if (wasCorrect) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                                                contentDescription = if (wasCorrect) "Correct" else "Incorrect",
+                                                tint = if (wasCorrect) AccentGreen else AccentRose,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "Q${index + 1}",
+                                                color = if (wasCorrect) AccentGreen else AccentRose,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = q.question,
+                                                color = TextSecondary,
+                                                fontSize = 10.sp,
+                                                lineHeight = 14.sp,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    if (passed) {
                                         val context = androidx.compose.ui.platform.LocalContext.current
                                         val mainActivity = context as? MainActivity
 
@@ -1106,9 +1399,16 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                                             )
                                                             Spacer(modifier = Modifier.width(6.dp))
                                                             Text(
-                                                                text = if (stats.isPremium) "PRO: Double Reward Claim Instantly ⚡" else "Double Reward (${formatCurrencyNoDecimals(quiz.rewardAmt * 2.0, stats.currency)}) 📺",
+                                                                text = if (stats.isPremium) "PRO: Double Reward Claim Instantly" else "Double Reward (${formatCurrencyNoDecimals(quiz.rewardAmt * 2.0, stats.currency)})",
                                                                 color = if (stats.isPremium) AccentYellow else AccentGreen,
                                                                 fontWeight = FontWeight.ExtraBold
+                                                            )
+                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                            Image(
+                                                                painter = painterResource(if (stats.isPremium) R.drawable.ic_status_pro else R.drawable.ic_status_ad),
+                                                                contentDescription = null,
+                                                                colorFilter = ColorFilter.tint(if (stats.isPremium) AccentYellow else AccentGreen),
+                                                                modifier = Modifier.size(14.dp)
                                                             )
                                                         }
                                                     }
@@ -1116,31 +1416,6 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                             }
                                         }
                                     } else {
-                                        Card(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            colors = CardDefaults.cardColors(containerColor = AccentRoseDark.copy(alpha = 0.2f)),
-                                            border = BorderStroke(1.dp, AccentRose.copy(alpha = 0.4f)),
-                                            shape = RoundedCornerShape(12.dp)
-                                        ) {
-                                            Column(modifier = Modifier.padding(12.dp)) {
-                                                Text(
-                                                    text = "❌ INCORRECT ANSWER",
-                                                    color = AccentRose,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                Text(
-                                                    text = "Not quite. Retail investors learn from mistakes! Review the lectures and try again.",
-                                                    color = TextMuted,
-                                                    fontSize = 10.sp,
-                                                    lineHeight = 14.sp
-                                                )
-                                            }
-                                        }
-
-                                        Spacer(modifier = Modifier.height(16.dp))
-
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1148,8 +1423,10 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                             Button(
                                                 onClick = {
                                                     activeLectureIndex = 0
+                                                    quizComplete = false
+                                                    questionIndex = 0
+                                                    answers = emptyMap()
                                                     showResult = false
-                                                    selectedIndex = null
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
                                                 shape = RoundedCornerShape(12.dp),
@@ -1160,8 +1437,10 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
 
                                             Button(
                                                 onClick = {
+                                                    quizComplete = false
+                                                    questionIndex = 0
+                                                    answers = emptyMap()
                                                     showResult = false
-                                                    selectedIndex = null
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = AccentRoseMedium),
                                                 shape = RoundedCornerShape(12.dp),
@@ -1170,30 +1449,6 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                                 Text("Try Again", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                             }
                                         }
-                                    }
-                                } else {
-                                    Button(
-                                        onClick = {
-                                            if (selectedIndex != null) {
-                                                isCorrect = selectedIndex == quiz.correctIndex
-                                                showResult = true
-                                            }
-                                        },
-                                        enabled = selectedIndex != null,
-                                        colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
-                                        shape = RoundedCornerShape(12.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text("Check Answer", color = Color.White, fontWeight = FontWeight.Bold)
-                                    }
-
-                                    Spacer(modifier = Modifier.height(10.dp))
-
-                                    TextButton(
-                                        onClick = { activeLectureIndex = 0 },
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                                    ) {
-                                        Text("← Back to Lectures", color = BrandViolet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -1871,7 +2126,7 @@ fun TradeLabProBenefitsDialog(
                     ProBenefitRow(
                         icon = Icons.Default.CheckCircle,
                         iconColor = AccentGreen,
-                        title = "Zero Brokerage Charges 🛡️",
+                        title = "Zero Brokerage Charges",
                         description = "Fully waive the 20 credits/trade transaction cost. Keep 100% of your gains."
                     )
 
@@ -1879,7 +2134,7 @@ fun TradeLabProBenefitsDialog(
                     ProBenefitRow(
                         icon = Icons.Default.ShowChart,
                         iconColor = AccentRose,
-                        title = "Premium Technical Indicators 📊",
+                        title = "Premium Technical Indicators",
                         description = "Unlock Simple Moving Average (SMA), Exponential Moving Average (EMA), and RSI indicators permanently to master technical analysis trends."
                     )
 
@@ -1887,7 +2142,7 @@ fun TradeLabProBenefitsDialog(
                     ProBenefitRow(
                         icon = Icons.Default.School,
                         iconColor = BrandViolet,
-                        title = "Double Quiz Rewards Instantly 🎓",
+                        title = "Double Quiz Rewards Instantly",
                         description = "Claim double virtual cash (${symbol}2,000 instead of ${symbol}1,000) on completing academy lessons without watching video ads."
                     )
 
@@ -1895,7 +2150,7 @@ fun TradeLabProBenefitsDialog(
                     ProBenefitRow(
                         icon = Icons.Default.Refresh,
                         iconColor = Color(0xFF00A2FF),
-                        title = "Unlimited Portfolio Resets 🔄",
+                        title = "Unlimited Portfolio Resets",
                         description = "Erase your history and start over with ${symbol}25,000 cash instantly whenever you want. No daily limits or wait times."
                     )
 
@@ -1903,7 +2158,7 @@ fun TradeLabProBenefitsDialog(
                     ProBenefitRow(
                         icon = Icons.Default.AttachMoney,
                         iconColor = AccentGreen,
-                        title = "Instant Emergency Wallet Cash ⚡",
+                        title = "Instant Emergency Wallet Cash",
                         description = "Replenish your balance with +${symbol}1,000 cash instantly anytime with one click. No video ads required."
                     )
 
@@ -1911,7 +2166,7 @@ fun TradeLabProBenefitsDialog(
                     ProBenefitRow(
                         icon = Icons.Default.List,
                         iconColor = AccentYellow,
-                        title = "Unlimited Watchlist Space 📂",
+                        title = "Unlimited Watchlist Space",
                         description = "Organize multiple groups of Indian and US stock trackers across custom sheets seamlessly."
                     )
                 }

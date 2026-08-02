@@ -2,6 +2,7 @@ package com.ashwathai.tradelab.ui.portfolio
 
 import com.ashwathai.tradelab.MainActivity
 import com.ashwathai.tradelab.rememberLaunchPromo
+import com.ashwathai.tradelab.R
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -32,6 +33,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -310,7 +312,15 @@ fun PortfolioScreen(
                                 else { isAdLoading = true; mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(20) }) ?: run { isAdLoading = false; isWatchingAd = true } }
                             }
                         }.padding(horizontal = 8.dp, vertical = 5.dp)) {
-                            Text(if (stats.isPremium) "PRO ⚡" else "Shield Up 📺", color = if (stats.isPremium) AccentYellow else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(if (stats.isPremium) R.drawable.ic_status_pro else R.drawable.ic_status_ad),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(if (stats.isPremium) "PRO" else "Shield Up", color = if (stats.isPremium) AccentYellow else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -431,7 +441,15 @@ fun BrokerageShieldDialog(
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Recharge Brokerage Shield 📺", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_status_ad),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Recharge Brokerage Shield", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

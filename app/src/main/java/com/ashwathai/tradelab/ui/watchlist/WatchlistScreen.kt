@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,6 +31,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ashwathai.tradelab.data.*
 import com.ashwathai.tradelab.rememberLaunchPromo
+import com.ashwathai.tradelab.R
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
 import com.ashwathai.tradelab.ui.theme.*
@@ -418,7 +420,15 @@ fun WatchlistScreen(
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Unlock Watchlist Sheet 📺", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_status_ad),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Unlock Watchlist Sheet", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             },
             text = {
@@ -898,7 +908,13 @@ fun BuySellBottomSheet(
                                 Text("EST. CHARGES (TAX/FEE)", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(if (isShielded) AccentGreen.copy(alpha = 0.15f) else AccentYellow.copy(alpha = 0.15f)).padding(horizontal = 5.dp, vertical = 2.dp)) {
-                                    Text(if (isShielded) "🛡️ SHIELDED" else "🎫 FEE UNLOCKED", color = if (isShielded) AccentGreen else AccentYellow, fontSize = 7.sp, fontWeight = FontWeight.ExtraBold)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (isShielded) {
+                                            Image(painter = painterResource(R.drawable.ic_status_shield), contentDescription = null, modifier = Modifier.size(9.dp))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                        }
+                                        Text(if (isShielded) "SHIELDED" else "FEE UNLOCKED", color = if (isShielded) AccentGreen else AccentYellow, fontSize = 7.sp, fontWeight = FontWeight.ExtraBold)
+                                    }
                                 }
                             }
                             Text(formatCurrency(totalCharges, stats.currency), color = TextSubtle, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -985,7 +1001,15 @@ fun BuySellBottomSheet(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(imageVector = Icons.Default.Bolt, contentDescription = null, tint = BrandViolet, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Unlock Intraday Suite ⚡", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_status_pro),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Unlock Intraday Suite", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 },
                 text = {

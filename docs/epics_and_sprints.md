@@ -55,8 +55,10 @@ This document defines the development roadmap for **Trade Lab**. It breaks down 
  │  EPIC 19: Track C — Social Discipline Scores     [100% COMP.] │
  ├─────────────────────────────────────────────────────────────┤
  │  EPIC 20: Next.js Web App Platform               [DEFERRED] │
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 22: Academy v2 — Varsity-Style Curriculum   [100% COMP.] │
  └─────────────────────────────────────────────────────────────┘
-```
+ ```
 
 ---
 
@@ -547,6 +549,79 @@ Comprehensive review and improvement sprint addressing 10 product areas includin
 *   [x] Tiered simulation volatility: equities ±0.3%, commodities ±0.8%, crypto ±1.5%
 *   [x] Holdings sort toggle (by P&L, value, alphabetical)
 *   [x] Time-decay discipline score (1pt/week after 30 days inactivity)
+
+---
+
+## Epic 22: Academy v2 — Varsity-Style Curriculum Engine (Status: 🟢 Complete)
+Expand the Learn-to-Earn Academy from 8 flat single-question modules into a two-level, Varsity-inspired curriculum: **Courses → Chapters**, each chapter containing 3–4 lectures and a 3–5 question knowledge check. Content is **100% original** (structure inspired by Zerodha Varsity; no copyrighted text reproduced).
+
+> Authoring contract: [`docs/ACADEMY_CONTENT_SPEC.md`](docs/ACADEMY_CONTENT_SPEC.md)
+
+### Sprint 22.1: Content Authoring Contract & Schema
+*   [x] Write the content authoring spec (`docs/ACADEMY_CONTENT_SPEC.md`) defining the v2 JSON schema, reserved chapter IDs (101–610), tiered rewards, tone rules, and verification checklist.
+*   [x] Author the 6-core-course curriculum (`academy_data_v2.json`): Stock Market Basics (12 ch), Technical Analysis (12 ch), Fundamental Analysis (10 ch), Futures & Options (12 ch), Risk Management & Trading Psychology (12 ch), Markets & Taxation (10 ch).
+
+### Sprint 22.2: Data Model & Content Engine
+*   [x] Add `AcademyCourse`, `ChapterModule`, and `QuizQuestion` data classes to the shared model.
+*   [x] Upgrade the academy loader in `TradingViewModel` to parse v2 JSON (courses → chapters → lectures + quizzes).
+*   [x] Provide a backward-compatible fallback mapping legacy `academy_data.json` `QuizModule`s into a synthetic "Stock Market Basics" course so existing progress and rewards keep working.
+*   [x] Expose `academyCourses` StateFlow and derived course/chapter progress helpers.
+
+### Sprint 22.3: Chapter Completion & Rewards
+*   [x] Implement multi-question scoring with a pass threshold (≥60% correct to pass a chapter).
+*   [x] Record chapter completion in the existing `completedLevels` CSV via `completeTutorialLevel` so the F&O unlock gate, missions, and certificate logic remain intact.
+*   [x] Enforce tiered rewards: BEGINNER ₹500 / INTERMEDIATE ₹750 / ADVANCED ₹1,000 per chapter (later retuned in Sprint 22.9 for realistic position-sizing discipline).
+*   [x] Keep reward idempotency (a chapter may only be claimed once).
+
+### Sprint 22.4: Academy UI — Course Grouping & Progress
+*   [x] Group chapter cards under collapsible course headers with course icon/emoji, tagline, and tier badge.
+*   [x] Add per-course progress (chapters completed / total) and overall progress bar across all courses.
+*   [x] Surface quiz pass-state ("Earned!" vs "+₹") per chapter card.
+
+### Sprint 22.5: Quiz Dialog — Multi-Question Flow
+*   [x] Replace the single-question knowledge check with a multi-question stepper (Question X of Y).
+*   [x] Show per-question explanations after answering and a final chapter score screen.
+*   [x] Unlock the reward claim only on a passing score; offer Review Lectures / Retry on failure.
+*   [x] Preserve the rewarded-ad "Double Reward" and premium instant-double flows for passing chapters.
+*   [x] Render the `riskDisclosure` footnote (Courses 4 & 6) inside the quiz dialog above the lecture panel.
+
+### Sprint 22.6: Tests & Verification
+*   [x] Add content-schema validation tests: unique/contiguous chapter IDs, valid `correctIndex`, 3–5 questions/chapter, 3–4 lectures/chapter, tiered reward amounts.
+*   [x] Add scoring/pass-threshold tests for the multi-question engine.
+*   [x] Add backward-compatibility tests for legacy `academy_data.json` parsing.
+*   [x] Add `riskDisclosure` coverage checks (required on Courses 4 & 6) to validation and file tests.
+*   [x] Update the Authoritative Manual Verification Protocol with the Academy v2 checklist.
+
+### Sprint 22.7: Accordion Deck, Progressive Unlock & Premium Motion
+*   [x] Refactor the lessons deck into a single-open accordion (`CourseDeck`) — at most one course expanded at a time, chapters slide in/out via `AnimatedVisibility`.
+*   [x] Add progressive course unlocking via `AcademyScoring.unlockedCourseIds` (course N requires all chapters of course N−1 completed); locked headers dimmed + 🔒.
+*   [x] Add a **"read freely, earn when ready" preview model**: locked courses expand to show dimmed chapter cards (🔒 "Preview" chip instead of a reward); opening a locked chapter shows fully readable lectures with the assessment entry replaced by a locked card naming the course to finish first.
+*   [x] Add "Skip Lectures → Take Assessment 📝" outlined shortcut in lecture mode so users can jump straight to the knowledge check.
+*   [x] Move the tier badge onto its own line below the course title (long titles are ellipsized) so the badge can never wrap vertically.
+*   [x] Build the reusable `PremiumMotion` animation toolkit (`ui/common/PremiumMotion.kt`): staggered entrances, neon glow pulse, shimmer progress, rotating chevron, lock-shake, one-shot sparkle burst, finite confetti — all gated behind `LocalPremiumMotionEnabled` for idle-safe tests.
+*   [x] Add `AcademyAccordionTest` (8 Robolectric cases covering expand/collapse, single-open, locked preview states, progressive unlock) and `AcademyScreenshotTest` (Roborazzi collapsed vs expanded deck).
+*   [x] Extend `AcademyScoringTest` with `unlockedCourseIds` cases (17 total) and document `PremiumMotion` in `docs/architecture.md`.
+
+### Sprint 22.8: Academy-Aligned Missions & Claimable Rewards
+*   [x] Upgrade the Missions tab to an Academy-aware reward loop: expanded `missions_data.json` catalog (7 missions) with `targetCount`/`targetCourseId` fields, including course-completion ("Course Crusher", "Derivatives Debut"), progressive-unlock ("Beyond Beginner"), and certificate ("Certified Risk Manager") missions.
+*   [x] Add `AcademyScoring.evaluateMission(mission, completedSet, academyCourses, unlockedIds, stats): MissionEvaluation` — a pure, testable engine that replaces the inline `when` block, computing per-mission progress and completion from real course/chapter state.
+*   [x] Add claimable rewards: `claimedMissions` CSV on `UserProfile`, Room migration 22→23 (`ALTER TABLE user_profile ADD COLUMN claimedMissions`), and idempotent `TradingRepository.claimMissionReward()` that credits `cash`/`startingCash` and writes a `ledger_entries` CREDIT row.
+*   [x] Add `TradingViewModel.claimedMissions` StateFlow + `claimMission()` (feedback + confetti) and a Claim button on completed-but-unclaimed `MissionRow`s with progress bars and a "Claimed ✓" state.
+*   [x] Update certificate-card total to use the live 68-chapter academy count.
+*   [x] Extend `AcademyScoringTest` with 10 `evaluateMission` cases and `TradingRepositoryTest` with 4 claim/idempotency/parse cases; document the mission engine in `docs/architecture.md`.
+
+### Sprint 22.9: Reward Economy Retune (Anti-Inflation)
+*   [x] Retune per-chapter rewards to a **mild** scale (BEGINNER ₹500 / INTERMEDIATE ₹750 / ADVANCED ₹1,000) in `academy_data_v2.json` and `TradingViewModel.tierReward()`, cutting the full-academy payout from ₹730,000 to **₹53,500** (~2.1× the ₹25,000 starting budget instead of ~29×).
+*   [x] Normalize legacy `academy_data.json` fallback rewards to ₹500 (all map to the synthetic BEGINNER course).
+*   [x] Update `tierReward()` unit assertions, chapter fixtures, and the content-spec documentation to the new scale.
+
+### Sprint 22.10: F&O Gate Fix & Vector Icon Migration
+*   [x] Fix the **F&O Academic Gate dead-lock**: `AcademyScoring.fnoAcademicUnlocked()` now checks the v2 beginner chapter ids `101,102,103` (which v2 actually awards via `completeTutorialLevel`), while still honoring legacy ids `1,2,3`. Previously the gate checked only legacy ids the v2 curriculum never writes, so F&O could never unlock through normal play.
+*   [x] Update the gate checklist UI in `FoDeskScreen.kt` to display the three beginner chapter titles.
+*   [x] Add `fnoAcademicUnlocked` unit cases to `AcademyScoringTest` (v2 full/partial, legacy full/partial).
+*   [x] Migrate decorative emoji to **27 VectorDrawables** (6 `ic_course_*` + 21 `ic_status_*`) across the quiz dialog, PRO dialog, F&O desk (TOKENS badge, MIS warning, EXECUTE button, bias labels), and Profile (level trophy, heart footer).
+*   [x] Add `Trade Lab v1.5.0 (5)` version/build footer line under the Profile branding for bug-triage identification.
+*   [x] Add `biasIcon(totalDelta)` drawable-selection helper to `AcademyScoring` with unit coverage.
 
 
 

@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -49,9 +50,11 @@ import androidx.compose.ui.geometry.Size
 import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ashwathai.tradelab.data.*
+import com.ashwathai.tradelab.R
 import kotlinx.coroutines.launch
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
+import com.ashwathai.tradelab.ui.AcademyScoring
 import com.ashwathai.tradelab.ui.QuizModule
 import com.ashwathai.tradelab.ui.Lecture
 import com.ashwathai.tradelab.ui.Mission
@@ -82,7 +85,7 @@ fun FoDeskScreen(
     val completedSet = remember(stats.completedLevels) { 
         stats.completedLevels.split(",").filter { it.isNotBlank() }.toSet() 
     }
-    val isAcademicUnlocked = completedSet.contains("1") && completedSet.contains("2") && completedSet.contains("3")
+    val isAcademicUnlocked = AcademyScoring.fnoAcademicUnlocked(completedSet)
 
     if (!isAcademicUnlocked) {
         Column(
@@ -131,7 +134,7 @@ fun FoDeskScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        listOf("1" to "Module 1: Equity Basics", "2" to "Module 2: Market Order Mechanics", "3" to "Module 3: Portfolio Asset Classes").forEach { (id, title) ->
+                        listOf("101" to "Chapter 1.1: What is a Stock?", "102" to "Chapter 1.2: IPOs & Going Public", "103" to "Chapter 1.3: Exchanges & Indices").forEach { (id, title) ->
                             val done = completedSet.contains(id)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
@@ -160,7 +163,15 @@ fun FoDeskScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
-                        Text("GO TO ACADEMY HUB 🎓", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_status_certificate),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("GO TO ACADEMY HUB", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -252,13 +263,21 @@ fun FoDeskScreen(
                             letterSpacing = 1.sp
                         )
                         Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "Unshackle Advanced Options Chain 👑",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_status_crown),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Unshackle Advanced Options Chain",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Premium derivative tools require high exchange margins and specialized infrastructure. Unlock professional desking instantly below.",
@@ -278,7 +297,15 @@ fun FoDeskScreen(
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth().height(48.dp)
                         ) {
-                            Text("UPGRADE TO TRADE LAB PRO 👑", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_status_crown),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("UPGRADE TO TRADE LAB PRO", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                         
                         Spacer(modifier = Modifier.height(12.dp))
@@ -302,7 +329,15 @@ fun FoDeskScreen(
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth().height(48.dp)
                         ) {
-                            Text("WATCH SPONSORED VIDEO (CLAIM +3 TOKENS) 📺", color = BrandViolet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_status_ad),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("WATCH SPONSORED VIDEO (CLAIM +3 TOKENS)", color = BrandViolet, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -441,12 +476,20 @@ fun FoDeskScreen(
                             .border(1.dp, BrandViolet, RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text(
-                            text = "🎫 TOKENS: ${stats.fnoTokens}",
-                            color = BrandViolet,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_status_token),
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "TOKENS: ${stats.fnoTokens}",
+                                color = BrandViolet,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 } else {
                     Box(
@@ -456,12 +499,20 @@ fun FoDeskScreen(
                             .border(1.dp, AccentGreen, RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text(
-                            text = "👑 PRO UNLOCKED",
-                            color = AccentGreen,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_status_crown),
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "PRO UNLOCKED",
+                                color = AccentGreen,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -668,10 +719,26 @@ fun FoDeskScreen(
                         // Educational Warning for MIS
                         if (!isDelivery) {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "⚠️ MIS/Intraday: Position will be auto-squared off at 3:20 PM IST today.", color = AccentYellow, fontSize = 10.sp, lineHeight = 13.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_status_warning),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = "MIS/Intraday: Position will be auto-squared off at 3:20 PM IST today.", color = AccentYellow, fontSize = 10.sp, lineHeight = 13.sp)
+                            }
                         } else {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "💎 NRML/Carry Forward: Hold position until contract expiry. Higher margin may be required for overnight holdings.", color = BrandViolet, fontSize = 10.sp, lineHeight = 13.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_status_gem),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(text = "NRML/Carry Forward: Hold position until contract expiry. Higher margin may be required for overnight holdings.", color = BrandViolet, fontSize = 10.sp, lineHeight = 13.sp)
+                            }
                         }
                     }
 
@@ -863,12 +930,20 @@ fun FoDeskScreen(
                             .height(48.dp)
                             .testTag("submit_option_order")
                     ) {
-                        Text(
-                            text = "EXECUTE F&O ${if (isBuyOrder) "BUY" else "SELL"} ORDER 🚀",
-                            color = Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_status_rocket),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "EXECUTE F&O ${if (isBuyOrder) "BUY" else "SELL"} ORDER",
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -947,11 +1022,19 @@ fun GreeksDiagnosticsBox(
                         fontWeight = FontWeight.Bold
                     )
                     val biasText = when {
-                        totalDelta >= 5.0 -> "Bullish Bias 📈"
-                        totalDelta <= -5.0 -> "Bearish Bias 📉"
-                        else -> "Delta Neutral ⚖️"
+                        totalDelta >= 5.0 -> "Bullish Bias"
+                        totalDelta <= -5.0 -> "Bearish Bias"
+                        else -> "Delta Neutral"
                     }
-                    Text(biasText, color = TextSubtle, fontSize = 10.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(AcademyScoring.biasIcon(totalDelta)),
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(biasText, color = TextSubtle, fontSize = 10.sp)
+                    }
                 }
                 Box(modifier = Modifier.width(1.dp).height(40.dp).background(DarkBorder))
                 Column(horizontalAlignment = Alignment.End) {
@@ -968,12 +1051,20 @@ fun GreeksDiagnosticsBox(
             Spacer(modifier = Modifier.height(10.dp))
             HorizontalDivider(color = DarkBorder, thickness = 1.dp)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "💡 Delta indicates sensitivity to direction: +Delta gains if the market rallies, -Delta gains if the market falls. Theta represents the silent time-decay of option premiums. Square off contracts before they bleed dry!",
-                color = TextSubtle,
-                fontSize = 10.sp,
-                lineHeight = 13.sp
-            )
+            Row(verticalAlignment = Alignment.Top) {
+                Image(
+                    painter = painterResource(R.drawable.ic_status_bulb),
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Delta indicates sensitivity to direction: +Delta gains if the market rallies, -Delta gains if the market falls. Theta represents the silent time-decay of option premiums. Square off contracts before they bleed dry!",
+                    color = TextSubtle,
+                    fontSize = 10.sp,
+                    lineHeight = 13.sp
+                )
+            }
         }
     }
 }

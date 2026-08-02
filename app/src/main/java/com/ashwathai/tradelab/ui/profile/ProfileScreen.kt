@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +52,7 @@ import androidx.compose.ui.geometry.Size
 import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ashwathai.tradelab.data.*
+import com.ashwathai.tradelab.R
 import kotlinx.coroutines.launch
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
@@ -196,12 +198,22 @@ fun ProfileScreen(
                             letterSpacing = 1.sp
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (stats.isPremium) "TradeLab Pro ⚡" else "TradeLab Free Tier",
-                            color = if (stats.isPremium) AccentYellow else Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (stats.isPremium) {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_status_pro),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                            }
+                            Text(
+                                text = if (stats.isPremium) "TradeLab Pro" else "TradeLab Free Tier",
+                                color = if (stats.isPremium) AccentYellow else Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
                     }
 
                     if (stats.isPremium) {
@@ -255,7 +267,7 @@ fun ProfileScreen(
             1, 2 -> "Level 2: Disciplined Risk-Taker"
             3, 4 -> "Level 3: Strategic Wealth Planner"
             5 -> "Level 4: Advanced Portfolio Architect"
-            else -> "Level 5: Master Risk Manager 🏆"
+            else -> "Level 5: Master Risk Manager"
         }
         val rankNumber = when (completedSet.size) {
             0 -> "Rank #15"
@@ -283,12 +295,22 @@ fun ProfileScreen(
                     letterSpacing = 1.sp
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = levelName,
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (completedSet.size >= 5) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_status_trophy),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(
+                        text = levelName,
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -619,12 +641,7 @@ fun ProfileScreen(
                                     Text("Instantly adds $amtStr to cash balance", color = TextMuted, fontSize = 10.sp)
                                 }
                             }
-                            Text(
-                                text = if (stats.isPremium) "PRO INSTANT ⚡" else "FREE 📺",
-                                color = if (stats.isPremium) AccentYellow else BrandViolet,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
+                            PremiumStatusChip(isPremium = stats.isPremium)
                         }
 
                         // Reward 2: Brokerage credits
@@ -684,12 +701,7 @@ fun ProfileScreen(
                                     )
                                 }
                             }
-                            Text(
-                                text = if (stats.isPremium) "PRO ACTIVE ⚡" else "FREE 📺",
-                                color = if (stats.isPremium) AccentYellow else BrandViolet,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
+                            PremiumStatusChip(isPremium = stats.isPremium)
                         }
 
                         // Reward 3: AI Diagnostic Audit credit
@@ -749,12 +761,7 @@ fun ProfileScreen(
                                     )
                                 }
                             }
-                            Text(
-                                text = if (stats.isPremium) "PRO INSTANT ⚡" else "FREE 📺",
-                                color = if (stats.isPremium) AccentYellow else BrandViolet,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
+                            PremiumStatusChip(isPremium = stats.isPremium)
                         }
 
                         // Reward 4: Premium indicators unlock
@@ -819,12 +826,7 @@ fun ProfileScreen(
                                     Text(expiryLabel, color = if (indUnl) AccentGreen else TextMuted, fontSize = 10.sp)
                                 }
                             }
-                            Text(
-                                text = if (stats.isPremium) "PRO ACTIVE ⚡" else "FREE 📺",
-                                color = if (stats.isPremium) AccentYellow else BrandViolet,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
+                            PremiumStatusChip(isPremium = stats.isPremium)
                         }
 
                         // Reward 5: Intraday Session Pass unlock
@@ -890,12 +892,7 @@ fun ProfileScreen(
                                     Text(levExpiryLabel, color = if (levUnl) AccentGreen else TextMuted, fontSize = 10.sp)
                                 }
                             }
-                            Text(
-                                text = if (stats.isPremium) "PRO ACTIVE ⚡" else "FREE 📺",
-                                color = if (stats.isPremium) AccentYellow else BrandViolet,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
+                            PremiumStatusChip(isPremium = stats.isPremium)
                         }
                 }
             }
@@ -1456,7 +1453,13 @@ fun ProfileScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.School, contentDescription = "Academy Mission", tint = BrandViolet, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Earn Free Refunds in Academy 🎓", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Image(
+                                painter = painterResource(R.drawable.ic_status_certificate),
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Earn Free Refunds in Academy", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -1531,12 +1534,22 @@ fun ProfileScreen(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = if (stats.isPremium) "PRO: Reset Portfolio Instantly ⚡" else if (stats.portfolioResetsCount >= 3) "RESETS EXHAUSTED (Limit 3)" else "Watch Ad and Reset Portfolio",
-                        color = if (stats.isPremium) Color.Black else Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (stats.isPremium) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_status_pro),
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
+                        Text(
+                            text = if (stats.isPremium) "PRO: Reset Portfolio Instantly" else if (stats.portfolioResetsCount >= 3) "RESETS EXHAUSTED (Limit 3)" else "Watch Ad and Reset Portfolio",
+                            color = if (stats.isPremium) Color.Black else Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
@@ -1633,11 +1646,27 @@ fun ProfileScreen(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(R.drawable.ic_status_heart),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(AccentRose),
+                    modifier = Modifier.size(10.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Made by Ashwat AI",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Made with ❤️ by Ashwat AI",
-                color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
+                text = "Trade Lab v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                color = TextMuted.copy(alpha = 0.7f),
+                fontSize = 10.sp,
                 textAlign = TextAlign.Center
             )
         }
@@ -1898,6 +1927,24 @@ fun ProfileScreen(
             containerColor = DarkSurfaceElevated,
             titleContentColor = Color.White,
             textContentColor = TextSubtle
+        )
+    }
+}
+
+@Composable
+fun PremiumStatusChip(isPremium: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Image(
+            painter = painterResource(if (isPremium) R.drawable.ic_status_pro else R.drawable.ic_status_ad),
+            contentDescription = null,
+            modifier = Modifier.size(12.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = if (isPremium) "PRO" else "FREE",
+            color = if (isPremium) AccentYellow else BrandViolet,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.ExtraBold
         )
     }
 }

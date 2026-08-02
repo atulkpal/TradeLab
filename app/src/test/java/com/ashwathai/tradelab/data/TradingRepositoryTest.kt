@@ -5,6 +5,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -135,5 +136,54 @@ class TradingRepositoryTest {
 
         // Verify sellStock was called (liquidated)
         coVerify { transactionDao.insertTransaction(match { it.type == "SELL" && it.symbol == "BAD" }) }
+    }
+
+    @Test
+    fun `claimMissionReward grants cash and marks mission claimed`() = runTest {
+        val profile = UserProfile(id = 1, cash = 25000.0, startingCash = 25000.0)
+        coEvery { userProfileDao.getUserProfile() } returns profile
+
+        val capturedProfile = slot<UserProfile>()
+        coEvery { userProfileDao.insertProfile(capture(capturedProfile)) } returns Unit
+        val capturedLedger = slot<LedgerEntry>()
+        coEvery { ledgerDao.insertLedgerEntry(capture(capturedLedger)) } returns Unit
+
+        repository.claimMissionReward(missionId = 4, title = "Mission 4: Course Crusher", reward = 2000.0)
+
+        assertTrue(capturedProfile.isCaptured)
+        assertEquals(27000.0, capturedProfile.captured.cash, 0.0)
+        assertEquals(27000.0, capturedProfile.captured.startingCash, 0.0)
+        assertEquals(setOf("4"), capturedProfile.captured.claimedMissions.split(",").filter { it.isNotBlank() }.toSet())
+        assertTrue(capturedLedger.isCaptured)
+        assertEquals("Mission Reward: Mission 4: Course Crusher", capturedLedger.captured.description)
+        assertEquals("CREDIT", capturedLedger.captured.type)
+        assertEquals(2000.0, capturedLedger.captured.amount, 0.0)
+        assertEquals(27000.0, capturedLedger.captured.runningBalance, 0.0)
+    }
+
+    @Test
+    fun `claimMissionReward is idempotent - second claim does not double pay`() = runTest {
+        val inserted = mutableListOf<UserProfile>()
+        coEvery { userProfileDao.getUserProfile() } returns UserProfile(id = 1, cash = 25000.0, startingCash = 25000.0, claimedMissions = "4")
+        coEvery { userProfileDao.insertProfile(capture(inserted)) } returns Unit
+        val ledgerCaptures = mutableListOf<LedgerEntry>()
+        coEvery { ledgerDao.insertLedgerEntry(capture(ledgerCaptures)) } returns Unit
+
+        repository.claimMissionReward(missionId = 4, title = "Mission 4: Course Crusher", reward = 2000.0)
+
+        assertEquals(0, inserted.size)
+        assertEquals(0, ledgerCaptures.size)
+    }
+
+    @Test
+    fun `getClaimedMissionIds parses csv into a set`() = runTest {
+        coEvery { userProfileDao.getUserProfile() } returns UserProfile(id = 1, claimedMissions = "1,2,7")
+        assertEquals(setOf("1", "2", "7"), repository.getClaimedMissionIds())
+    }
+
+    @Test
+    fun `getClaimedMissionIds returns empty set when nothing claimed`() = runTest {
+        coEvery { userProfileDao.getUserProfile() } returns UserProfile(id = 1, claimedMissions = "")
+        assertEquals(emptySet<String>(), repository.getClaimedMissionIds())
     }
 }

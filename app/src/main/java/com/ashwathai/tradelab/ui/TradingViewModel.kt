@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ashwathai.tradelab.data.*
 import com.ashwathai.tradelab.BuildConfig
+import com.ashwathai.tradelab.R
 import com.ashwathai.tradelab.billing.SubscriptionConfig
 import com.ashwathai.tradelab.shared.TradingHelper
 import kotlinx.coroutines.flow.*
@@ -36,11 +37,20 @@ class TradingViewModel @Inject constructor(
 ) : ViewModel() {
 
     // Dynamic Academy & Missions data from JSON
-    private val _quizModules = MutableStateFlow<List<QuizModule>>(emptyList())
-    val quizModules: StateFlow<List<QuizModule>> = _quizModules.asStateFlow()
+    private val _quizModules = MutableStateFlow<List<ChapterModule>>(emptyList())
+    val quizModules: StateFlow<List<ChapterModule>> = _quizModules.asStateFlow()
+
+    private val _academyCourses = MutableStateFlow<List<AcademyCourse>>(emptyList())
+    val academyCourses: StateFlow<List<AcademyCourse>> = _academyCourses.asStateFlow()
 
     private val _missionsList = MutableStateFlow<List<Mission>>(emptyList())
     val missionsList: StateFlow<List<Mission>> = _missionsList.asStateFlow()
+
+    val claimedMissions: StateFlow<Set<String>> = repository.userProfile
+        .map { profile ->
+            profile?.claimedMissions?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     // Dynamic Theme Mode
     private val _isDarkTheme = MutableStateFlow(true)
@@ -540,11 +550,41 @@ class TradingViewModel @Inject constructor(
                 .addLast(KotlinJsonAdapterFactory())
                 .build()
 
-            // Load Academy JSON
-            val academyJson = assetManager.open("academy_data.json").bufferedReader().use { it.readText() }
-            val academyType = Types.newParameterizedType(List::class.java, QuizModule::class.java)
-            val academyAdapter = moshiInstance.adapter<List<QuizModule>>(academyType)
-            _quizModules.value = academyAdapter.fromJson(academyJson) ?: emptyList()
+            // Load Academy JSON (v2 Varsity-style curriculum with legacy fallback)
+            val v2Courses = try {
+                val v2Json = assetManager.open("academy_data_v2.json").bufferedReader().use { it.readText() }
+                val v2Adapter = moshiInstance.adapter(AcademyContentV2::class.java)
+                v2Adapter.fromJson(v2Json)?.courses?.filter { it.chapters.isNotEmpty() } ?: emptyList()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+
+            if (v2Courses.isNotEmpty()) {
+                _academyCourses.value = v2Courses.sortedBy { it.order }
+                _quizModules.value = v2Courses.flatMap { course ->
+                    course.chapters.map { chapter -> chapter.copy(courseId = course.id) }
+                }
+            } else {
+                // Legacy fallback: map single-question modules into a synthetic "Stock Market Basics" course
+                val academyJson = assetManager.open("academy_data.json").bufferedReader().use { it.readText() }
+                val academyType = Types.newParameterizedType(List::class.java, QuizModule::class.java)
+                val academyAdapter = moshiInstance.adapter<List<QuizModule>>(academyType)
+                val legacyModules = academyAdapter.fromJson(academyJson) ?: emptyList()
+                val legacyChapters = legacyModules.map { it.toChapterModule(courseId = 1) }
+                _academyCourses.value = listOf(
+                    AcademyCourse(
+                        id = 1,
+                        title = "Stock Market Basics",
+                        tagline = "How markets work, what a stock is, and how trades settle.",
+                        iconEmoji = "📈",
+                        tier = "BEGINNER",
+                        order = 1,
+                        chapters = legacyChapters
+                    )
+                )
+                _quizModules.value = legacyChapters
+            }
 
             // Load Missions JSON
             val missionsJson = assetManager.open("missions_data.json").bufferedReader().use { it.readText() }
@@ -746,6 +786,16 @@ class TradingViewModel @Inject constructor(
             repository.completeTutorialLevel(levelId, reward)
             val sym = if (portfolioStats.value.currency == "INR") "₹" else "$"
             showFeedback("Mission Completed! Earned $sym${String.format("%.0f", reward)}!")
+            triggerConfetti()
+        }
+    }
+
+    // Claim a completed mission's virtual cash reward (idempotent)
+    fun claimMission(mission: Mission) {
+        viewModelScope.launch {
+            repository.claimMissionReward(mission.id, mission.title, mission.rewardAmt)
+            val sym = if (portfolioStats.value.currency == "INR") "₹" else "$"
+            showFeedback("Mission Reward Claimed! +$sym${String.format("%.0f", mission.rewardAmt)}")
             triggerConfetti()
         }
     }
@@ -1608,6 +1658,40 @@ data class Lecture(
     val content: String
 )
 
+data class QuizQuestion(
+    val question: String,
+    val options: List<String>,
+    val correctIndex: Int,
+    val explanation: String = ""
+)
+
+data class ChapterModule(
+    val id: Int,
+    val courseId: Int = 0,
+    val title: String,
+    val topic: String,
+    val rewardAmt: Double,
+    val concept: String,
+    val lectures: List<Lecture> = emptyList(),
+    val quizzes: List<QuizQuestion> = emptyList(),
+    val riskDisclosure: String = ""
+)
+
+data class AcademyCourse(
+    val id: Int,
+    val title: String,
+    val tagline: String = "",
+    val iconEmoji: String = "",
+    val tier: String = "BEGINNER",
+    val order: Int = 0,
+    val chapters: List<ChapterModule> = emptyList()
+)
+
+data class AcademyContentV2(
+    val version: Int = 1,
+    val courses: List<AcademyCourse> = emptyList()
+)
+
 data class QuizModule(
     val id: Int,
     val title: String,
@@ -1618,7 +1702,18 @@ data class QuizModule(
     val options: List<String>,
     val correctIndex: Int,
     val lectures: List<Lecture> = emptyList()
-)
+) {
+    fun toChapterModule(courseId: Int = 1): ChapterModule = ChapterModule(
+        id = id,
+        courseId = courseId,
+        title = title,
+        topic = topic,
+        rewardAmt = rewardAmt,
+        concept = concept,
+        lectures = lectures,
+        quizzes = listOf(QuizQuestion(question, options, correctIndex))
+    )
+}
 
 data class Mission(
     val id: Int,
@@ -1626,5 +1721,186 @@ data class Mission(
     val desc: String,
     val reward: String,
     val identifier: String,
-    val rewardAmt: Double
+    val rewardAmt: Double,
+    val targetCount: Int? = null,
+    val targetCourseId: Int? = null
 )
+
+object AcademyScoring {
+    const val PASS_RATIO = 0.6f
+
+    fun isCorrect(question: QuizQuestion, selected: Int): Boolean = selected == question.correctIndex
+
+    fun score(quizzes: List<QuizQuestion>, answers: Map<Int, Int>): Pair<Int, Int> {
+        val total = quizzes.size
+        val correct = quizzes.indices.count { index ->
+            val answer = answers[index]
+            answer != null && answer == quizzes[index].correctIndex
+        }
+        return correct to total
+    }
+
+    fun passes(quizzes: List<QuizQuestion>, answers: Map<Int, Int>): Boolean {
+        val (correct, total) = score(quizzes, answers)
+        if (total == 0) return false
+        return correct.toFloat() / total >= PASS_RATIO
+    }
+
+    fun tierFor(tier: String): String = when (tier.uppercase()) {
+        "BEGINNER" -> "BEGINNER"
+        "INTERMEDIATE" -> "INTERMEDIATE"
+        "ADVANCED" -> "ADVANCED"
+        else -> "BEGINNER"
+    }
+
+    fun tierReward(tier: String): Double = when (tier.uppercase()) {
+        "BEGINNER" -> 500.0
+        "INTERMEDIATE" -> 750.0
+        "ADVANCED" -> 1000.0
+        else -> 500.0
+    }
+
+    fun courseIcon(courseId: Int): Int = when (courseId) {
+        1 -> R.drawable.ic_course_markets
+        2 -> R.drawable.ic_course_technical
+        3 -> R.drawable.ic_course_fundamental
+        4 -> R.drawable.ic_course_derivatives
+        5 -> R.drawable.ic_course_psychology
+        6 -> R.drawable.ic_course_taxation
+        else -> R.drawable.ic_course_markets
+    }
+
+    fun biasIcon(totalDelta: Double): Int = when {
+        totalDelta >= 5.0 -> R.drawable.ic_status_trend_up
+        totalDelta <= -5.0 -> R.drawable.ic_status_trend_down
+        else -> R.drawable.ic_status_balance
+    }
+
+    // F&O Academic Gate: requires the first 3 beginner-curriculum chapters.
+    // v2 academy awards chapter ids 101, 102, 103...; legacy ids 1, 2, 3 kept for backward compatibility.
+    fun fnoAcademicUnlocked(completedSet: Set<String>): Boolean {
+        val requiredV2 = setOf("101", "102", "103")
+        val requiredLegacy = setOf("1", "2", "3")
+        return completedSet.containsAll(requiredV2) || completedSet.containsAll(requiredLegacy)
+    }
+
+    fun unlockedCourseIds(courses: List<AcademyCourse>, completedIds: Set<String>): Set<Int> {
+        if (courses.isEmpty()) return emptySet()
+        val unlocked = mutableSetOf<Int>()
+        courses.sortedBy { it.order }.forEachIndexed { index, course ->
+            if (index == 0) {
+                unlocked.add(course.id)
+            } else {
+                val previous = courses.sortedBy { it.order }[index - 1]
+                if (previous.chapters.all { completedIds.contains(it.id.toString()) }) {
+                    unlocked.add(course.id)
+                }
+            }
+        }
+        return unlocked
+    }
+
+    data class ValidationResult(val isValid: Boolean, val errors: List<String>)
+
+    fun validateCourses(courses: List<AcademyCourse>): ValidationResult {
+        val errors = mutableListOf<String>()
+        val seenIds = mutableSetOf<Int>()
+
+        courses.forEach { course ->
+            if (course.chapters.isEmpty()) {
+                errors.add("Course '${course.title}' (id ${course.id}) has zero chapters")
+            }
+            val requiresDisclosure = course.id == 4 || course.id == 6
+            course.chapters.forEach { chapter ->
+                if (!seenIds.add(chapter.id)) {
+                    errors.add("Duplicate chapter id ${chapter.id}")
+                }
+                if (requiresDisclosure && chapter.riskDisclosure.isBlank()) {
+                    errors.add("Chapter ${chapter.id} (course ${course.id}) is missing riskDisclosure")
+                }
+                if (chapter.lectures.isEmpty()) {
+                    errors.add("Chapter ${chapter.id} has zero lectures")
+                }
+                if (chapter.lectures.size > 4) {
+                    errors.add("Chapter ${chapter.id} has ${chapter.lectures.size} lectures (max 4)")
+                }
+                chapter.lectures.forEachIndexed { i, lecture ->
+                    val words = lecture.content.trim().split(Regex("\\s+")).size
+                    if (lecture.content.isBlank()) {
+                        errors.add("Chapter ${chapter.id} lecture ${i + 1} is blank")
+                    }
+                }
+                if (chapter.quizzes.isEmpty()) {
+                    errors.add("Chapter ${chapter.id} has zero quiz questions")
+                }
+                if (chapter.quizzes.size !in 3..5) {
+                    errors.add("Chapter ${chapter.id} has ${chapter.quizzes.size} questions (expected 3-5)")
+                }
+                chapter.quizzes.forEachIndexed { i, q ->
+                    if (q.correctIndex < 0 || q.correctIndex >= q.options.size) {
+                        errors.add("Chapter ${chapter.id} question ${i + 1} has invalid correctIndex ${q.correctIndex}")
+                    }
+                    if (q.options.size < 2) {
+                        errors.add("Chapter ${chapter.id} question ${i + 1} has fewer than 2 options")
+                    }
+                    if (q.explanation.isBlank()) {
+                        errors.add("Chapter ${chapter.id} question ${i + 1} is missing explanation")
+                    }
+                }
+            }
+        }
+
+        return ValidationResult(errors.isEmpty(), errors)
+    }
+
+    data class MissionEvaluation(
+        val progress: Int,
+        val target: Int,
+        val isCompleted: Boolean
+    )
+
+    fun evaluateMission(
+        mission: Mission,
+        completedSet: Set<String>,
+        academyCourses: List<AcademyCourse>,
+        unlockedIds: Set<Int>,
+        stats: PortfolioStats
+    ): MissionEvaluation {
+        return when (mission.identifier) {
+            "has_traded" -> {
+                val done = stats.startingCash != stats.cash || stats.holdingsValue > 0
+                MissionEvaluation(if (done) 1 else 0, 1, done)
+            }
+            "completed_3_modules" -> {
+                val progress = completedSet.size
+                val target = mission.targetCount ?: 3
+                MissionEvaluation(progress, target, progress >= target)
+            }
+            "has_calibrated" -> {
+                val done = stats.riskLevel != "Moderate" || stats.startingCash != 25000.0
+                MissionEvaluation(if (done) 1 else 0, 1, done)
+            }
+            "completed_course_1", "completed_fno_course" -> {
+                val course = academyCourses.firstOrNull { it.id == mission.targetCourseId }
+                if (course == null) {
+                    MissionEvaluation(0, mission.targetCount ?: 1, false)
+                } else {
+                    val done = course.chapters.count { completedSet.contains(it.id.toString()) }
+                    val target = course.chapters.size
+                    MissionEvaluation(done, target, done >= target)
+                }
+            }
+            "unlocked_advanced_course" -> {
+                val done = unlockedIds.size > 1
+                MissionEvaluation(if (done) 1 else 0, 1, done)
+            }
+            "earned_certificate" -> {
+                val totalChapters = academyCourses.sumOf { it.chapters.size }
+                val target = if (totalChapters > 0) totalChapters else (mission.targetCount ?: 1)
+                val progress = completedSet.size
+                MissionEvaluation(progress, target, progress >= target)
+            }
+            else -> MissionEvaluation(0, 1, false)
+        }
+    }
+}

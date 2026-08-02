@@ -3,7 +3,7 @@
     "id": 1,
     "title": "Level 1: What is a Stock?",
     "topic": "Equities Terminology",
-    "rewardAmt": 5000.0,
+    "rewardAmt": 500.0,
     "concept": "A stock represents fractional ownership in a business. When a company flourishes, the share value increases, and they might distribute cash back as dividends.",
     "question": "What does buying a stock represent?",
     "options": [
@@ -31,7 +31,7 @@
     "id": 2,
     "title": "Level 2: Brokers & Exchanges",
     "topic": "Market Infrastructure",
-    "rewardAmt": 5000.0,
+    "rewardAmt": 500.0,
     "concept": "Exchanges are marketplaces where stock prices are matched, and Brokers are regulated intermediaries that pass your client orders securely to the exchange.",
     "question": "What is the primary role of a stock broker?",
     "options": [
@@ -47,7 +47,7 @@
       },
       {
         "title": "Lecture 2.2: The Regulated Broker",
-        "content": "Individual retail investors cannot buy shares directly from the exchange. You need a broker—a certified, licensed, and heavily regulated firm that provides trading terminals, processes client orders, and transmits them directly to the exchange."
+        "content": "Individual retail investors cannot buy shares directly from the exchange. You need a brokerâ€”a certified, licensed, and heavily regulated firm that provides trading terminals, processes client orders, and transmits them directly to the exchange."
       }
     ]
   },
@@ -55,7 +55,7 @@
     "id": 3,
     "title": "Level 3: Order Types",
     "topic": "Advanced Executions",
-    "rewardAmt": 10000.0,
+    "rewardAmt": 500.0,
     "concept": "Market orders buy/sell instantly, while Limit orders specify maximum/minimum prices. GTT (Good Till Triggered) orders stay active until a designated price support is matched.",
     "question": "Which order type is ideal for waiting patiently to buy a stock at a lower support price?",
     "options": [
@@ -79,13 +79,13 @@
     "id": 4,
     "title": "Level 4: Position Sizing",
     "topic": "Risk Mitigation",
-    "rewardAmt": 10000.0,
+    "rewardAmt": 500.0,
     "concept": "Position sizing means limiting how much of your total capital is allocated to any single trade to prevent catastrophic losses.",
-    "question": "If your total capital is ₹25,000, what is the maximum disciplined allocation for a single stock trade?",
+    "question": "If your total capital is â‚¹25,000, what is the maximum disciplined allocation for a single stock trade?",
     "options": [
-      "₹15,000 to ₹25,000 (60% to 100%)",
-      "₹2,500 to ₹3,750 (10% to 15%)",
-      "Exactly ₹0 (You should never buy anything)"
+      "â‚¹15,000 to â‚¹25,000 (60% to 100%)",
+      "â‚¹2,500 to â‚¹3,750 (10% to 15%)",
+      "Exactly â‚¹0 (You should never buy anything)"
     ],
     "correctIndex": 1,
     "lectures": [
@@ -103,7 +103,7 @@
     "id": 5,
     "title": "Level 5: Diversification",
     "topic": "Portfolio Health",
-    "rewardAmt": 10000.0,
+    "rewardAmt": 500.0,
     "concept": "Diversification means distributing your cash across distinct stocks, sectors, and asset classes to spread risk.",
     "question": "Why do retail investors use diversification?",
     "options": [
@@ -127,7 +127,7 @@
     "id": 6,
     "title": "Level 6: Technical Basics",
     "topic": "Chart Interpretation",
-    "rewardAmt": 15000.0,
+    "rewardAmt": 500.0,
     "concept": "A candlestick chart displays Open, Close, High, and Low prices. A hammer candlestick at a support level suggests buyers rejected lower prices, hinting at a bullish trend reversal.",
     "question": "What does a candlestick with a small upper body and a long lower shadow (hammer) at support suggest?",
     "options": [
@@ -155,7 +155,7 @@
     "id": 7,
     "title": "Level 7: The Cost of Trading",
     "topic": "Taxes & Fees",
-    "rewardAmt": 15000.0,
+    "rewardAmt": 500.0,
     "concept": "Trading isn't free. Every trade attracts STT (Securities Transaction Tax), Stamp Duty, Exchange Charges, and SEBI fees. Understanding these is vital for net profitability.",
     "question": "Which tax is typically higher for Delivery trades than Intraday in India?",
     "options": [
@@ -179,7 +179,7 @@
     "id": 8,
     "title": "Level 8: Intraday vs Delivery",
     "topic": "Settlement & Cycles",
-    "rewardAmt": 15000.0,
+    "rewardAmt": 500.0,
     "concept": "Intraday means buying and selling on the same day. Delivery means keeping stocks for T+1 days or more. Delivery trades have a longer settlement cycle.",
     "question": "In a T+1 settlement cycle, when do shares bought today become available for delivery exit?",
     "options": [
