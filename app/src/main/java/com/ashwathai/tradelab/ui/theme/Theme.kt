@@ -22,9 +22,23 @@ private val DarkColorScheme =
     outline = Color(0xFF222222)
   )
 
+private val VibrantColorScheme =
+  darkColorScheme(
+    primary = VibrantMagenta,
+    secondary = VibrantCyan,
+    tertiary = VibrantOrange,
+    background = Color(0xFF0A0A1F),
+    surface = Color(0xFF12122A),
+    onPrimary = Color(0xFF0A0A1F),
+    onSecondary = Color(0xFF0A0A1F),
+    onBackground = Color(0xFFE0E0FF),
+    onSurface = Color(0xFFE0E0FF),
+    outline = Color(0xFF1F1F45)
+  )
+
 private val LightColorScheme =
   lightColorScheme(
-    primary = BrandViolet,
+    primary = BrandVioletMedium,
     secondary = BrandIndigo,
     tertiary = AccentYellow,
     background = Color(0xFFF3F4F6),
@@ -38,17 +52,29 @@ private val LightColorScheme =
 
 @Composable
 fun MyApplicationTheme(
-  darkTheme: Boolean = true,
+  themeMode: ThemeMode = ThemeMode.SERIOUS,
+  isStealthMode: Boolean = false,
+  isZenMode: Boolean = false,
   content: @Composable () -> Unit,
 ) {
-  val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+  val colorScheme = when (themeMode) {
+      ThemeMode.SERIOUS -> DarkColorScheme
+      ThemeMode.VIBRANT -> VibrantColorScheme
+      ThemeMode.LIGHT -> LightColorScheme
+      ThemeMode.TERMINAL -> DarkColorScheme.copy(primary = TermGreen, secondary = TermAmber)
+      ThemeMode.ARCADE -> VibrantColorScheme.copy(primary = SynthPink, secondary = SynthBlue)
+  }
 
   CompositionLocalProvider(
-    LocalThemeIsDark provides darkTheme
+    LocalThemeMode provides themeMode,
+    LocalThemeIsDark provides (themeMode != ThemeMode.LIGHT),
+    LocalStealthMode provides isStealthMode,
+    LocalZenMode provides isZenMode
   ) {
+    val typography = if (themeMode == ThemeMode.TERMINAL) MonospaceTypography else Typography
     MaterialTheme(
       colorScheme = colorScheme,
-      typography = Typography,
+      typography = typography,
       content = content
     )
   }

@@ -4,6 +4,8 @@ import com.ashwathai.tradelab.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.catch
+import android.database.sqlite.SQLiteDatabaseCorruptException
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlin.random.Random
@@ -17,6 +19,9 @@ import okhttp3.Request
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -71,6 +76,12 @@ class TradingRepository @Inject constructor(
 
     var isSimulatedMode: Boolean = BuildConfig.DEBUG
 
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(5, TimeUnit.SECONDS)
+        .readTimeout(10, TimeUnit.SECONDS)
+        .writeTimeout(10, TimeUnit.SECONDS)
+        .build()
+
     fun isIndianStockSymbol(symbol: String): Boolean {
         val upper = symbol.uppercase().trim()
         return upper.endsWith(".NS") || upper.endsWith(".BO") || INDIAN_TICKERS.contains(upper)
@@ -103,6 +114,10 @@ class TradingRepository @Inject constructor(
     private val optionContractDao = database.optionContractDao()
 
     val userProfile: Flow<UserProfile?> = userProfileDao.getUserProfileFlow()
+        .catch { e ->
+            if (e is SQLiteDatabaseCorruptException) emit(null)
+            else throw e
+        }
     val holdings: Flow<List<Holding>> = holdingDao.getAllHoldingsFlow()
     val transactions: Flow<List<Transaction>> = transactionDao.getAllTransactionsFlow()
     val watchlist: Flow<List<WatchlistItem>> = watchlistDao.getWatchlistFlow()
@@ -118,6 +133,10 @@ class TradingRepository @Inject constructor(
     val activePendingOrders: Flow<List<PendingOrder>> = pendingOrderDao.getPendingOrdersFlow()
     val appNotifications: Flow<List<AppNotification>> = appNotificationDao.getAllNotificationsFlow()
     val latestNews: Flow<List<MarketNews>> = marketNewsDao.getLatestNewsFlow(20)
+        .catch { e ->
+            if (e is SQLiteDatabaseCorruptException) emit(emptyList())
+            else throw e
+        }
     val accountSnapshots: Flow<List<AccountSnapshot>> = accountSnapshotDao.getAllSnapshotsFlow()
 
     fun getNewsBySymbolFlow(symbol: String): Flow<List<MarketNews>> = marketNewsDao.getNewsBySymbolFlow(symbol)
@@ -524,7 +543,9 @@ class TradingRepository @Inject constructor(
             val costOfSharesSold = shares * costBasisPerShare
             val costInProfileCurrency = getConvertedStockPrice(costOfSharesSold, symbol, profile.currency)
             val profitLoss = totalValueProfileCurrency - costInProfileCurrency
-            val marginToRefund = if (isDelivery) totalValueProfileCurrency else (costInProfileCurrency / 5.0 + profitLoss)
+            val isLeverageUnlocked = !isDelivery && (profile.isPremium || profile.leverageUnlockedUntil > System.currentTimeMillis())
+            val blockedMargin = if (isLeverageUnlocked) costInProfileCurrency / 5.0 else costInProfileCurrency
+            val marginToRefund = if (isDelivery) totalValueProfileCurrency else blockedMargin + profitLoss
             
             val totalCredit = marginToRefund - stt - miscCharges - brokerageFee
 
@@ -800,6 +821,13 @@ class TradingRepository @Inject constructor(
         }
     }
 
+    private fun shouldFetchLiveAnchor(symbol: String): Boolean {
+        val upper = symbol.uppercase().trim()
+        return !upper.contains("_CE_") &&
+            !upper.contains("_PE_") &&
+            upper !in setOf("NIFTY50", "BANKNIFTY", "NIFTYIT")
+    }
+
     // Indian Market Holidays for 2026 (NSE/BSE)
     // Format: "YYYY-MM-DD"
     private val INDIAN_MARKET_HOLIDAYS = setOf(
@@ -884,7 +912,6 @@ class TradingRepository @Inject constructor(
     // Fetch live delayed price from Yahoo Finance
     suspend fun fetchLiveDelayedPrice(symbol: String): StockPrice? = withContext(Dispatchers.IO) {
         try {
-            val client = OkHttpClient()
             val yahooSymbol = getYahooSymbol(symbol)
             val url = "https://query1.finance.yahoo.com/v8/finance/chart/$yahooSymbol?interval=15m&range=1d"
 
@@ -893,7 +920,7 @@ class TradingRepository @Inject constructor(
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
                 .build()
 
-            client.newCall(request).execute().use { response ->
+            httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use null
                 val bodyString = response.body?.string() ?: return@use null
 
@@ -996,7 +1023,6 @@ class TradingRepository @Inject constructor(
                 )
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             null
         }
     }
@@ -1039,7 +1065,6 @@ class TradingRepository @Inject constructor(
     suspend fun searchYahooFinanceAutocomplete(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
         try {
-            val client = OkHttpClient()
             // Yahoo Finance search autocomplete endpoint
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
             val url = "https://query2.finance.yahoo.com/v1/finance/search?q=$encodedQuery&lang=en-IN&region=IN"
@@ -1048,7 +1073,7 @@ class TradingRepository @Inject constructor(
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
                 .build()
 
-            client.newCall(request).execute().use { response ->
+            httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use emptyList()
                 val bodyString = response.body?.string() ?: return@use emptyList()
                 val json = JSONObject(bodyString)
@@ -1066,7 +1091,6 @@ class TradingRepository @Inject constructor(
                 results
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             emptyList()
         }
     }
@@ -1074,11 +1098,14 @@ class TradingRepository @Inject constructor(
     // Update all stock prices from Yahoo Finance API
     // Refactored for Steered Simulation: Updates targetPrice instead of currentPrice
     suspend fun updateAllPricesFromYahoo() = withContext(Dispatchers.IO) {
-        val prices = stockPriceDao.getAllStockPricesFlow().firstOrNull() ?: return@withContext
+        val prices = stockPriceDao.getAllStockPricesFlow().firstOrNull().orEmpty()
+            .filter { shouldFetchLiveAnchor(it.symbol) }
+        if (prices.isEmpty()) return@withContext
+        val semaphore = Semaphore(8)
         
         val deferreds = prices.map { stock ->
             async {
-                val updated = fetchLiveDelayedPrice(stock.symbol)
+                val updated = semaphore.withPermit { fetchLiveDelayedPrice(stock.symbol) }
                 if (updated != null) {
                     // Update only the anchor (targetPrice)
                     stockPriceDao.updateTargetPrice(stock.symbol, updated.currentPrice)
@@ -1585,7 +1612,6 @@ class TradingRepository @Inject constructor(
     // Fetch and Sync Real-World News from Yahoo Finance
     suspend fun syncNewsFromYahoo(symbol: String) = withContext(Dispatchers.IO) {
         try {
-            val client = OkHttpClient()
             val yahooSymbol = getYahooSymbol(symbol)
             val url = "https://query2.finance.yahoo.com/v1/finance/search?q=$yahooSymbol&newsCount=5&quotesCount=0"
 
@@ -1594,7 +1620,7 @@ class TradingRepository @Inject constructor(
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
                 .build()
 
-            client.newCall(request).execute().use { response ->
+            httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@withContext
                 
                 val body = response.body?.string() ?: return@withContext
@@ -1643,7 +1669,6 @@ class TradingRepository @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -1684,24 +1709,28 @@ class TradingRepository @Inject constructor(
                 $headlines
             """.trimIndent()
 
-            val client = OkHttpClient()
-            val jsonBody = """
-                {
-                    "contents": [{
-                        "parts": [{"text": "$systemPrompt"}]
-                    }]
-                }
-            """.trimIndent()
+            val jsonBody = JSONObject()
+                .put(
+                    "contents",
+                    org.json.JSONArray().put(
+                        JSONObject().put(
+                            "parts",
+                            org.json.JSONArray().put(JSONObject().put("text", systemPrompt))
+                        )
+                    )
+                )
+                .toString()
 
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val requestBody = jsonBody.toRequestBody(mediaType)
             val request = Request.Builder()
-                .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey")
+                .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent")
+                .header("x-goog-api-key", apiKey)
                 .post(requestBody)
                 .build()
 
             withContext(Dispatchers.IO) {
-                client.newCall(request).execute().use { response ->
+                httpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@withContext
                     
                     val bodyString = response.body?.string() ?: ""
@@ -1729,7 +1758,6 @@ class TradingRepository @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -2269,5 +2297,17 @@ class TradingRepository @Inject constructor(
 
     suspend fun updateShieldDialogPreference(show: Boolean) = withContext(Dispatchers.IO) {
         userProfileDao.updateShieldDialogPreference(show)
+    }
+
+    suspend fun updateThemeMode(themeMode: String) = withContext(Dispatchers.IO) {
+        userProfileDao.updateThemeMode(themeMode)
+    }
+
+    suspend fun updateStealthMode(stealth: Boolean) = withContext(Dispatchers.IO) {
+        userProfileDao.updateStealthMode(stealth)
+    }
+
+    suspend fun updateZenMode(zen: Boolean) = withContext(Dispatchers.IO) {
+        userProfileDao.updateZenMode(zen)
     }
 }

@@ -1,42 +1,36 @@
-# Walkthrough - Precision Ledger & Tradebook
+# Walkthrough: Institutional Power Release (v1.7.0)
 
-I have successfully implemented the **Precision Ledger** system, providing total transparency for every virtual penny in your TradeLab account.
+We have successfully released **Trade Lab v1.7.0**. This release formally launches the professional technical analysis and order management suites while improving the home screen's data visibility.
 
-## Changes Made
+## Key Changes
 
-### 1. High-Precision Data Layer
-- **New Entity**: Created [LedgerEntry](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/data/Entities.kt) to store every cash movement with 4-decimal precision.
-- **Database Bump**: Upgraded Room database to **Version 21**.
+### 1. Release Documentation & Metadata
+- **Version Bump:** Set `versionName` to `1.7.0` (keeping `versionCode` at `6`).
+- **Changelog & Ledger:** Formalized v1.7.0 entries in [CHANGELOG.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/CHANGELOG.md) and [RELEASES.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/RELEASES.md).
+- **Project State:** Updated [AGENTS.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/AGENTS.md) to set v1.7.0 as the production baseline.
 
-### 2. Atomic Ledger Integration
-- **Transparent Trades**: Updated the repository so a single "BUY" or "SELL" now logs multiple entries in the ledger:
-    - **Principal**: The actual stock cost.
-    - **STT**: Statutory Taxes.
-    - **Charges**: Transaction and Brokerage fees.
-- **Full Coverage**: The ledger also tracks **Mission Rewards**, **Emergency Capital Recharges**, and **Account Resets**.
+### 2. Build & Release Policy
+- **New Policy:** Codified a mandatory build archiving policy in [AGENTS.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/AGENTS.md#L141-L151). This requires moving artifacts *out* of the build directory before generating new ones.
+- **Archiving:** All release artifacts are now stored in a permanent [releases/](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/releases/) folder.
+    - **Note:** During the v1.7.0 transition, the v1.6.0 APKs were accidentally overwritten by Gradle because they were renamed but not moved out of the `build/` directory. The v1.6.0 AAB was successfully recovered and moved.
 
-### 3. Precision UI/UX
-- **Ledger Screen**: Built a new [LedgerScreen.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/ui/portfolio/LedgerScreen.kt) that acts as your professional account statement.
-- **Integrated Access**: Added a "VIEW PRECISION LEDGER" button directly on the Portfolio account card for instant access.
-- **Formatter**: Implemented `formatLedgerAmount` to show 4 decimal places, ensuring no "missing pennies" are hidden by rounding.
+### 3. Technical Fixes & UI Polish
+- **Test Stability:** Fixed the Firebase initialization crash in [TradeLabApplication.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/TradeLabApplication.kt) that was failing Robolectric tests.
+- **Home Screen Elevation:** Promoted the **Equity Curve** chart to a primary, collapsible element on the Home screen for immediate performance feedback.
 
-## Consolidated Precision Ledger
-- **Single Entry per Trade**: Instead of multiple records for tax and charges, each transaction now creates one high-precision consolidated ledger entry.
-- **Detailed Breakdown**: The entry description now shows the Principal, STT, and Charges individually for complete transparency.
-- **4-Decimal Precision**: Ensured every virtual penny is tracked up to `0.0001` for professional auditing.
+## Verification Results
 
-## Release v1.3.0
-- **Version Bump**: Updated app version name to `1.3.0`.
-- **Artifacts Generated**:
-    - **Debug APK**: Successfully built via `:app:assembleDebug`.
-    - **Release APK**: Successfully built via `:app:assembleRelease`.
-    - **App Bundle (AAB)**: Successfully built via `:app:bundleRelease`.
+### Automated Tests
+- **Status:** 🟢 **ALL TESTS PASSED**
+- Run `:app:testDebugUnitTest`: 73 passed, 0 failed.
 
-### Logic Check
-- Verified that buying a stock correctly debits the principal, tax, and charges as separate line items.
-- Confirmed the "Running Balance" in the ledger matches your `Total Cash` at every step.
+### Build Artifacts
+The following v1.7.0 assets have been generated and archived in the [releases/](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/releases/) folder:
+- `debug-1.7.0-6.apk`
+- `release-apk-1.7.0-6.apk`
+- `release-aab-1.7.0-6.aab`
 
-### Manual Verification
-1. Open the Portfolio tab.
-2. Click **View Precision Ledger**.
-3. Observe the line-by-line breakdown of your account history.
+## Manual Verification Checklist
+- [x] **Technical Analysis:** verify Candlestick toggle and MACD/RSI indicators.
+- [x] **Order Management:** Verify Bracket Orders and 5x Intraday Leverage.
+- [x] **Dashboard:** Verify the Equity Curve is visible and functional on the Home screen.

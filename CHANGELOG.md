@@ -3,6 +3,55 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [1.7.0] - Institutional Power Release - 2026-08-04
+
+### Added
+- **Institutional Visualization (Track A)**:
+  - Formally launched the **Candlestick Engine** for high-fidelity price action analysis.
+  - Added **Technical Indicators**: MACD, Bollinger Bands, and Volume Bars.
+  - Implemented **Interactive Zoom** and scaling gestures for stock charts.
+- **Institutional Order Management (Track B)**:
+  - Implemented **5x Leverage** for Intraday (MIS) equity trades.
+  - Added **Bracket Orders (BO)**: Entry + Target + Stop-Loss multi-leg execution.
+  - Integrated **Trailing Stop-Loss** logic to lock in profits automatically.
+  - Supported **OCO (One Cancels Other)** order logic.
+- **UI "Quick Win" Refinement**:
+  - Promoted the **Equity Curve** chart to a primary, collapsible element on the Home screen for immediate performance visibility.
+- **Build & Release Policy**:
+  - Established a formal policy for archiving build artifacts (APKs/AABs) to preserve release history.
+
+### Fixed
+- Stabilized Robolectric tests by fixing Firebase initialization crashes.
+
+---
+
+## [1.6.0] - Varsity Academy & Multi-Format Monetization - 2026-08-04
+
+### Added
+- **Academy v2 (The Varsity Expansion)**:
+  - Transitioned from flat modules to a **6-Course, 68-Chapter** comprehensive curriculum.
+  - Implemented a **Multi-Question Knowledge Check** engine with a 60% passing threshold.
+  - Added **Mission Reward Engine** with claimable virtual capital and progress persistence.
+  - Integrated a **Preview Model** for locked courses (read freely, earn when ready).
+- **Multi-Format Monetization**:
+  - **App Open Ads**: Implemented a lifecycle-aware manager to show ads when resuming the app from the background.
+  - **Blended Native Ads**: Custom-styled ads that blend into the **Watchlist**, **Portfolio**, and **Academy** dashboards.
+  - Ad-gate bypass for all formats for **Premium** users.
+- **Institutional Trading Desk Polish**:
+  - **GTT Persistence**: Added `validUntil` fields ensuring GTT orders survive end-of-day resets.
+  - **Quick Exit (Square Off)**: One-tap market exit buttons for all Equity and F&O positions.
+  - **Precision Ledger**: Redesigned the tradebook with date-grouping and net-flow analytics.
+- **Visual Vector Migration**:
+  - Replaced 26 decorative emoji with high-performance **VectorDrawables** across the entire UI.
+  - Added build version footer in the Profile screen for easy triage.
+
+### Fixed
+- Resolved the **F&O Academic Gate** deadlock by mapping beginner completions to v2 chapter IDs.
+- Fixed F&O premium accounting (now tracked as an asset rather than a cash expense).
+- Normalized lot sizes and volatility for MCX commodities.
+
+---
+
 ## [1.5.0] - Launch Pricing, Real Product IDs & Store-Listing Compliance - 2026-07-31
 
 ### Added

@@ -27,7 +27,7 @@ fun MarketDashboardWidget(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color.White.copy(alpha = 0.03f))
+                .background(TextPrimary.copy(alpha = 0.03f))
                 .padding(vertical = 6.dp, horizontal = 12.dp)
         ) {
             MoversMarqueeCompact(topGainers, topLosers)
@@ -54,7 +54,7 @@ fun MoversMarqueeCompact(gainers: List<StockPrice>, losers: List<StockPrice>) {
         allMovers.forEach { m ->
             val isUp = m.dailyChangePct >= 0
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(m.symbol.take(4), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                Text(m.symbol.take(4), color = TextPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(2.dp))
                 Text(
                     text = "${String.format("%.1f", m.dailyChangePct)}%",

@@ -45,7 +45,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.ashwathai.tradelab.ui.theme.BrandViolet
+import com.ashwathai.tradelab.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.cos
@@ -183,7 +183,7 @@ fun ShimmerProgress(
 fun RotatingChevron(
     expanded: Boolean,
     modifier: Modifier = Modifier,
-    tint: Color = Color(0xFFA1A1A1)
+    tint: Color = TextMuted
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
@@ -239,7 +239,7 @@ fun Modifier.lockShake(controller: LockShakeController): Modifier = composed {
 fun SparkleBurst(
     trigger: Boolean,
     modifier: Modifier = Modifier,
-    color: Color = BrandViolet,
+    color: Color = DynamicPrimary,
     particleCount: Int = 10
 ) {
     val progress = remember { Animatable(0f) }
@@ -281,7 +281,7 @@ fun SparkleBurst(
 fun ConfettiOverlay(
     visible: Boolean,
     modifier: Modifier = Modifier,
-    colors: List<Color> = listOf(BrandViolet, Color(0xFFFACC15), Color(0xFF10B981), Color(0xFFFB7185))
+    colors: List<Color> = listOf(DynamicPrimary, AccentYellow, AccentGreen, AccentRose)
 ) {
     if (!visible) return
     val progress = remember { Animatable(0f) }

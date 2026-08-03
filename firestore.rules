@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leaderboard/{userId} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.userId == userId
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'userName',
+          'xp',
+          'portfolioValue',
+          'disciplineScore',
+          'lastUpdated'
+        ])
+        && request.resource.data.userName is string
+        && request.resource.data.userName.size() <= 80
+        && request.resource.data.xp is int
+        && request.resource.data.xp >= 0
+        && request.resource.data.xp <= 10000000
+        && request.resource.data.portfolioValue is number
+        && request.resource.data.portfolioValue >= 0
+        && request.resource.data.portfolioValue <= 1000000000
+        && request.resource.data.disciplineScore is int
+        && request.resource.data.disciplineScore >= 0
+        && request.resource.data.disciplineScore <= 100
+        && request.resource.data.lastUpdated is int;
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -7,14 +7,21 @@ import com.ashwathai.tradelab.data.*
 import com.ashwathai.tradelab.BuildConfig
 import com.ashwathai.tradelab.R
 import com.ashwathai.tradelab.billing.SubscriptionConfig
+import com.ashwathai.tradelab.ui.theme.ThemeMode
 import com.ashwathai.tradelab.shared.TradingHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.google.firebase.auth.FirebaseAuth
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,6 +43,12 @@ class TradingViewModel @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(5, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .writeTimeout(10, TimeUnit.SECONDS)
+        .build()
+
     // Dynamic Academy & Missions data from JSON
     private val _quizModules = MutableStateFlow<List<ChapterModule>>(emptyList())
     val quizModules: StateFlow<List<ChapterModule>> = _quizModules.asStateFlow()
@@ -53,8 +66,16 @@ class TradingViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     // Dynamic Theme Mode
-    private val _isDarkTheme = MutableStateFlow(true)
-    val isDarkTheme: StateFlow<Boolean> = _isDarkTheme.asStateFlow()
+    private val _themeMode = MutableStateFlow(ThemeMode.SERIOUS)
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+    val isDarkTheme: StateFlow<Boolean> = _themeMode.map { it != ThemeMode.LIGHT }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    private val _isStealthMode = MutableStateFlow(false)
+    val isStealthMode: StateFlow<Boolean> = _isStealthMode.asStateFlow()
+
+    private val _isZenMode = MutableStateFlow(false)
+    val isZenMode: StateFlow<Boolean> = _isZenMode.asStateFlow()
 
     // Raw database state flows
     val userProfile: StateFlow<UserProfile?> = repository.userProfile
@@ -160,7 +181,8 @@ class TradingViewModel @Inject constructor(
 
     private val _commoditiesUnlocked = MutableStateFlow(false)
     val commoditiesUnlocked: StateFlow<Boolean> = _commoditiesUnlocked.asStateFlow()
-    private var commoditiesUnlockTime: Long? = null
+    @Volatile private var commoditiesUnlockTime: Long? = null
+    @Volatile private var backgroundTasksStarted = false
 
     private val _hasDismissedAuthScreen = MutableStateFlow(false)
     val hasDismissedAuthScreen: StateFlow<Boolean> = _hasDismissedAuthScreen.asStateFlow()
@@ -173,6 +195,9 @@ class TradingViewModel @Inject constructor(
 
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private val _isInitialized = MutableStateFlow(false)
+    val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     private val _watchlistSearchQuery = MutableStateFlow("")
     val watchlistSearchQuery: StateFlow<String> = _watchlistSearchQuery.asStateFlow()
@@ -313,7 +338,8 @@ class TradingViewModel @Inject constructor(
         var totalCostBasis = 0.0
         var todayPnL = 0.0
         var usedMargin = 0.0
-        var misCostBasis = 0.0
+        var phantomMarginPnL = 0.0
+        val isLeverageUnlocked = profile.isPremium || profile.leverageUnlockedUntil > System.currentTimeMillis()
 
         for (holding in activeHoldings) {
             val liveStock = prices.find { it.symbol == holding.symbol }
@@ -328,9 +354,13 @@ class TradingViewModel @Inject constructor(
             val convertedAvgPrice = getConvertedStockPrice(holding.averagePrice, holding.symbol, profile.currency)
             
             if (!holding.isDelivery) {
-                // MIS positions use 5x margin
-                usedMargin += (totalSharesAbs * convertedLivePrice) / 5.0
-                misCostBasis += (totalSharesAbs * convertedAvgPrice)
+                val liveNotional = totalSharesAbs * convertedLivePrice
+                val entryNotional = totalSharesAbs * convertedAvgPrice
+                val blockedMargin = if (isLeverageUnlocked) entryNotional / 5.0 else entryNotional
+                usedMargin += if (isLeverageUnlocked) liveNotional / 5.0 else liveNotional
+                if (totalShares >= 0 && isLeverageUnlocked) {
+                    phantomMarginPnL += entryNotional - blockedMargin
+                }
             }
 
             if (totalShares >= 0) {
@@ -345,7 +375,9 @@ class TradingViewModel @Inject constructor(
                 // SHORT POSITION (Shares are negative)
                 // P/L = (Entry - Live) * |Shares|
                 val openShortPnL = (convertedAvgPrice - convertedLivePrice) * totalSharesAbs
-                holdingsValue += openShortPnL // Unrealized profit is treated as value
+                val entryNotional = totalSharesAbs * convertedAvgPrice
+                val blockedMargin = if (isLeverageUnlocked) entryNotional / 5.0 else entryNotional
+                holdingsValue += blockedMargin + openShortPnL
                 
                 // For shorts, the "cost basis" is effectively the margin blocked, but let's keep it consistent
                 // totalCostBasis += 0 // Margin is already in profile.cash as reduced amount
@@ -357,7 +389,6 @@ class TradingViewModel @Inject constructor(
         }
 
         val totalValue = profile.cash + holdingsValue
-        val phantomMarginPnL = misCostBasis * 0.8
         val totalProfitLoss = totalValue - profile.startingCash - phantomMarginPnL
         val profitLossPct = if (profile.startingCash > 0) (totalProfitLoss / profile.startingCash) * 100.0 else 0.0
         val openProfitLoss = holdingsValue - totalCostBasis
@@ -366,7 +397,6 @@ class TradingViewModel @Inject constructor(
         val valueAtStartOfDay = totalValue - todayPnL
         val todayPnLPct = if (valueAtStartOfDay > 0) (todayPnL / valueAtStartOfDay) * 100.0 else 0.0
 
-        val isLeverageUnlocked = profile.isPremium || profile.leverageUnlockedUntil > System.currentTimeMillis()
         val buyingPower = if (isLeverageUnlocked) profile.cash * 5.0 else profile.cash
 
         PortfolioStats(
@@ -407,7 +437,7 @@ class TradingViewModel @Inject constructor(
         // Initialize values on app launch
         viewModelScope.launch(ioDispatcher) {
             repository.initializeDataIfEmpty()
-            repository.updateCurrency("INR")
+            _isInitialized.value = true
             
             // Hyper-Gamification: Update Streak
             updateUserStreak()
@@ -422,15 +452,41 @@ class TradingViewModel @Inject constructor(
 
         loadAcademyAndMissionsData()
 
+        // Load theme from profile
+        viewModelScope.launch {
+            repository.userProfile.collect { profile ->
+                profile?.let {
+                    val mode = try { ThemeMode.valueOf(it.themeMode) } catch (_: Exception) { ThemeMode.SERIOUS }
+                    if (_themeMode.value != mode) {
+                        _themeMode.value = mode
+                    }
+                    if (_isStealthMode.value != it.isStealthMode) {
+                        _isStealthMode.value = it.isStealthMode
+                    }
+                    if (_isZenMode.value != it.isZenMode) {
+                        _isZenMode.value = it.isZenMode
+                    }
+                }
+            }
+        }
+
         // Sync stats to Firestore whenever they change significantly
         viewModelScope.launch(ioDispatcher) {
+            var lastSyncedAt = 0L
             portfolioStats.collect { stats ->
-                syncStatsToFirestore(stats)
+                val now = System.currentTimeMillis()
+                if (now - lastSyncedAt >= 60_000L) {
+                    lastSyncedAt = now
+                    syncStatsToFirestore(stats)
+                }
             }
         }
     }
 
     fun startBackgroundTasks() {
+        if (backgroundTasksStarted) return
+        backgroundTasksStarted = true
+
         // Check commodities unlock expiration periodically
         viewModelScope.launch(defaultDispatcher) {
             while (true) {
@@ -532,14 +588,13 @@ class TradingViewModel @Inject constructor(
 
     private fun syncStatsToFirestore(stats: PortfolioStats) {
         val profile = userProfile.value ?: return
-        val email = profile.userEmail
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val name = profile.userName
-        if (email.isBlank()) return
 
         val xp = profile.xp
         
         viewModelScope.launch {
-            leaderboardManager.syncUserStats(hashUserId(email), name, xp, stats.totalValue, stats.disciplineScore)
+            leaderboardManager.syncUserStats(userId, name, xp, stats.totalValue, stats.disciplineScore)
         }
     }
 
@@ -597,13 +652,48 @@ class TradingViewModel @Inject constructor(
     }
 
     fun toggleTheme() {
-        val next = !_isDarkTheme.value
-        _isDarkTheme.value = next
-        if (next) {
-            showFeedback("Ashwathey recommends sophisticated dark mode to shield your eyes.")
-        } else {
-            showFeedback("Light mode activated for visual clarity.")
+        val next = when (_themeMode.value) {
+            ThemeMode.SERIOUS -> ThemeMode.VIBRANT
+            ThemeMode.VIBRANT -> ThemeMode.TERMINAL
+            ThemeMode.TERMINAL -> ThemeMode.ARCADE
+            ThemeMode.ARCADE -> ThemeMode.LIGHT
+            ThemeMode.LIGHT -> ThemeMode.SERIOUS
         }
+        updateThemeMode(next)
+    }
+
+    fun updateThemeMode(next: ThemeMode) {
+        _themeMode.value = next
+        viewModelScope.launch {
+            repository.updateThemeMode(next.name)
+        }
+        when (next) {
+            ThemeMode.SERIOUS -> showFeedback("Serious Dark mode activated.")
+            ThemeMode.VIBRANT -> showFeedback("Vibrant GenZ mode activated! 🚀")
+            ThemeMode.LIGHT -> showFeedback("Light mode activated for clarity.")
+            ThemeMode.TERMINAL -> showFeedback("Terminal Mode: System Override active. 📟")
+            ThemeMode.ARCADE -> showFeedback("Arcade Mode: Insert Coin. 🕹️")
+        }
+    }
+
+    fun toggleStealthMode() {
+        val next = !_isStealthMode.value
+        _isStealthMode.value = next
+        viewModelScope.launch {
+            repository.updateStealthMode(next)
+        }
+        if (next) showFeedback("Stealth Mode: Privacy Blur active.")
+        else showFeedback("Stealth Mode: Privacy Blur disabled.")
+    }
+
+    fun toggleZenMode() {
+        val next = !_isZenMode.value
+        _isZenMode.value = next
+        viewModelScope.launch {
+            repository.updateZenMode(next)
+        }
+        if (next) showFeedback("Zen Mode: Focus active.")
+        else showFeedback("Zen Mode: Focus disabled.")
     }
 
     // Tab switcher
@@ -1323,28 +1413,30 @@ class TradingViewModel @Inject constructor(
                 
                 val systemPrompt = "You are the Trade Lab AI Financial Advisor. Provide highly strategic, educational position sizing, risk management, and trading advice in Indian Rupees (INR) or US Dollars. Keep answers concise, direct, professional, and limited to 2-3 short paragraphs. User's Portfolio: Total Value: ${statsVal.totalValue}, Cash: ${statsVal.cash}, Risk Preference: ${statsVal.riskLevel}. Holdings: $holdingsStr."
 
-                val client = okhttp3.OkHttpClient()
-                val jsonBody = """
-                    {
-                        "contents": [{
-                            "parts": [{"text": "$systemPrompt\n\nUser Question: $message"}]
-                        }]
-                    }
-                """.trimIndent()
+                val promptText = "$systemPrompt\n\nUser Question: $message"
+                val jsonBody = JSONObject()
+                    .put(
+                        "contents",
+                        JSONArray().put(
+                            JSONObject().put(
+                                "parts",
+                                JSONArray().put(JSONObject().put("text", promptText))
+                            )
+                        )
+                    )
+                    .toString()
 
                 val mediaType = "application/json; charset=utf-8".toMediaType()
-                val requestBody = okhttp3.RequestBody.create(
-                    mediaType,
-                    jsonBody
-                )
+                val requestBody = jsonBody.toRequestBody(mediaType)
 
                 val request = okhttp3.Request.Builder()
-                    .url("https://generativemodelsv1beta.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey")
+                    .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent")
+                    .header("x-goog-api-key", apiKey)
                     .post(requestBody)
                     .build()
 
                 val responseText = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    client.newCall(request).execute().use { response ->
+                    httpClient.newCall(request).execute().use { response ->
                         if (!response.isSuccessful) {
                             "Error: ${response.code} ${response.message}"
                         } else {
@@ -1578,7 +1670,7 @@ class TradingViewModel @Inject constructor(
             if (holding != null) {
                 val totalShares = holding.shares + holding.sharesT1
                 if (totalShares > 0) {
-                    val result = repository.sellStock(symbol, totalShares)
+                    val result = repository.sellStock(symbol, totalShares, holding.isDelivery)
                     result.onSuccess {
                         showFeedback("Position squared off successfully!")
                         repository.addNotification("Squared off $totalShares shares of $symbol successfully.")

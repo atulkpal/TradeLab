@@ -60,6 +60,7 @@ fun PortfolioScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
     latestNews: List<MarketNews>,
+    nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null,
     onTickerClick: (String) -> Unit
 ) {
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -111,6 +112,7 @@ fun PortfolioScreen(
         }
 
         // 2. Main Screen UI
+        val isZenMode = LocalZenMode.current
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -118,14 +120,18 @@ fun PortfolioScreen(
                 .verticalScroll(scrollState)
         ) {
             // 0. Breaking News (Internalized)
-            BreakingNewsTicker(latestNews = latestNews)
+            if (!isZenMode) {
+                BreakingNewsTicker(latestNews = latestNews)
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // 1. Market Dashboard (Movers)
-            MarketDashboardWidget(topGainers, topLosers)
+                // 1. Market Dashboard (Movers)
+                MarketDashboardWidget(topGainers, topLosers)
             
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // 2. Account Card - ULTRA DENSE
             Card(
@@ -152,7 +158,7 @@ fun PortfolioScreen(
                                 Text(
                                     text = userLeague.uppercase(),
                                     color = when(userLeague) {
-                                        "Diamond" -> Color(0xFFB9F2FF)
+                                        "Diamond" -> VibrantCyan
                                         "Platinum" -> Color(0xFFE5E4E2)
                                         "Gold" -> AccentYellow
                                         "Silver" -> Color(0xFFC0C0C0)
@@ -205,10 +211,11 @@ fun PortfolioScreen(
                     
                     Text(
                         text = formatCurrency(stats.totalValue, stats.currency),
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Black,
-                        letterSpacing = (-1).sp
+                        letterSpacing = (-1).sp,
+                        modifier = Modifier.stealthBlur()
                     )
                     
                     Spacer(modifier = Modifier.height(10.dp))
@@ -227,7 +234,8 @@ fun PortfolioScreen(
                                 text = "${if (isTotalUp) "+" else ""}${formatPnL(stats.totalPnL, stats.currency)} (${String.format(Locale.US, "%.1f", stats.totalPnLPct)}%)",
                                 color = if (isTotalUp) AccentGreen else AccentRose,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.stealthBlur()
                             )
                         }
                         Box(modifier = Modifier.width(1.dp).height(24.dp).background(DarkBorder))
@@ -238,7 +246,8 @@ fun PortfolioScreen(
                                 text = "${if (isDayUp) "+" else ""}${formatPnL(stats.todayPnL, stats.currency)} (${String.format(Locale.US, "%.1f", stats.todayPnLPct)}%)",
                                 color = if (isDayUp) AccentGreen else AccentRose,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.stealthBlur()
                             )
                         }
                     }
@@ -263,6 +272,15 @@ fun PortfolioScreen(
             // 3. INSTITUTIONAL ANALYTICS (Heatmap)
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                 SectorHeatmapWidget(holdings, stockPrices, stats)
+                Spacer(modifier = Modifier.height(12.dp))
+                EquityCurveWidget(accountSnapshots, stats.currency)
+            }
+
+            if (nativeAd != null && !stats.isPremium) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    NativeAdRow(nativeAd = nativeAd)
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -274,8 +292,8 @@ fun PortfolioScreen(
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = if (stats.isPremium) Color(0xFF151525) else if (shieldActive) Color(0xFF102010) else Color(0xFF251010)),
-                border = BorderStroke(1.dp, if (stats.isPremium) BrandViolet.copy(alpha = 0.4f) else if (shieldActive) AccentGreen.copy(alpha = 0.3f) else AccentRose.copy(alpha = 0.3f))
+                colors = CardDefaults.cardColors(containerColor = if (stats.isPremium) DynamicPrimary.copy(alpha = 0.1f) else if (shieldActive) DeepProfit else DeepLoss),
+                border = BorderStroke(1.dp, if (stats.isPremium) DynamicPrimary.copy(alpha = 0.4f) else if (shieldActive) AccentGreen.copy(alpha = 0.3f) else AccentRose.copy(alpha = 0.3f))
             ) {
                 val mainActivity = context as? MainActivity
                 var isWatchingAd by remember { mutableStateOf(false) }
@@ -305,7 +323,7 @@ fun PortfolioScreen(
                                 Text(if (stats.isPremium) "PRO Waiver Active" else "${stats.brokerageCredits} Credits", color = TextMuted, fontSize = 9.sp)
                             }
                         }
-                        Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(if (stats.isPremium) AccentYellow.copy(alpha = 0.1f) else BrandViolet).clickable {
+                        Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(if (stats.isPremium) AccentYellow.copy(alpha = 0.1f) else DynamicPrimary).clickable {
                             if (stats.isPremium) viewModel.showFeedback("Pro Active!")
                             else {
                                 if (stats.shouldShowShieldDialog) showShieldDialog = true
@@ -319,7 +337,7 @@ fun PortfolioScreen(
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(if (stats.isPremium) "PRO" else "Shield Up", color = if (stats.isPremium) AccentYellow else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                Text(if (stats.isPremium) "PRO" else "Shield Up", color = if (stats.isPremium) AccentYellow else TextOnAccent, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -341,7 +359,7 @@ fun PortfolioScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Sub-Tabs (Point 7 & 12)
+            val highlightColor = DynamicPrimary
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).clip(RoundedCornerShape(12.dp)).background(DarkSurface).padding(4.dp)) {
                 listOf(
                     "Holdings" to "Holdings (${holdings.filter { it.shares > 0 }.size})", 
@@ -349,8 +367,8 @@ fun PortfolioScreen(
                     "Pending" to "Pending"
                 ).forEach { (tabId, tabTitle) ->
                     val isSel = activeSubTab == tabId
-                    Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(if (isSel) BrandViolet.copy(alpha = 0.15f) else Color.Transparent).clickable { activeSubTab = tabId }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                        Text(tabTitle, color = if (isSel) BrandViolet else Color.White.copy(alpha = 0.5f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(if (isSel) highlightColor.copy(alpha = 0.15f) else Color.Transparent).clickable { activeSubTab = tabId }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                        Text(tabTitle, color = if (isSel) highlightColor else TextPrimary.copy(alpha = 0.5f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -367,7 +385,6 @@ fun PortfolioScreen(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Box(modifier = Modifier.padding(horizontal = 20.dp)) { EquityCurveWidget(accountSnapshots, stats.currency) }
             Spacer(modifier = Modifier.height(80.dp))
         }
 
@@ -381,23 +398,23 @@ fun PortfolioScreen(
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A0A0C).copy(alpha = 0.98f)),
-                border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.5f))
+                colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated.copy(alpha = 0.98f)),
+                border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.5f))
             ) {
                 Row(modifier = Modifier.padding(horizontal = 14.dp).fillMaxSize(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("PORTFOLIO VALUE", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                        Text(formatCurrency(stats.totalValue, stats.currency), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                        Text(formatCurrency(stats.totalValue, stats.currency), color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.stealthBlur())
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         Text("LIFETIME", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                         val isTotalUp = stats.totalPnL >= 0
-                        Text("${formatPnL(stats.totalPnL, stats.currency)} (${if (isTotalUp) "+" else ""}${String.format(Locale.US, "%.1f", stats.totalPnLPct)}%)", color = if (isTotalUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text("${formatPnL(stats.totalPnL, stats.currency)} (${if (isTotalUp) "+" else ""}${String.format(Locale.US, "%.1f", stats.totalPnLPct)}%)", color = if (isTotalUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.stealthBlur())
                     }
                     Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
                         Text("TODAY", color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                         val isDayUp = stats.todayPnL >= 0
-                        Text("${formatPnL(stats.todayPnL, stats.currency)} (${if (isDayUp) "+" else ""}${String.format(Locale.US, "%.1f", stats.todayPnLPct)}%)", color = if (isDayUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text("${formatPnL(stats.todayPnL, stats.currency)} (${if (isDayUp) "+" else ""}${String.format(Locale.US, "%.1f", stats.todayPnLPct)}%)", color = if (isDayUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.stealthBlur())
                     }
                 }
             }
@@ -598,13 +615,13 @@ fun HoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: Portfoli
             }
             Spacer(modifier = Modifier.width(4.dp))
             Column {
-                Text(holding.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(holding.symbol, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Text("${String.format(Locale.US, "%.2f", totalShares)} shares", color = TextMuted, fontSize = 10.sp)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.End) {
-                Text(formatCurrency(currentValue, stats.currency), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(formatCurrency(currentValue, stats.currency), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 val isUp = pnl >= 0
                 Text("${if (isUp) "+" else ""}${String.format(Locale.US, "%.2f", pnlPct)}%", color = if (isUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
@@ -643,13 +660,13 @@ fun OptionHoldingItem(holding: Holding, stockPrices: List<StockPrice>, stats: Po
                     Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(if (isCall) AccentGreen.copy(alpha = 0.15f) else AccentRose.copy(alpha = 0.15f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
                         Text(if (isCall) "CALL" else "PUT", color = if (isCall) AccentGreen else AccentRose, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(modifier = Modifier.width(6.dp)); Text(holding.symbol, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(6.dp)); Text(holding.symbol, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
                 Text("Qty: ${totalShares.toInt()}${if (holding.sharesT1 > 0) " (${holding.sharesT1.toInt()} T1)" else ""}", color = TextMuted, fontSize = 10.sp)
             }
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(formatCurrency(currentValue, stats.currency), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(formatCurrency(currentValue, stats.currency), color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             val isUp = pnl >= 0
             Text("${if (isUp) "+" else ""}${String.format(Locale.US, "%.1f", pnlPct)}%", color = if (isUp) AccentGreen else AccentRose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
@@ -731,11 +748,11 @@ fun PositionsList(positions: List<Holding>, transactions: List<Transaction>, sto
                         Spacer(modifier = Modifier.width(4.dp))
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(if (isShort) AccentRose.copy(alpha = 0.15f) else BrandViolet.copy(alpha = 0.15f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                                    Text(if (isShort) "SHORT" else if (holding.sharesT1 > 0) "T1" else "MIS", color = if (isShort) AccentRose else BrandViolet, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(if (isShort) AccentRose.copy(alpha = 0.15f) else DynamicPrimary.copy(alpha = 0.15f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                                    Text(if (isShort) "SHORT" else if (holding.sharesT1 > 0) "T1" else "MIS", color = if (isShort) AccentRose else DynamicPrimary, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(holding.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(holding.symbol, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                             Text("${String.format(Locale.US, "%.2f", totalSharesAbs)} shares @ ${formatCurrency(holding.averagePrice, stats.currency)}", color = TextMuted, fontSize = 10.sp)
                         }
@@ -790,10 +807,10 @@ fun PendingOrdersList(viewModel: TradingViewModel) {
                                     Text(order.type, color = if (order.type == "BUY") AccentGreen else AccentRose, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(order.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(order.symbol, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(order.orderType, color = BrandViolet, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    Text(order.orderType, color = DynamicPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                     if (order.orderType == "GTT") {
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(AccentYellow.copy(alpha = 0.2f)).padding(horizontal = 4.dp, vertical = 1.dp)) {
@@ -838,11 +855,11 @@ fun TransactionsList(transactions: List<Transaction>, stockPrices: List<StockPri
                             Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(if (isBuy) AccentGreen.copy(alpha = 0.1f) else AccentRose.copy(alpha = 0.1f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
                                 Text(tx.type, color = if (isBuy) AccentGreen else AccentRose, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                             }
-                            Spacer(modifier = Modifier.width(8.dp)); Text(tx.symbol, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.width(8.dp)); Text(tx.symbol, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Text("${tx.shares.toInt()} @ ${formatCurrency(tx.price, stats.currency)}", color = TextMuted, fontSize = 10.sp)
                     }
-                    Column(horizontalAlignment = Alignment.End) { Text(formatCurrency(presentValue, stats.currency), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
+                    Column(horizontalAlignment = Alignment.End) { Text(formatCurrency(presentValue, stats.currency), color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
                 }
             }
         }
@@ -870,16 +887,16 @@ fun SectorHeatmapWidget(
     Card(modifier = Modifier.fillMaxWidth().clickable { isExpanded = !isExpanded }, shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = DarkSurface), border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.2f))) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("SECTOR ALLOCATION", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text("SECTOR ALLOCATION", color = TextPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 Icon(if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = TextMuted, modifier = Modifier.size(14.dp))
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Box(modifier = Modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(13.dp)).background(Color.White.copy(alpha = 0.05f))) {
+            Box(modifier = Modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(13.dp)).background(TextPrimary.copy(alpha = 0.05f))) {
                 Row(modifier = Modifier.fillMaxSize()) {
                     val totalValue = maxOf(stats.holdingsValue, 1.0)
                     sectorMap.forEachIndexed { index, (sector, value) ->
                         val weight = (value / totalValue).toFloat().coerceAtLeast(0.01f)
-                        val color = when (index % 5) { 0 -> BrandViolet; 1 -> AccentGreen; 2 -> Color(0xFF2196F3); 3 -> AccentYellow; else -> AccentRose }
+                        val color = when (index % 5) { 0 -> DynamicPrimary; 1 -> AccentGreen; 2 -> VibrantCyan; 3 -> AccentYellow; else -> AccentRose }
                         Box(modifier = Modifier.fillMaxHeight().weight(weight).background(color), contentAlignment = Alignment.Center) {
                             Text(sector.take(4).uppercase(), color = Color.Black, fontSize = 8.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Clip, modifier = Modifier.padding(horizontal = 2.dp))
                         }
@@ -891,11 +908,11 @@ fun SectorHeatmapWidget(
                     Spacer(modifier = Modifier.height(12.dp))
                     sectorMap.forEachIndexed { index, (sector, value) ->
                         val pct = (value / maxOf(stats.holdingsValue, 1.0)) * 100.0
-                        val color = when (index % 5) { 0 -> BrandViolet; 1 -> AccentGreen; 2 -> Color(0xFF2196F3); 3 -> AccentYellow; else -> AccentRose }
+                        val color = when (index % 5) { 0 -> DynamicPrimary; 1 -> AccentGreen; 2 -> VibrantCyan; 3 -> AccentYellow; else -> AccentRose }
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
-                                Spacer(modifier = Modifier.width(10.dp)); Text(sector, color = Color.White, fontSize = 12.sp)
+                                Spacer(modifier = Modifier.width(10.dp)); Text(sector, color = TextPrimary, fontSize = 12.sp)
                             }
                             Text("${String.format(Locale.US, "%.1f", pct)}%", color = TextSubtle, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
@@ -922,55 +939,64 @@ private fun mapTickerToIndustry(symbol: String): String {
 
 @Composable
 fun EquityCurveWidget(snapshots: List<AccountSnapshot>, currency: String) {
-    var showDetails by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth().clickable { showDetails = true }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = DarkSurface), border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))) {
-        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.ShowChart, null, tint = AccentGreen, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(10.dp))
-                Column {
-                    Text("EQUITY CURVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                    Text("Performance analytics", color = TextMuted, fontSize = 8.sp)
-                }
-            }
-            Icon(Icons.AutoMirrored.Filled.OpenInNew, null, tint = TextMuted, modifier = Modifier.size(14.dp))
-        }
-    }
-    if (showDetails) {
-        Dialog(onDismissRequest = { showDetails = false }) {
-            Card(modifier = Modifier.fillMaxWidth().padding(16.dp), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated), border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("PERFORMANCE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { showDetails = false }, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, null, tint = TextMuted) }
+    var isExpanded by remember { mutableStateOf(false) }
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { isExpanded = !isExpanded },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.ShowChart, null, tint = AccentGreen, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text("EQUITY CURVE", color = TextPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("Performance analytics", color = TextMuted, fontSize = 8.sp)
                     }
+                }
+                Icon(if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = TextMuted, modifier = Modifier.size(14.dp))
+            }
+
+            androidx.compose.animation.AnimatedVisibility(visible = isExpanded) {
+                Column {
                     Spacer(modifier = Modifier.height(20.dp))
                     if (snapshots.size < 2) {
-                        Column(modifier = Modifier.fillMaxWidth().height(160.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.DataUsage, null, tint = TextMuted, modifier = Modifier.size(48.dp))
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text("NOT ENOUGH DATA", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text("Typical history required: 30 days.", color = TextSubtle, fontSize = 11.sp, textAlign = TextAlign.Center)
+                        Column(
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(Icons.Default.DataUsage, null, tint = TextMuted, modifier = Modifier.size(32.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("NOT ENOUGH DATA", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("Typical history required: 30 days.", color = TextSubtle, fontSize = 9.sp, textAlign = TextAlign.Center)
                         }
                     } else {
                         val pricesString = snapshots.joinToString(",") { it.totalValue.toString() }
                         val isPositive = snapshots.last().totalValue >= snapshots.first().totalValue
-                        Box(modifier = Modifier.fillMaxWidth().height(180.dp)) { StockLineChart(pricesString = pricesString, isPositive = isPositive, showIndicators = false, modifier = Modifier.fillMaxSize()) }
+                        Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
+                            StockLineChart(pricesString = pricesString, isPositive = isPositive, showIndicators = false, modifier = Modifier.fillMaxSize())
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         val gain = snapshots.last().totalValue - snapshots.first().totalValue
                         val gainPct = if (snapshots.first().totalValue > 0) (gain / snapshots.first().totalValue) * 100.0 else 0.0
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Column {
                                 Text("NET GROWTH", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                Text(text = formatCurrency(gain, currency), color = if (gain >= 0) AccentGreen else AccentRose, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text(text = formatCurrency(gain, currency), color = if (gain >= 0) AccentGreen else AccentRose, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("TOTAL RETURN", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "${if (gainPct >= 0) "+" else ""}${String.format(Locale.US, "%.2f", gainPct)}%", color = if (gainPct >= 0) AccentGreen else AccentRose, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "${if (gainPct >= 0) "+" else ""}${String.format(Locale.US, "%.2f", gainPct)}%", color = if (gainPct >= 0) AccentGreen else AccentRose, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp)); Button(onClick = { showDetails = false }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = BrandViolet), shape = RoundedCornerShape(12.dp)) { Text("Close View", color = Color.White, fontWeight = FontWeight.Bold) }
                 }
             }
         }

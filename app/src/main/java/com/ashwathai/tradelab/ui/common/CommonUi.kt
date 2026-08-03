@@ -28,6 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.composed
+import android.os.Build
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
@@ -68,6 +72,17 @@ import com.ashwathai.tradelab.ui.derivatives.*
 import com.ashwathai.tradelab.ui.commodities.*
 import com.ashwathai.tradelab.ui.profile.*
 
+fun Modifier.stealthBlur(enabled: Boolean = true): Modifier = composed {
+    if (!enabled || !LocalStealthMode.current) return@composed this
+    
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        this.blur(16.dp)
+    } else {
+        // Fallback for API < 31: Semi-transparent frosted overlay
+        this.alpha(0.3f)
+    }
+}
+
 @Composable
 fun DataModeToggle(
     isSimulatedMode: Boolean,
@@ -76,8 +91,8 @@ fun DataModeToggle(
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF1E1E1E))
-            .border(1.dp, Color(0xFF333333), RoundedCornerShape(20.dp))
+            .background(DarkSurfaceElevated)
+            .border(1.dp, DarkBorder, RoundedCornerShape(20.dp))
             .padding(2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -102,14 +117,14 @@ fun DataModeToggle(
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(18.dp))
-                .background(if (isSimulatedMode) BrandViolet.copy(alpha = 0.2f) else Color.Transparent)
+                .background(if (isSimulatedMode) DynamicPrimary.copy(alpha = 0.2f) else Color.Transparent)
                 .clickable { onToggle(true) }
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "SIM",
-                color = if (isSimulatedMode) BrandViolet else TextMuted,
+                color = if (isSimulatedMode) DynamicPrimary else TextMuted,
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -128,9 +143,9 @@ fun HeaderBar(
 ) {
     val avatarGradient = remember(riskLevel) {
         when (riskLevel) {
-            "Aggressive" -> Brush.linearGradient(listOf(Color(0xFFFB7185), Color(0xFFE11D48)))
-            "Conservative" -> Brush.linearGradient(listOf(Color(0xFF60A5FA), Color(0xFF2563EB)))
-            else -> Brush.linearGradient(listOf(Color(0xFFC084FC), Color(0xFF9333EA)))
+            "Aggressive" -> Brush.linearGradient(listOf(AccentRose, VibrantMagenta))
+            "Conservative" -> Brush.linearGradient(listOf(Color(0xFF60A5FA), VibrantCyan))
+            else -> Brush.linearGradient(listOf(BrandVioletMedium, BrandIndigo))
         }
     }
 
@@ -149,7 +164,7 @@ fun HeaderBar(
             ) {
                 Text(
                     text = title,
-                    color = Color.White,
+                    color = TextPrimary,
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.5).sp,
@@ -217,7 +232,7 @@ fun HeaderBar(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .border(1.dp, Color(0xFF222222), CircleShape),
+                    .border(1.dp, DarkBorder, CircleShape),
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
             )
         }
@@ -239,9 +254,10 @@ val MainTabs = listOf(
 
 @Composable
 fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
+    val highlightColor = DynamicPrimary
     Surface(
         color = DarkBg,
-        border = BorderStroke(1.dp, Color(0xFF1F1F1F)),
+        border = BorderStroke(1.dp, DarkBorder),
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
@@ -255,7 +271,7 @@ fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
         ) {
             MainTabs.forEach { tab ->
                 val isSelected = currentTab == tab.name
-                val tintColor = if (isSelected) BrandViolet else Color.White.copy(alpha = 0.4f)
+                val tintColor = if (isSelected) highlightColor else TextPrimary.copy(alpha = 0.4f)
 
                 Column(
                     modifier = Modifier
@@ -271,10 +287,10 @@ fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSelected) Color(0xFF1A1A1A) else Color.Transparent)
+                            .background(if (isSelected) highlightColor.copy(alpha = 0.12f) else Color.Transparent)
                             .border(
                                 1.dp,
-                                if (isSelected) BrandViolet.copy(alpha = 0.3f) else Color.Transparent,
+                                if (isSelected) highlightColor.copy(alpha = 0.3f) else Color.Transparent,
                                 RoundedCornerShape(12.dp)
                             )
                             .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -311,12 +327,12 @@ fun ConfettiOverlay(trigger: Long) {
                 vx = ((-150..150).random().toFloat() / 1000f) * 0.05f,
                 vy = (120..350).random().toFloat() / 1000f * 0.12f,
                 color = listOf(
-                    Color(0xFFFBBF24), // Gold / Glitter
-                    Color(0xFF8B5CF6), // Purple
-                    Color(0xFFEC4899), // Pink
-                    Color(0xFF10B981), // Emerald
-                    Color(0xFF06B6D4), // Cyan
-                    Color(0xFFFF3B30), // Red
+                    AccentYellow, // Gold / Glitter
+                    VibrantPurple, // Purple
+                    VibrantMagenta, // Pink
+                    AccentGreen, // Emerald
+                    VibrantCyan, // Cyan
+                    AccentRose, // Red
                     Color(0xFFFFD700)  // Brilliant Gold
                 ).random(),
                 size = (10..24).random().toFloat(),

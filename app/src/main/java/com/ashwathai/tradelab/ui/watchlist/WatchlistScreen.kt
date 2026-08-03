@@ -46,6 +46,7 @@ fun WatchlistScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
     latestNews: List<MarketNews>,
+    nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null,
     onTickerClick: (String, Boolean, Boolean) -> Unit
 ) {
     val watchlistItems by viewModel.selectedWatchlistItems.collectAsStateWithLifecycle()
@@ -82,9 +83,12 @@ fun WatchlistScreen(
             .padding(horizontal = 20.dp)
     ) {
         // 0. Breaking News
-        BreakingNewsTicker(latestNews = latestNews)
-        
-        Spacer(modifier = Modifier.height(8.dp))
+        if (!LocalZenMode.current) {
+            BreakingNewsTicker(latestNews = latestNews)
+            Spacer(modifier = Modifier.height(8.dp))
+        } else {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         // 1. Multi-Watchlist Tabs
         Row(
@@ -101,15 +105,15 @@ fun WatchlistScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) BrandViolet.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.03f))
-                            .border(1.dp, if (isSelected) BrandViolet else Color.White.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+                            .background(if (isSelected) DynamicPrimary.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.03f))
+                            .border(1.dp, if (isSelected) DynamicPrimary else Color.White.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
                             .clickable { viewModel.selectWatchlist(wl.id) }
                             .padding(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = wl.name,
-                                color = if (isSelected) BrandViolet else Color.White.copy(alpha = 0.6f),
+                                color = if (isSelected) DynamicPrimary else TextPrimary.copy(alpha = 0.6f),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -172,10 +176,10 @@ fun WatchlistScreen(
                     },
                     modifier = Modifier
                         .size(30.dp)
-                        .background(BrandViolet.copy(alpha = 0.1f), CircleShape)
-                        .border(1.dp, BrandViolet.copy(alpha = 0.3f), CircleShape)
+                        .background(DynamicPrimary.copy(alpha = 0.1f), CircleShape)
+                        .border(1.dp, DynamicPrimary.copy(alpha = 0.3f), CircleShape)
                 ) {
-                    Icon(Icons.Default.Add, "Add Watchlist", tint = BrandViolet, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Add, "Add Watchlist", tint = DynamicPrimary, modifier = Modifier.size(16.dp))
                 }
             }
         }
@@ -205,10 +209,10 @@ fun WatchlistScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = DarkSurface,
                         unfocusedContainerColor = DarkSurface,
-                        focusedBorderColor = BrandViolet,
+                        focusedBorderColor = DynamicPrimary,
                         unfocusedBorderColor = DarkBorder,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary
                     ),
                     singleLine = true
                 )
@@ -236,7 +240,7 @@ fun WatchlistScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column {
-                                        Text(stock.symbol, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Text(stock.symbol, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                         Text(stock.companyName, color = TextMuted, fontSize = 10.sp)
                                     }
                                     Icon(if (isAdded) Icons.Default.Check else Icons.Default.Add, null, tint = if (isAdded) BrandViolet else AccentYellow, modifier = Modifier.size(16.dp))
@@ -255,7 +259,7 @@ fun WatchlistScreen(
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Column {
-                                            Text(result.symbol, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                            Text(result.symbol, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                             Text("${result.name} • ${result.exchange}", color = TextMuted, fontSize = 10.sp)
                                         }
                                         Icon(if (isAdded) Icons.Default.Check else Icons.Default.Add, null, tint = if (isAdded) BrandViolet else AccentYellow, modifier = Modifier.size(16.dp))
@@ -295,7 +299,7 @@ fun WatchlistScreen(
                     ) {
                         Text(
                             text = "+ $symbol",
-                            color = if (isPresent) BrandViolet else Color.White,
+                            color = if (isPresent) DynamicPrimary else TextPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -331,7 +335,7 @@ fun WatchlistScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.FormatListBulleted, null, tint = TextSubtle, modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Watchlist is empty", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("Watchlist is empty", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
             }
         } else {
@@ -339,7 +343,7 @@ fun WatchlistScreen(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(if (isCompactMode) 4.dp else 8.dp)
             ) {
-                items(watchlistItems) { item ->
+                items(watchlistItems.take(5)) { item ->
                     val stock = stockPrices.find { it.symbol == item.symbol }
                     stock?.let { s ->
                         WatchlistStockRow(
@@ -353,6 +357,34 @@ fun WatchlistScreen(
                         )
                     }
                 }
+
+                if (watchlistItems.size >= 5 && nativeAd != null && !stats.isPremium) {
+                    item {
+                        NativeAdRow(nativeAd = nativeAd)
+                        Spacer(modifier = Modifier.height(if (isCompactMode) 4.dp else 8.dp))
+                    }
+                }
+
+                items(watchlistItems.drop(5)) { item ->
+                    val stock = stockPrices.find { it.symbol == item.symbol }
+                    stock?.let { s ->
+                        WatchlistStockRow(
+                            stock = s,
+                            currency = stats.currency,
+                            isCompact = isCompactMode,
+                            onRemoveClick = { viewModel.toggleWatchlistV2(s.symbol) },
+                            onAction = { isBuy -> onTickerClick(s.symbol, isBuy, false) },
+                            onClick = { onTickerClick(s.symbol, true, true) },
+                            onChartClick = { viewModel.navigateToChart(s.symbol) }
+                        )
+                    }
+                }
+                
+                if (watchlistItems.size < 5 && nativeAd != null && !stats.isPremium) {
+                    item {
+                        NativeAdRow(nativeAd = nativeAd)
+                    }
+                }
             }
         }
 
@@ -363,8 +395,8 @@ fun WatchlistScreen(
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = BrandViolet.copy(alpha = 0.05f)),
-                border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.2f))
+                colors = CardDefaults.cardColors(containerColor = DynamicPrimary.copy(alpha = 0.05f)),
+                border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.2f))
             ) {
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
                     Icon(Icons.Default.School, null, tint = BrandViolet, modifier = Modifier.size(16.dp))
@@ -388,7 +420,7 @@ fun WatchlistScreen(
                 OutlinedTextField(value = renameInput, onValueChange = { renameInput = it }, singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = BrandViolet, unfocusedBorderColor = DarkBorder))
             },
-            confirmButton = { TextButton(onClick = { viewModel.renameWatchlist(watchlistToRename!!, renameInput); showRenameDialog = false }) { Text("SAVE", color = BrandViolet) } },
+            confirmButton = { TextButton(onClick = { viewModel.renameWatchlist(watchlistToRename!!, renameInput); showRenameDialog = false }) { Text("SAVE", color = DynamicPrimary) } },
             dismissButton = { TextButton(onClick = { showRenameDialog = false }) { Text("CANCEL", color = TextMuted) } },
             containerColor = DarkSurfaceElevated
         )
@@ -402,7 +434,7 @@ fun WatchlistScreen(
                 OutlinedTextField(value = createInput, onValueChange = { createInput = it }, placeholder = { Text("Sheet name...") }, singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = BrandViolet, unfocusedBorderColor = DarkBorder))
             },
-            confirmButton = { TextButton(onClick = { if (createInput.isNotBlank()) viewModel.addNewWatchlist(createInput); showCreateDialog = false }) { Text("CREATE", color = BrandViolet) } },
+            confirmButton = { TextButton(onClick = { if (createInput.isNotBlank()) viewModel.addNewWatchlist(createInput); showCreateDialog = false }) { Text("CREATE", color = DynamicPrimary) } },
             dismissButton = { TextButton(onClick = { showCreateDialog = false }) { Text("CANCEL", color = TextMuted) } },
             containerColor = DarkSurfaceElevated
         )
@@ -622,12 +654,12 @@ fun WatchlistStockRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1.5f)) {
-                Box(modifier = Modifier.size(if (isCompact) 28.dp else 34.dp).clip(RoundedCornerShape(6.dp)).background(Color.White.copy(alpha = 0.05f)), contentAlignment = Alignment.Center) {
-                    Text(text = stock.symbol.take(4), color = Color.White, fontSize = if (isCompact) 8.sp else 10.sp, fontWeight = FontWeight.Bold)
+                Box(modifier = Modifier.size(if (isCompact) 28.dp else 34.dp).clip(RoundedCornerShape(6.dp)).background(TextPrimary.copy(alpha = 0.05f)), contentAlignment = Alignment.Center) {
+                    Text(text = stock.symbol.take(4), color = TextPrimary, fontSize = if (isCompact) 8.sp else 10.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
-                    Text(text = stock.symbol, color = Color.White, fontSize = if (isCompact) 12.sp else 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(text = stock.symbol, color = TextPrimary, fontSize = if (isCompact) 12.sp else 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (!isCompact) {
                         Text(text = stock.companyName, color = TextMuted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
@@ -642,7 +674,7 @@ fun WatchlistStockRow(
             }
 
             Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
-                Text(text = formatCurrency(stock.currentPrice, currency), color = Color.White, fontSize = if (isCompact) 12.sp else 14.sp, fontWeight = FontWeight.Bold)
+                Text(text = formatCurrency(stock.currentPrice, currency), color = TextPrimary, fontSize = if (isCompact) 12.sp else 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.stealthBlur())
                 Text(text = "${if (isPositive) "+" else ""}${String.format(Locale.US, "%.2f", stock.dailyChangePct)}%", color = trendColor, fontSize = if (isCompact) 9.sp else 11.sp, fontWeight = FontWeight.Bold)
             }
             if (onRemoveClick != null) {
@@ -705,7 +737,7 @@ fun BuySellBottomSheet(
             .animateContentSize()
             .testTag("buy_sell_bottom_sheet"),
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        colors = CardDefaults.cardColors(containerColor = if (isBuy) Color(0xFF0A1F16) else Color(0xFF220A10)),
+        colors = CardDefaults.cardColors(containerColor = if (isBuy) DeepProfit else DeepLoss),
         border = BorderStroke(1.dp, (if (isBuy) AccentGreen else AccentRose).copy(alpha = 0.4f))
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp).fillMaxSize()) {
@@ -730,7 +762,7 @@ fun BuySellBottomSheet(
                 }
                 
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(text = formatCurrency(stock.currentPrice, stats.currency), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(text = formatCurrency(stock.currentPrice, stats.currency), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.stealthBlur())
                     val isPositive = stock.dailyChangePct >= 0
                     Text(text = "${if (isPositive) "+" else ""}${String.format(Locale.US, "%.2f", stock.dailyChangePct)}%", color = if (isPositive) AccentGreen else AccentRose, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
@@ -773,16 +805,16 @@ fun BuySellBottomSheet(
                     
                     Row(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Prev Close" to formatCurrency(stock.previousClose, stats.currency), "High" to formatCurrency(stock.highPrice, stats.currency), "Low" to formatCurrency(stock.lowPrice, stats.currency)).forEach { (l, v) ->
-                            Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.03f)).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(TextPrimary.copy(alpha = 0.03f)).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(l, color = TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                Text(v, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(v, color = TextPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
 
                 // 1. DENSE CONTROL GRID
-                Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.03f)).border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp)).padding(12.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(TextPrimary.copy(alpha = 0.03f)).border(1.dp, TextPrimary.copy(alpha = 0.05f), RoundedCornerShape(16.dp)).padding(12.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         // Quantity Input (Standard Text Box as requested)
                         Column(modifier = Modifier.weight(1f)) {
@@ -792,7 +824,7 @@ fun BuySellBottomSheet(
                                 value = sharesInput,
                                 onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) sharesInput = it },
                                 modifier = Modifier.fillMaxWidth().height(44.dp).testTag("trade_quantity_input"),
-                                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = BrandViolet, unfocusedBorderColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = DynamicPrimary, unfocusedBorderColor = Color.Transparent, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary),
                                 textStyle = LocalTextStyle.current.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -859,7 +891,7 @@ fun BuySellBottomSheet(
                                 value = customPriceInput,
                                 onValueChange = { customPriceInput = it },
                                 modifier = Modifier.fillMaxWidth().height(44.dp),
-                                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = BrandViolet, unfocusedBorderColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
+                                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = DynamicPrimary, unfocusedBorderColor = Color.Transparent, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary),
                                 textStyle = LocalTextStyle.current.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -891,16 +923,16 @@ fun BuySellBottomSheet(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column {
                                 Text(if (isLevActive) "MARGIN REQUIRED (5x)" else "ORDER VALUE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                Text(formatCurrency(effectiveOrderValue, stats.currency), color = if (isLevActive) AccentGreen else Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                Text(formatCurrency(effectiveOrderValue, stats.currency), color = if (isLevActive) AccentGreen else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.stealthBlur())
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("CASH IN HAND", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                Text(formatCurrency(stats.cash, stats.currency), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                                Text(formatCurrency(stats.cash, stats.currency), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, modifier = Modifier.stealthBlur())
                             }
                         }
                         
                         Spacer(modifier = Modifier.height(10.dp))
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                        HorizontalDivider(color = TextPrimary.copy(alpha = 0.05f))
                         Spacer(modifier = Modifier.height(10.dp))
                         
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -926,14 +958,14 @@ fun BuySellBottomSheet(
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("25%", "50%", "100%").forEach { pct ->
                         val ratio = if (pct == "25%") 0.25 else if (pct == "50%") 0.5 else 1.0
-                        Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.05f)).clickable {
+                        Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(TextPrimary.copy(alpha = 0.05f)).clickable {
                             val curPrice = if (orderType != "Market") customPriceInput.toDoubleOrNull() ?: stock.currentPrice else stock.currentPrice
                             if (isBuy) {
                                 val allocated = stats.cash * (if (pct == "100%") 0.95 else ratio)
                                 sharesInput = if (curPrice > 0) (allocated / curPrice).toInt().toString() else ""
                             } else sharesInput = (ownedShares * ratio).toInt().toString()
                         }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                            Text(pct, color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(pct, color = TextPrimary.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -943,8 +975,8 @@ fun BuySellBottomSheet(
                     
                     // BRACKET / INSTITUTIONAL SECTION
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("BRACKET ORDER (PRO)", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        Switch(checked = isBracketOrder, onCheckedChange = { if (stats.isPremium) { isBracketOrder = it; if (it && orderType == "Market") orderType = "Limit" } else viewModel.triggerPaywall() }, colors = SwitchDefaults.colors(checkedThumbColor = BrandViolet, checkedTrackColor = BrandViolet.copy(alpha = 0.3f)))
+                        Text("BRACKET ORDER (PRO)", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Switch(checked = isBracketOrder, onCheckedChange = { if (stats.isPremium) { isBracketOrder = it; if (it && orderType == "Market") orderType = "Limit" } else viewModel.triggerPaywall() }, colors = SwitchDefaults.colors(checkedThumbColor = DynamicPrimary, checkedTrackColor = DynamicPrimary.copy(alpha = 0.3f)))
                     }
                     
                     if (isBracketOrder) {
@@ -952,7 +984,7 @@ fun BuySellBottomSheet(
                             listOf("TARGET" to targetPriceInput, "STOP LOSS" to stopLossPriceInput).forEach { (l, v) ->
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(l, color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                    OutlinedTextField(value = v, onValueChange = { if (l == "TARGET") targetPriceInput = it else stopLossPriceInput = it }, modifier = Modifier.fillMaxWidth().height(44.dp), colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = if (l == "TARGET") AccentGreen else AccentRose, unfocusedBorderColor = DarkBorder, focusedTextColor = Color.White, unfocusedTextColor = Color.White), shape = RoundedCornerShape(10.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                                    OutlinedTextField(value = v, onValueChange = { if (l == "TARGET") targetPriceInput = it else stopLossPriceInput = it }, modifier = Modifier.fillMaxWidth().height(44.dp), colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = DarkBg, unfocusedContainerColor = DarkBg, focusedBorderColor = if (l == "TARGET") AccentGreen else AccentRose, unfocusedBorderColor = DarkBorder, focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary), shape = RoundedCornerShape(10.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
                                 }
                             }
                         }
@@ -962,8 +994,8 @@ fun BuySellBottomSheet(
                         Spacer(modifier = Modifier.height(20.dp))
                         Text("INSIGHTS", color = BrandViolet, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                         tickerNews.take(2).forEach { news ->
-                            Column(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.02f)).border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp)).padding(10.dp)) {
-                                Text(news.title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Column(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(TextPrimary.copy(alpha = 0.02f)).border(1.dp, TextPrimary.copy(alpha = 0.05f), RoundedCornerShape(12.dp)).padding(10.dp)) {
+                                Text(news.title, color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 Text(news.summary, color = TextSubtle, fontSize = 10.sp, lineHeight = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             }
                         }

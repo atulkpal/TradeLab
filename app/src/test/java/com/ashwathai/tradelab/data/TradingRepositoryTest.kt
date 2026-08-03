@@ -139,6 +139,32 @@ class TradingRepositoryTest {
     }
 
     @Test
+    fun `selling non leveraged MIS returns full blocked margin`() = runTest {
+        repository.isSimulatedMode = true
+        val profile = UserProfile(id = 1, cash = 0.0, startingCash = 1000.0, currency = "USD")
+        val stock = StockPrice("AAPL", "Apple", 100.0, 0.0, 100.0, 100.0, 100.0, "100.0")
+        val holding = Holding("AAPL", shares = 10.0, averagePrice = 100.0, isDelivery = false)
+
+        coEvery { userProfileDao.getUserProfile() } returns profile
+        coEvery { stockPriceDao.getStockPrice("AAPL") } returns stock
+        coEvery { holdingDao.getHolding("AAPL", false) } returns holding
+        coEvery { holdingDao.getAllHoldings() } returns emptyList()
+        coEvery { transactionDao.insertTransaction(any()) } returns 1L
+        every { disciplineCalculator.calculateNewScore(any(), any(), any(), any()) } returns 75
+        every { disciplineCalculator.evaluateBadges(any(), any()) } returns emptyList()
+
+        val capturedProfile = slot<UserProfile>()
+        coEvery { userProfileDao.insertProfile(capture(capturedProfile)) } returns Unit
+
+        val result = repository.sellStock("AAPL", shares = 10.0, isDelivery = false)
+
+        assertTrue(result.isSuccess)
+        // Full notional is refunded for non-leveraged MIS, minus STT/misc charges.
+        // Brokerage is waived because the default profile has brokerage credits.
+        assertEquals(999.65, capturedProfile.captured.cash, 0.0001)
+    }
+
+    @Test
     fun `claimMissionReward grants cash and marks mission claimed`() = runTest {
         val profile = UserProfile(id = 1, cash = 25000.0, startingCash = 25000.0)
         coEvery { userProfileDao.getUserProfile() } returns profile

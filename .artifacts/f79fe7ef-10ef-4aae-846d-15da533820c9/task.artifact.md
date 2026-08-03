@@ -1,18 +1,17 @@
-# Tasks - Precision Ledger & Tradebook
+# Task: Institutional Power Release (v1.7.0)
 
-- [x] **Data Layer**
-    - [x] Add `LedgerEntry` entity to `Entities.kt`
-    - [x] Add `LedgerDao` to `Daos.kt`
-    - [x] Update `AppDatabase.kt` (Version 21)
-    - [x] Update `DatabaseModule.kt`
-- [x] **Business Logic**
-    - [x] Implement `recordLedgerEntry` in `TradingRepository`
-    - [x] Integrate ledger logging in `buyStock`, `sellStock`, `earnEmergencyCash`, etc.
-- [x] **UI/UX Implementation**
-    - [x] Add `formatLedgerAmount` to `CommonHelpers.kt`
-    - [x] Update `TradingViewModel.kt` to expose ledger state
-    - [x] Create `LedgerScreen.kt`
-    - [x] Add "View Ledger" trigger to `PortfolioScreen.kt`
-- [x] **Verification**
-    - [x] Manual check of ledger entries after a trade
-    - [x] Verify balance consistency
+- [x] Update documentation and metadata
+    - [x] Update `AGENTS.md` with release policy and v1.7.0 status
+    - [x] Update `CHANGELOG.md` with v1.7.0 changes
+    - [x] Update `RELEASES.md` with v1.7.0 ledger entry
+    - [x] Update `app/build.gradle.kts` (versionName = "1.7.0")
+- [x] Implement technical fixes and UI polish
+    - [x] Fix Firebase initialization in `TradeLabApplication.kt`
+    - [x] Promote Equity Curve in `PortfolioScreen.kt`
+- [x] Execute build and archiving process
+    - [x] Archive existing v1.6.0 artifacts (renaming/moving)
+    - [x] Generate v1.7.0 artifacts (`:app:assembleDebug`, `:app:assembleRelease`, `:app:bundleRelease`)
+- [x] Verification
+    - [x] Run unit tests (`:app:testDebugUnitTest`)
+    - [x] Verify build artifacts presence and naming
+    - [x] Manual verification of UI changes

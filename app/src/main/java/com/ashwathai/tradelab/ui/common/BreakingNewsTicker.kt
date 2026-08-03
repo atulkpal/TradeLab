@@ -42,15 +42,15 @@ fun BreakingNewsTicker(
     }
 
     val barColor = when (currentNews.sentiment) {
-        "BULLISH" -> Color(0xFF062319) // Deep Green
-        "BEARISH" -> Color(0xFF280C11) // Deep Red
-        else -> Color(0xFF0F0F1A) // Dark Navy
+        "BULLISH" -> DeepProfit
+        "BEARISH" -> DeepLoss
+        else -> DarkSurfaceElevated
     }
 
     val accentColor = when (currentNews.sentiment) {
         "BULLISH" -> AccentGreen
         "BEARISH" -> AccentRose
-        else -> BrandViolet
+        else -> DynamicPrimary
     }
 
     Row(
@@ -82,7 +82,7 @@ fun BreakingNewsTicker(
         ) {
             Text(
                 text = "BREAKING",
-                color = if (currentNews.sentiment == "BEARISH" || currentNews.sentiment == "BULLISH") Color.White else Color.Black,
+                color = if (currentNews.sentiment == "BEARISH" || currentNews.sentiment == "BULLISH") TextOnAccent else Color.Black,
                 fontSize = 8.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.5.sp
@@ -94,7 +94,7 @@ fun BreakingNewsTicker(
         // CHANNEL BADGE
         Text(
             text = currentNews.source.uppercase(),
-            color = if (currentNews.source.contains("CNBC")) Color(0xFFFFD700) else BrandViolet,
+            color = if (currentNews.source.contains("CNBC")) AccentYellow else DynamicPrimary,
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.widthIn(max = 100.dp)
@@ -113,7 +113,7 @@ fun BreakingNewsTicker(
         ) { news ->
             Text(
                 text = news.title,
-                color = Color.White,
+                color = TextPrimary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,

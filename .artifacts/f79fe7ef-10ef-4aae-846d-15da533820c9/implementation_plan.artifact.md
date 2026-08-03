@@ -1,68 +1,75 @@
-# Implementation Plan - Precision Ledger & Tradebook
+# Implementation Plan: Institutional Power Release (v1.7.0)
 
-This plan introduces a high-precision **Ledger** (Account Statement) system to track every virtual penny, ensuring total transparency in where capital goes (Trades, Taxes, Charges, and Rewards).
+This plan outlines the final steps to ship **Trade Lab v1.7.0**. This release formally launches the "Institutional Power" features and establishes a new build archiving policy for all primary artifacts.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> - We will add a new `LedgerEntry` entity to track running cash balances.
-> - We will introduce a new "Ledger" view accessible from the Portfolio tab to show detailed cash flow with 4-decimal precision.
+> **Version Configuration:**
+> - `versionName` → `1.7.0`
+> - `versionCode` → `6` (No increment per instruction).
+
+> [!IMPORTANT]
+> **Build Archiving Policy:**
+> Before generating new artifacts, ALL existing artifacts in the output folders must be archived.
+> - **Debug APK:** `debug-<version>-<versionCode>.apk`
+> - **Release APK:** `release-apk-<version>-<versionCode>.apk`
+> - **Release AAB:** `release-aab-<version>-<versionCode>.aab`
 
 ## Proposed Changes
 
-### 1. Data Layer Enhancements
+### 1. Policies & Documentation
 
-#### [NEW] [Entities.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/data/Entities.kt)
-- Create `LedgerEntry` entity:
-    - `id: Int` (Primary Key)
-    - `timestamp: Long`
-    - `description: String`
-    - `type: String` (e.g., "DEBIT", "CREDIT")
-    - `amount: Double`
-    - `runningBalance: Double`
-    - `refId: Int?` (Optional link to Transaction ID)
+#### [MODIFY] [AGENTS.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/AGENTS.md)
+- **Add Section 9: Build & Release Policy**:
+    - Policy: Before generating new build artifacts, existing files must be archived to prevent overwriting.
+    - Format:
+        - `debug-<version>-<versionCode>.apk`
+        - `release-apk-<version>-<versionCode>.apk`
+        - `release-aab-<version>-<versionCode>.aab`
+    - Purpose: Maintain a local history of distributable assets.
+- **Update Section 4**: Set v1.7.0 as the current production state.
 
-#### [MODIFY] [Daos.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/data/Daos.kt)
-- Add `LedgerDao` with methods to insert and query ledger entries.
+#### [MODIFY] [CHANGELOG.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/CHANGELOG.md) & [RELEASES.md](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/RELEASES.md)
+- Formalize v1.7.0 entry with Track A/B features and UI updates.
 
-#### [MODIFY] [AppDatabase.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/data/AppDatabase.kt)
-- Include `LedgerEntry` in the database and bump version to **21**.
+#### [MODIFY] [build.gradle.kts](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/build.gradle.kts)
+- Update `versionName` to `"1.7.0"`.
 
-### 2. Business Logic Integration
+---
 
-#### [MODIFY] [TradingRepository.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/data/TradingRepository.kt)
-- Update `buyStock`, `sellStock`, `earnEmergencyCash`, `completeTutorialLevel`, and `resetPortfolio` to record a `LedgerEntry` whenever cash changes.
-- Ensure all intermediate math uses `Double` precision and is logged accurately.
+### 2. Technical Stability & UI Polish
 
-### 3. UI/UX Implementation
-
-#### [MODIFY] [CommonHelpers.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/ui/common/CommonHelpers.kt)
-- Add `formatLedgerAmount(Double)` to show up to 4 decimal places for the Ledger view.
-
-#### [MODIFY] [TradingViewModel.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/ui/TradingViewModel.kt)
-- Expose `ledgerEntries: StateFlow<List<LedgerEntry>>`.
-
-#### [NEW] [LedgerScreen.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/ui/portfolio/LedgerScreen.kt)
-- A detailed list view showing:
-    - Date/Time
-    - Activity Description
-    - Amount (Red for Debit, Green for Credit)
-    - Running Balance (High precision)
+#### [MODIFY] [TradeLabApplication.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/TradeLabApplication.kt)
+- Add null-safety/initialization checks for Firebase to fix Robolectric test crashes.
 
 #### [MODIFY] [PortfolioScreen.kt](file:///C:/Users/Atul/AndroidStudioProjects/TradeLab/app/src/main/java/com/ashwathai/tradelab/ui/portfolio/PortfolioScreen.kt)
-- Add a "View Ledger / Tradebook" button in the Account Card or Lifetime Metrics section.
+- Promote **Equity Curve** to a primary, collapsible element on the Home screen.
+
+---
+
+### 3. Build & Archiving (v1.7.0 Execution)
+
+#### [ARCHIVE] Existing Artifacts
+- Rename `app/build/outputs/apk/debug/app-debug.apk` → `debug-1.6.0-6.apk`.
+- Rename `app/build/outputs/apk/release/app-release.apk` → `release-apk-1.6.0-6.apk`.
+- Rename `app/build/outputs/bundle/release/app-release.aab` → `release-aab-1.6.0-6.aab`.
+
+#### [BUILD] New Artifacts
+- Run Gradle tasks to generate all three v1.7.0 assets:
+    - `:app:assembleDebug` (Debug APK)
+    - `:app:assembleRelease` (Release APK)
+    - `:app:bundleRelease` (Release AAB)
 
 ## Verification Plan
 
 ### Automated Tests
-- `LedgerLogicTest`: Verify that buying 10 shares at a specific price results in correct debits for:
-    1. Stock Cost
-    2. STT (Tax)
-    3. Transaction Charges
-    4. Correct final running balance.
+- Run `:app:testDebugUnitTest`. Expected: 73 passed, 0 failed.
 
 ### Manual Verification
-1. Execute a trade and open the Ledger.
-2. Verify 3 separate entries appear for a single BUY: the principal, the tax, and the charges.
-3. Verify ad rewards (Emergency Cash) appear as a single CREDIT entry.
-4. Verify the "Total Portfolio Value" on the home screen matches the final running balance in the Ledger (plus current holding values).
+- **Build Output:** Confirm the presence of `app-debug.apk`, `app-release.apk`, and `app-release.aab`.
+- **Archiving:** Confirm the renamed v1.6.0 files exist in their respective directories.
+- **App Behavior:**
+    - Verify Candlesticks and indicators on charts.
+    - Verify Bracket Order entry in the order ticket.
+    - Verify Equity Curve on the Portfolio Dashboard.

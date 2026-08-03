@@ -4,10 +4,50 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [1.7.0] - Institutional Power Release
+**Release Date:** August 4, 2026  
+**Version Code:** `6`  
+**Status:** 🟢 STABLE
+
+### Summary of Changes
+A major milestone formally launching professional-grade technical analysis and risk management tools.
+
+### Core Features
+- **Technical Analysis Suite:** Native candlestick rendering, indicators (MACD, Bollinger), and volume histograms.
+- **Advanced Order Desk:** 5x intraday leverage, Bracket Orders, and Trailing Stop-Loss.
+- **Home Dashboard Evolution:** Integrated live Equity Curve for immediate feedback on portfolio performance.
+
+### Build Artifacts
+- **Debug APK:** `debug-1.7.0-6.apk`
+- **Release APK:** `release-apk-1.7.0-6.apk`
+- **Release AAB:** `release-aab-1.7.0-6.aab`
+
+---
+
+## [1.6.0] - Varsity Academy & Multi-Format Monetization
+**Release Date:** August 4, 2026  
+**Version Code:** `6`  
+**Status:** 🟢 STABLE
+
+### Summary of Changes
+A major release expanding the educational foundation to 68 chapters and diversifying monetization with non-intrusive App Open and Native Ad formats.
+
+### Core Features
+- **Varsity Academy:** 6-Course, 68-Chapter curriculum with multi-question knowledge checks and mission rewards.
+- **Diversified Monetization:** App Open Ads on resume and Native Advanced Ads blended into Dashboard/Watchlist.
+- **Institutional Polish:** Full GTT persistence, high-precision ledger redesign, and one-tap Square Off.
+- **Vector Migration:** 100% vector-based iconography (no more decorative emoji).
+
+### Build Artifacts
+- **Debug APK:** `app-debug.apk`
+- **Release AAB:** `app-release.aab` (v1.6.0 Build 6)
+
+---
+
 ## [1.5.0] - Launch Pricing & Store-Listing Compliance
 **Release Date:** July 31, 2026  
 **Version Code:** `5`  
-**Status:** 🟡 RELEASE CANDIDATE
+**Status:** 🟢 STABLE
 
 ### Summary of Changes
 Ship the real Google Play subscription products with a time-boxed ₹49 Early-Bird promo and resolve Play Store listing compliance gaps.

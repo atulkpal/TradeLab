@@ -138,9 +138,9 @@ fun CommoditiesScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(240.dp)
-                        .border(BorderStroke(1.dp, BrandViolet.copy(alpha = 0.4f)), RoundedCornerShape(16.dp)),
+                        .border(BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.4f)), RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0F0F0F))
+                    colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated)
                 ) {
                     Column(
                         modifier = Modifier
@@ -153,14 +153,14 @@ fun CommoditiesScreen(
                             modifier = Modifier
                                 .size(64.dp)
                                 .clip(androidx.compose.foundation.shape.CircleShape)
-                                .background(BrandViolet.copy(alpha = 0.2f))
-                                .border(BorderStroke(1.dp, BrandViolet), androidx.compose.foundation.shape.CircleShape),
+                                .background(DynamicPrimary.copy(alpha = 0.2f))
+                                .border(BorderStroke(1.dp, DynamicPrimary), androidx.compose.foundation.shape.CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.School,
                                 contentDescription = "Academy",
-                                tint = BrandViolet,
+                                tint = DynamicPrimary,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
@@ -169,7 +169,7 @@ fun CommoditiesScreen(
 
                         Text(
                             text = "Ashwath AI Investor Academy",
-                            color = Color.White,
+                            color = TextPrimary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -188,7 +188,7 @@ fun CommoditiesScreen(
 
                         Text(
                             text = "Learn more at ashwath.ai",
-                            color = BrandViolet,
+                            color = DynamicPrimary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
@@ -199,7 +199,7 @@ fun CommoditiesScreen(
                 Spacer(modifier = Modifier.height(40.dp))
 
                 CircularProgressIndicator(
-                    color = BrandViolet,
+                    color = DynamicPrimary,
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.dp
                 )
@@ -246,13 +246,13 @@ fun CommoditiesScreen(
                             modifier = Modifier
                                 .size(56.dp)
                                 .clip(androidx.compose.foundation.shape.CircleShape)
-                                .background(Color(0xFFFFB300).copy(alpha = 0.1f)),
+                                .background(AccentYellow.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Lock,
                                 contentDescription = "Locked",
-                                tint = Color(0xFFFFB300),
+                                tint = AccentYellow,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -289,7 +289,7 @@ fun CommoditiesScreen(
                                 .fillMaxWidth()
                                 .height(50.dp)
                                 .testTag("watch_ad_button"),
-                            colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                            colors = ButtonDefaults.buttonColors(containerColor = DynamicPrimary),
                             shape = RoundedCornerShape(14.dp)
                         ) {
                             Icon(
@@ -374,8 +374,8 @@ fun CommoditiesScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF0C0C0C))
-                        .border(1.dp, Color(0xFF1F1F1F), RoundedCornerShape(12.dp))
+                        .background(DarkSurfaceElevated)
+                        .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
                         .padding(4.dp)
                 ) {
                     val subTabs = listOf("MCX", "Global")
@@ -385,14 +385,14 @@ fun CommoditiesScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color(0xFF1A1A1A) else Color.Transparent)
+                                .background(if (isSelected) DarkSurface.copy(alpha = 0.5f) else Color.Transparent)
                                 .clickable { activeSubTab = tab }
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = if (tab == "MCX") "MCX (Indian Markets)" else "Global Commodities",
-                                color = if (isSelected) Color.White else Color.White.copy(alpha = 0.4f),
+                                color = if (isSelected) TextPrimary else TextMuted,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -406,8 +406,8 @@ fun CommoditiesScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0C0C0C)),
-                    border = BorderStroke(1.dp, Color(0xFF1A1A1A))
+                    colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
+                    border = BorderStroke(1.dp, DarkBorder)
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
@@ -495,7 +495,7 @@ fun CommoditiesScreen(
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
                                                 text = item.symbol.replace("GLOBAL_", "").replace("MCX_", ""),
-                                                color = Color.White,
+                                                color = TextPrimary,
                                                 fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -503,12 +503,12 @@ fun CommoditiesScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(4.dp))
-                                                    .background(if (activeSubTab == "MCX") Color(0xFF00C853).copy(alpha = 0.12f) else Color(0xFF2979FF).copy(alpha = 0.12f))
+                                                    .background(if (activeSubTab == "MCX") AccentGreen.copy(alpha = 0.12f) else DynamicSecondary.copy(alpha = 0.12f))
                                                     .padding(horizontal = 5.dp, vertical = 2.dp)
                                             ) {
                                                 Text(
                                                     text = if (activeSubTab == "MCX") "MCX" else "GLOBAL",
-                                                    color = if (activeSubTab == "MCX") Color(0xFF00C853) else Color(0xFF2979FF),
+                                                    color = if (activeSubTab == "MCX") AccentGreen else DynamicSecondary,
                                                     fontSize = 8.sp,
                                                     fontWeight = FontWeight.Bold
                                                 )
@@ -584,7 +584,7 @@ fun CommoditiesScreen(
                                 Column(horizontalAlignment = Alignment.End) {
                                     Text(
                                         text = formattedPrice,
-                                        color = Color.White,
+                                        color = TextPrimary,
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold
                                     )

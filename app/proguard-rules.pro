@@ -19,3 +19,12 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep Room and Moshi generated adapters discoverable while allowing R8 to shrink app code.
+-keep class **_Impl { *; }
+-keep class **JsonAdapter { *; }
+-keep class com.squareup.moshi.adapters.** { *; }
+-keep @com.squareup.moshi.JsonClass class * { *; }
+
+# Firebase, Hilt, and Google Play libraries ship consumer rules; keep model fields used by Firestore reflection.
+-keepclassmembers class com.ashwathai.tradelab.data.LeaderboardEntry { *; }

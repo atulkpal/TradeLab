@@ -92,6 +92,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: TradingViewModel by viewModels()
     private lateinit var billingManager: BillingManager
+    private lateinit var appOpenAdManager: AppOpenAdManager
 
     enum class AdType {
         ACADEMY_DOUBLE,
@@ -102,12 +103,18 @@ class MainActivity : ComponentActivity() {
         PROFILE_SHIELD_MAX,
         WATCHLIST_CREATE,
         PORTFOLIO_RESET,
-        PROFILE_LEVERAGE
+        PROFILE_LEVERAGE,
+        APP_OPEN,
+        NATIVE_WATCHLIST
     }
 
     fun getAdUnitId(adType: AdType): String {
         return if (BuildConfig.DEBUG) {
-            "ca-app-pub-3940256099942544/5224354917"
+            when (adType) {
+                AdType.APP_OPEN -> "ca-app-pub-3940256099942544/9257395912"
+                AdType.NATIVE_WATCHLIST -> "ca-app-pub-3940256099942544/2247696110"
+                else -> "ca-app-pub-3940256099942544/5224354917"
+            }
         } else {
             when (adType) {
                 AdType.ACADEMY_DOUBLE -> "ca-app-pub-4153575596488132/9800275450"
@@ -119,6 +126,8 @@ class MainActivity : ComponentActivity() {
                 AdType.WATCHLIST_CREATE -> "ca-app-pub-4153575596488132/5777269963"
                 AdType.PORTFOLIO_RESET -> "ca-app-pub-4153575596488132/5777269963"
                 AdType.PROFILE_LEVERAGE -> "ca-app-pub-4153575596488132/5777269963"
+                AdType.APP_OPEN -> "ca-app-pub-4153575596488132/7576025653"
+                AdType.NATIVE_WATCHLIST -> "ca-app-pub-4153575596488132/1254159884"
             }
         }
     }
@@ -186,6 +195,9 @@ class MainActivity : ComponentActivity() {
         // Initialize the Google Mobile Ads SDK
         MobileAds.initialize(this) {}
         
+        appOpenAdManager = AppOpenAdManager(application)
+        appOpenAdManager.fetchNativeAd() // Pre-load native ad for watchlist
+        
         createNotificationChannel()
 
         // Observe system notifications
@@ -200,15 +212,28 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val isStealthMode by viewModel.isStealthMode.collectAsStateWithLifecycle()
+            val isZenMode by viewModel.isZenMode.collectAsStateWithLifecycle()
             val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
             val hasDismissedAuthScreen by viewModel.hasDismissedAuthScreen.collectAsStateWithLifecycle()
+            val isInitialized by viewModel.isInitialized.collectAsStateWithLifecycle()
 
-            MyApplicationTheme(darkTheme = isDarkTheme) {
-                if (userProfile?.isLoggedIn != true && !hasDismissedAuthScreen) {
+            MyApplicationTheme(
+                themeMode = themeMode,
+                isStealthMode = isStealthMode,
+                isZenMode = isZenMode
+            ) {
+                if (!isInitialized) {
+                    TradeLabLoadingScreen()
+                } else if (userProfile?.isLoggedIn != true && !hasDismissedAuthScreen) {
                     AuthScreen(viewModel = viewModel)
                 } else {
-                    MainContent(viewModel = viewModel, billingManager = billingManager)
+                    MainContent(
+                        viewModel = viewModel, 
+                        billingManager = billingManager,
+                        appOpenAdManager = appOpenAdManager
+                    )
                 }
             }
         }
@@ -217,7 +242,55 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
+private fun TradeLabLoadingScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DarkBg)
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Trade Lab",
+                color = TextPrimary,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = "Preparing your market simulator...",
+                color = TextSecondary,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
+            )
+            ShimmerProgress(
+                progress = 0.68f,
+                color = BrandViolet,
+                modifier = Modifier
+                    .width(220.dp)
+                    .height(8.dp)
+            )
+            Text(
+                text = "Loading watchlists, ledgers, and live paper prices",
+                color = TextMuted,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+
+@Composable
+fun MainContent(
+    viewModel: TradingViewModel, 
+    billingManager: BillingManager,
+    appOpenAdManager: AppOpenAdManager
+) {
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val stats by viewModel.portfolioStats.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -343,7 +416,6 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
-                    beyondViewportPageCount = MainTabs.size,
                     userScrollEnabled = true 
                 ) { page ->
                     when (MainTabs[page].name) {
@@ -351,6 +423,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             viewModel = viewModel,
                             stats = stats,
                             latestNews = latestNews,
+                            nativeAd = appOpenAdManager.getNativeAd(),
                             onTickerClick = { symbol ->
                                 viewModel.selectStock(symbol)
                                 tradeSheetIsBuy = true
@@ -362,6 +435,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             viewModel = viewModel,
                             stats = stats,
                             latestNews = latestNews,
+                            nativeAd = appOpenAdManager.getNativeAd(),
                             onTickerClick = { symbol, isBuy, isExpanded ->
                                 viewModel.selectStock(symbol)
                                 tradeSheetIsBuy = isBuy
@@ -389,6 +463,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                         "Academy" -> AcademyScreen(
                             viewModel = viewModel,
                             stats = stats,
+                            nativeAd = appOpenAdManager.getNativeAd(),
                             onOpenQuiz = { activeQuizLevelId = it }
                         )
                         "Profile" -> ProfileScreen(
@@ -449,7 +524,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${rating.overallScore}/100",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 36.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
@@ -472,7 +547,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Position Sizing:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Position Sizing:", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text("${rating.sizeScore}/100", color = if (rating.sizeScore >= 75) AccentGreen else AccentRose, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 LinearProgressIndicator(
@@ -496,7 +571,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Order Type Selection:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Order Type Selection:", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text("${rating.typeScore}/100", color = if (rating.typeScore >= 75) AccentGreen else AccentYellow, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 LinearProgressIndicator(
@@ -516,11 +591,11 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
 
                             Button(
                                 onClick = { viewModel.clearTradeRating() },
-                                colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                                colors = ButtonDefaults.buttonColors(containerColor = DynamicPrimary),
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Acknowledge & Continue", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("Acknowledge & Continue", color = TextOnAccent, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -558,7 +633,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "Unlock Unlimited Trades",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -581,9 +656,9 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                 label = { Text("Name", color = TextMuted) },
                                 singleLine = true,
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    focusedBorderColor = BrandViolet,
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary,
+                                    focusedBorderColor = DynamicPrimary,
                                     unfocusedBorderColor = DarkBorder
                                 ),
                                 shape = RoundedCornerShape(12.dp)
@@ -599,9 +674,9 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                 label = { Text("Email Address", color = TextMuted) },
                                 singleLine = true,
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    focusedBorderColor = BrandViolet,
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary,
+                                    focusedBorderColor = DynamicPrimary,
                                     unfocusedBorderColor = DarkBorder
                                 ),
                                 shape = RoundedCornerShape(12.dp)
@@ -628,11 +703,11 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                         viewModel.simulateRegister(regName, regEmail)
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                                colors = ButtonDefaults.buttonColors(containerColor = DynamicPrimary),
                                 shape = RoundedCornerShape(14.dp),
                                 modifier = Modifier.fillMaxWidth().testTag("register_submit_button")
                             ) {
-                                Text("Register & Continue", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text("Register & Continue", color = TextOnAccent, fontWeight = FontWeight.Bold)
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -683,7 +758,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
                                 text = "Upgrade to Trade Lab Pro",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 textAlign = TextAlign.Center
@@ -720,7 +795,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = text,
-                                        color = Color.White,
+                                        color = TextPrimary,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -839,7 +914,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = quiz.title,
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -849,7 +924,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                             if (quiz.riskDisclosure.isNotBlank()) {
                                 Text(
                                     text = quiz.riskDisclosure,
-                                    color = Color(0xFFF2C94C),
+                                    color = AccentYellow,
                                     fontSize = 10.sp,
                                     lineHeight = 14.sp,
                                     fontWeight = FontWeight.Medium
@@ -907,7 +982,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                             Column(modifier = Modifier.padding(16.dp)) {
                                                 Text(
                                                     text = selectedLecture.title,
-                                                    color = Color.White,
+                                                    color = TextPrimary,
                                                     fontSize = 13.sp,
                                                     fontWeight = FontWeight.Bold
                                                 )
@@ -1047,7 +1122,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                         fontWeight = FontWeight.Bold
                                     )
                                     LinearProgressIndicator(
-                                        progress = { (questionIndex + 1) / questions.size.toFloat() },
+                                        progress = { if (questions.isNotEmpty()) (questionIndex + 1) / questions.size.toFloat() else 0f },
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 6.dp)
@@ -1059,7 +1134,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                         text = currentQuestion.question,
-                                        color = Color.White,
+                                        color = TextPrimary,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         lineHeight = 18.sp
@@ -1092,7 +1167,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Text(
                                                 text = option,
-                                                color = Color.White,
+                                                color = TextPrimary,
                                                 fontSize = 12.sp,
                                                 lineHeight = 16.sp
                                             )
@@ -1198,7 +1273,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                                 }
                                                 Text(
                                                     text = if (isLast) "See My Results" else "Next Question →",
-                                                    color = Color.White,
+                                                    color = TextOnAccent,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             }
@@ -1309,7 +1384,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                             ) {
                                                 CircularProgressIndicator(color = BrandViolet, modifier = Modifier.size(24.dp))
                                                 Spacer(modifier = Modifier.height(8.dp))
-                                                Text("Connecting to AdMob Live Stream...", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                Text("Connecting to AdMob Live Stream...", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             }
                                         } else if (isWatchingFallbackAd) {
                                             Column(
@@ -1318,7 +1393,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                             ) {
                                                 CircularProgressIndicator(color = BrandViolet, modifier = Modifier.size(24.dp))
                                                 Spacer(modifier = Modifier.height(8.dp))
-                                                Text("Streaming Sponsor Video... ${adTimer}s", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                Text("Streaming Sponsor Video... ${adTimer}s", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             }
                                             LaunchedEffect(isWatchingFallbackAd) {
                                                 adTimer = 2
@@ -1348,7 +1423,7 @@ fun MainContent(viewModel: TradingViewModel, billingManager: BillingManager) {
                                                 ) {
                                                     Text(
                                                         text = if (isAlreadyCompleted) "Close Quiz" else "Claim Standard ${formatCurrencyNoDecimals(quiz.rewardAmt, stats.currency)} Capital",
-                                                        color = Color.White,
+                                                        color = TextOnAccent,
                                                         fontWeight = FontWeight.Bold
                                                     )
                                                 }
@@ -1590,8 +1665,8 @@ fun GoogleBillingDialog(
                     .padding(16.dp)
                     .testTag("sideload_warning_dialog"),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF13131A)),
-                border = BorderStroke(1.5.dp, Color(0xFFFF5252).copy(alpha = 0.8f))
+                colors = CardDefaults.cardColors(containerColor = GoogleDarkGray),
+                border = BorderStroke(1.5.dp, WarningRed.copy(alpha = 0.8f))
             ) {
                 Column(
                     modifier = Modifier
@@ -1602,13 +1677,13 @@ fun GoogleBillingDialog(
                     Box(
                         modifier = Modifier
                             .size(64.dp)
-                            .background(Color(0xFFFF5252).copy(alpha = 0.1f), CircleShape),
+                            .background(WarningRed.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = "Billing Locked",
-                            tint = Color(0xFFFF5252),
+                            tint = WarningRed,
                             modifier = Modifier.size(32.dp)
                         )
                     }
@@ -1617,7 +1692,7 @@ fun GoogleBillingDialog(
 
                     Text(
                         text = "Google Play Store Required",
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
@@ -1655,7 +1730,7 @@ fun GoogleBillingDialog(
                                 }
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A2FF)),
+                        colors = ButtonDefaults.buttonColors(containerColor = GoogleBlue),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1715,7 +1790,7 @@ fun GoogleBillingDialog(
                 .padding(16.dp)
                 .testTag("google_billing_dialog"),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)), // Google Play Dark Gray
+            colors = CardDefaults.cardColors(containerColor = GoogleDarkGray), // Google Play Dark Gray
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
         ) {
             Column(
@@ -1739,14 +1814,14 @@ fun GoogleBillingDialog(
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Google Play",
-                            tint = Color(0xFF00A2FF), // Google blue
+                            tint = GoogleBlue, // Google blue
                             modifier = Modifier.size(18.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "Google Play",
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
@@ -1755,7 +1830,7 @@ fun GoogleBillingDialog(
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = "Secure",
-                        tint = Color(0xFF34A853), // Google green
+                        tint = GoogleGreen, // Google green
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -1771,14 +1846,14 @@ fun GoogleBillingDialog(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "TradeLab Pro (Ashwath AI)",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = promo.offerLine,
-                                color = Color(0xFF9AA0A6),
+                                color = GoogleTextGray,
                                 fontSize = 12.sp
                             )
                         }
@@ -1797,9 +1872,9 @@ fun GoogleBillingDialog(
                                 .padding(12.dp)
                         ) {
                             Row(modifier = Modifier.fillMaxWidth()) {
-                                Text("Today – Day ${promo.trialDays}", color = Color(0xFF9AA0A6), fontSize = 11.sp)
+                                Text("Today – Day ${promo.trialDays}", color = GoogleTextGray, fontSize = 11.sp)
                                 Spacer(modifier = Modifier.weight(1f))
-                                Text("₹0.00", color = Color(0xFF34A853), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("₹0.00", color = GoogleGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Row(modifier = Modifier.fillMaxWidth()) {
@@ -1814,7 +1889,7 @@ fun GoogleBillingDialog(
                         // Choose Payment Method
                         Text(
                             text = "SELECT PAYMENT METHOD",
-                            color = Color(0xFF9AA0A6),
+                            color = GoogleTextGray,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -1841,7 +1916,7 @@ fun GoogleBillingDialog(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text("UPI / GPay", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("UPI / GPay", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
 
@@ -1866,7 +1941,7 @@ fun GoogleBillingDialog(
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text("Credit/Debit Card", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("Credit/Debit Card", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -1878,13 +1953,13 @@ fun GoogleBillingDialog(
                             OutlinedTextField(
                                 value = upiId,
                                 onValueChange = { upiId = it },
-                                label = { Text("Enter UPI ID (e.g. name@okhdfcbank)", color = Color(0xFF9AA0A6), fontSize = 11.sp) },
+                                label = { Text("Enter UPI ID (e.g. name@okhdfcbank)", color = GoogleTextGray, fontSize = 11.sp) },
                                 singleLine = true,
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BrandViolet,
+                                    focusedBorderColor = DynamicPrimary,
                                     unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary
                                 ),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth().testTag("billing_upi_input")
@@ -1894,10 +1969,10 @@ fun GoogleBillingDialog(
                                 OutlinedTextField(
                                     value = cardNumber,
                                     onValueChange = { if (it.length <= 16) cardNumber = it },
-                                    label = { Text("Card Number (16 Digits)", color = Color(0xFF9AA0A6), fontSize = 11.sp) },
+                                    label = { Text("Card Number (16 Digits)", color = GoogleTextGray, fontSize = 11.sp) },
                                     singleLine = true,
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = BrandViolet,
+                                        focusedBorderColor = DynamicPrimary,
                                         unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
                                         focusedTextColor = Color.White,
                                         unfocusedTextColor = Color.White
@@ -1910,10 +1985,10 @@ fun GoogleBillingDialog(
                                     OutlinedTextField(
                                         value = cardExpiry,
                                         onValueChange = { if (it.length <= 5) cardExpiry = it },
-                                        label = { Text("Expiry (MM/YY)", color = Color(0xFF9AA0A6), fontSize = 11.sp) },
+                                        label = { Text("Expiry (MM/YY)", color = GoogleTextGray, fontSize = 11.sp) },
                                         singleLine = true,
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = BrandViolet,
+                                            focusedBorderColor = DynamicPrimary,
                                             unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
                                             focusedTextColor = Color.White,
                                             unfocusedTextColor = Color.White
@@ -1925,10 +2000,10 @@ fun GoogleBillingDialog(
                                     OutlinedTextField(
                                         value = cardCvv,
                                         onValueChange = { if (it.length <= 3) cardCvv = it },
-                                        label = { Text("CVV (3 Digits)", color = Color(0xFF9AA0A6), fontSize = 11.sp) },
+                                        label = { Text("CVV (3 Digits)", color = GoogleTextGray, fontSize = 11.sp) },
                                         singleLine = true,
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = BrandViolet,
+                                            focusedBorderColor = DynamicPrimary,
                                             unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
                                             focusedTextColor = Color.White,
                                             unfocusedTextColor = Color.White
@@ -1945,7 +2020,7 @@ fun GoogleBillingDialog(
                         // Terms
                         Text(
                             text = "By clicking 'SUBSCRIBE', you authorize Google Play to charge ${promo.renewalPrice}/mo automatically after your ${promo.trialDays}-day free trial. Cancel anytime in subscription settings.",
-                            color = Color(0xFF9AA0A6),
+                            color = GoogleTextGray,
                             fontSize = 9.sp,
                             lineHeight = 12.sp
                         )
@@ -1958,7 +2033,7 @@ fun GoogleBillingDialog(
                                 onClick = { onDismiss() },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("CANCEL", color = Color(0xFF9AA0A6), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("CANCEL", color = GoogleTextGray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                             Button(
                                 onClick = {
@@ -1973,12 +2048,12 @@ fun GoogleBillingDialog(
                                         onPurchaseSuccess()
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00A2FF)), // Google Blue
+                                colors = ButtonDefaults.buttonColors(containerColor = GoogleBlue), // Google Blue
                                 shape = RoundedCornerShape(12.dp),
                                 enabled = if (selectedPaymentMethod == "UPI") upiId.isNotBlank() else (cardNumber.length >= 15 && cardExpiry.length >= 4 && cardCvv.length >= 3),
                                 modifier = Modifier.weight(1.5f).testTag("billing_subscribe_button")
                             ) {
-                                Text("SUBSCRIBE", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("SUBSCRIBE", color = TextOnAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     } else {
@@ -1989,7 +2064,7 @@ fun GoogleBillingDialog(
                                 .padding(vertical = 30.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            CircularProgressIndicator(color = Color(0xFF00A2FF), strokeWidth = 3.dp)
+                            CircularProgressIndicator(color = GoogleBlue, strokeWidth = 3.dp)
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = if (processingStep == 1) "Securing bank connection..." else "Processing subscription authorization...",
@@ -2010,7 +2085,7 @@ fun GoogleBillingDialog(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = "Success",
-                            tint = Color(0xFF34A853), // Google Green
+                            tint = GoogleGreen, // Google Green
                             modifier = Modifier.size(60.dp)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -2023,7 +2098,7 @@ fun GoogleBillingDialog(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Subscription Activated successfully.",
-                            color = Color(0xFF9AA0A6),
+                            color = GoogleTextGray,
                             fontSize = 12.sp
                         )
                     }
@@ -2054,7 +2129,7 @@ fun TradeLabProBenefitsDialog(
                 .padding(vertical = 12.dp)
                 .testTag("pro_benefits_dialog"),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF13131A)),
+            colors = CardDefaults.cardColors(containerColor = GoogleDarkGray),
             border = BorderStroke(1.5.dp, AccentYellow.copy(alpha = 0.6f))
         ) {
             Column(
@@ -2149,7 +2224,7 @@ fun TradeLabProBenefitsDialog(
                     // Feature 4: Unlimited Portfolio Resets
                     ProBenefitRow(
                         icon = Icons.Default.Refresh,
-                        iconColor = Color(0xFF00A2FF),
+                        iconColor = GoogleBlue,
                         title = "Unlimited Portfolio Resets",
                         description = "Erase your history and start over with ${symbol}25,000 cash instantly whenever you want. No daily limits or wait times."
                     )

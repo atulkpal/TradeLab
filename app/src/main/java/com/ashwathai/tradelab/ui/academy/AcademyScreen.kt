@@ -75,6 +75,7 @@ import com.ashwathai.tradelab.ui.profile.*
 fun AcademyScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
+    nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null,
     onOpenQuiz: (Int) -> Unit
 ) {
     var activeSubTab by remember { mutableStateOf("Lessons") }
@@ -93,20 +94,21 @@ fun AcademyScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 8.dp)
-                .background(Color(0xFF141414), RoundedCornerShape(14.dp))
+                .background(DarkSurfaceElevated, RoundedCornerShape(14.dp))
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             val subTabs = listOf("Lessons", "Missions", "Leaderboard", "AI Coach")
             items(subTabs) { tab ->
                 val isSelected = activeSubTab == tab
+                val highlightColor = DynamicPrimary
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (isSelected) BrandViolet.copy(alpha = 0.15f) else Color.Transparent)
+                        .background(if (isSelected) highlightColor.copy(alpha = 0.15f) else Color.Transparent)
                         .border(
                             1.dp,
-                            if (isSelected) BrandViolet.copy(alpha = 0.3f) else Color.Transparent,
+                            if (isSelected) highlightColor.copy(alpha = 0.3f) else Color.Transparent,
                             RoundedCornerShape(10.dp)
                         )
                         .clickable { activeSubTab = tab }
@@ -120,7 +122,7 @@ fun AcademyScreen(
                             "Leaderboard" -> "LEADERBOARD"
                             else -> "AI PORTFOLIO COACH"
                         },
-                        color = if (isSelected) BrandViolet else TextMuted,
+                        color = if (isSelected) highlightColor else TextMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.8.sp
@@ -166,7 +168,7 @@ fun AcademyScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = "Learn-to-Earn Virtual Capital",
-                                    color = Color.White,
+                                    color = TextPrimary,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -208,6 +210,11 @@ fun AcademyScreen(
                             lineHeight = 15.sp
                         )
                     }
+                }
+
+                if (nativeAd != null && !stats.isPremium) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    NativeAdRow(nativeAd = nativeAd)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -273,7 +280,7 @@ fun AcademyScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "TradeLab Certified Risk Manager",
-                            color = Color.White,
+                            color = TextPrimary,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -380,7 +387,7 @@ fun AcademyScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "TradeLab Scholar",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -455,7 +462,7 @@ fun AcademyScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "TradeLab Arena",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -524,10 +531,16 @@ fun AcademyScreen(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Challenge a Friend", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("Challenge a Friend", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             Text("Invite fellow traders to the arena.", color = TextSubtle, fontSize = 11.sp)
                         }
                         Icon(Icons.Default.ChevronRight, contentDescription = "Go", tint = BrandViolet)
+                    }
+                }
+
+                if (nativeAd != null && !stats.isPremium) {
+                    Box(modifier = Modifier.padding(bottom = 12.dp)) {
+                        NativeAdRow(nativeAd = nativeAd)
                     }
                 }
 
@@ -602,7 +615,7 @@ fun AcademyScreen(
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     text = "${String.format("%,d", leader.xp)} XP",
-                                    color = Color.White,
+                                    color = TextPrimary,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -820,7 +833,7 @@ fun ChapterCard(
             .testTag("academy_module_${module.id}"),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = if (isLocked) DarkSurface.copy(alpha = 0.6f) else DarkSurface),
-        border = BorderStroke(1.dp, if (isCompleted) Color.White.copy(alpha = 0.05f) else if (isLocked) Color.White.copy(alpha = 0.06f) else BrandViolet.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, if (isCompleted) TextPrimary.copy(alpha = 0.05f) else if (isLocked) TextPrimary.copy(alpha = 0.06f) else BrandViolet.copy(alpha = 0.2f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -839,7 +852,7 @@ fun ChapterCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = module.title,
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -862,7 +875,7 @@ fun ChapterCard(
                     isLocked -> Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color.White.copy(alpha = 0.06f))
+                            .background(TextPrimary.copy(alpha = 0.06f))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1098,7 +1111,7 @@ fun AiCoachScreen(
                 Column {
                     Text(
                         text = "AI PORTFOLIO COACH",
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -1146,7 +1159,7 @@ fun AiCoachScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "Ask your AI Strategic Advisor",
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
@@ -1234,28 +1247,28 @@ fun AiCoachScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                             }
 
-                            Card(
-                                modifier = Modifier
-                                    .widthIn(max = 280.dp)
-                                    .testTag(if (isUser) "user_message" else "ai_message"),
-                                shape = RoundedCornerShape(
-                                    topStart = 16.dp,
-                                    topEnd = 16.dp,
-                                    bottomStart = if (isUser) 16.dp else 4.dp,
-                                    bottomEnd = if (isUser) 4.dp else 16.dp
-                                ),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isUser) BrandVioletDark.copy(alpha = 0.4f) else DarkSurface
-                                ),
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (isUser) BrandViolet.copy(alpha = 0.3f) else DarkBorder
-                                )
-                            ) {
+                Card(
+                    modifier = Modifier
+                        .widthIn(max = 280.dp)
+                        .testTag(if (isUser) "user_message" else "ai_message"),
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (isUser) 16.dp else 4.dp,
+                        bottomEnd = if (isUser) 4.dp else 16.dp
+                    ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isUser) DynamicPrimary.copy(alpha = 0.15f) else DarkSurface
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isUser) DynamicPrimary.copy(alpha = 0.3f) else DarkBorder
+                    )
+                ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         text = text,
-                                        color = Color.White,
+                                        color = TextPrimary,
                                         fontSize = 12.sp,
                                         lineHeight = 16.sp
                                     )
@@ -1389,11 +1402,11 @@ fun AiCoachScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         if (isAdLoadingLocal) {
-                            CircularProgressIndicator(color = BrandViolet, modifier = Modifier.size(36.dp))
+                            CircularProgressIndicator(color = DynamicPrimary, modifier = Modifier.size(36.dp))
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "Loading Sponsored stream...",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1418,7 +1431,7 @@ fun AiCoachScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = "Streaming Sponsored Message...",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )

@@ -101,7 +101,7 @@ fun StockLineChart(
                     Icon(
                         imageVector = if (chartMode == "Line") Icons.Default.ShowChart else Icons.Default.BarChart,
                         contentDescription = "Toggle Chart Mode",
-                        tint = BrandViolet,
+                        tint = DynamicPrimary,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -112,15 +112,16 @@ fun StockLineChart(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(indicators) { ind ->
                         val active = selectedIndicator == ind
+                        val highlightColor = DynamicPrimary
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(if (active) BrandViolet.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.03f))
-                                .border(1.dp, if (active) BrandViolet else Color.Transparent, RoundedCornerShape(6.dp))
+                                .background(if (active) highlightColor.copy(alpha = 0.2f) else TextPrimary.copy(alpha = 0.03f))
+                                .border(1.dp, if (active) highlightColor else Color.Transparent, RoundedCornerShape(6.dp))
                                 .clickable { selectedIndicator = ind }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Text(text = ind, color = if (active) BrandViolet else Color.White.copy(alpha = 0.6f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Text(text = ind, color = if (active) highlightColor else TextPrimary.copy(alpha = 0.6f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -177,6 +178,8 @@ fun StockLineChart(
             if (chartMode == "Candle") {
                 CandlestickChart(candles = currentCandles, modifier = Modifier.fillMaxSize())
             } else {
+                val gridColor = TextPrimary.copy(alpha = 0.05f)
+                val indicatorPointColor = TextPrimary
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val width = size.width
                     val height = size.height
@@ -200,7 +203,7 @@ fun StockLineChart(
                             val price = minPrice + (priceRange * pct)
                             val y = chartHeight - (pct * chartHeight).toFloat()
                             drawLine(
-                                color = Color.White.copy(alpha = 0.06f),
+                                color = gridColor,
                                 start = Offset(axisLeftPad, y),
                                 end = Offset(width, y),
                                 strokeWidth = 1f,
@@ -225,7 +228,7 @@ fun StockLineChart(
                             val x = idx * (chartWidth / (currentCandles.size - 1)) + axisLeftPad
                             val label = java.text.SimpleDateFormat("dd MMM", java.util.Locale.getDefault()).format(java.util.Date(currentCandles[idx].timestamp))
                             drawLine(
-                                color = Color.White.copy(alpha = 0.04f),
+                                color = gridColor,
                                 start = Offset(x, 0f),
                                 end = Offset(x, chartHeight),
                                 strokeWidth = 1f,
@@ -273,6 +276,9 @@ fun StockLineChart(
             }
 
             if (!mini) {
+            val emaColor = DynamicSecondary
+            val gridColor = TextPrimary.copy(alpha = 0.05f)
+            val indicatorPointColor = TextPrimary
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val width = size.width
                 val height = size.height
@@ -305,7 +311,7 @@ fun StockLineChart(
                         moveTo(first.x, first.y)
                         for (i in 1 until emaValues.size) lineTo(getPoint(emaValues[i], i).x, getPoint(emaValues[i], i).y)
                     }
-                    drawPath(path = emaPath, color = Color(0xFF00E5FF), style = Stroke(width = 3f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                    drawPath(path = emaPath, color = emaColor, style = Stroke(width = 3f, cap = StrokeCap.Round, join = StrokeJoin.Round))
                 }
 
                 if (showIndicators && selectedIndicator == "BOL" && prices.size >= 20) {
@@ -327,9 +333,9 @@ fun StockLineChart(
                 if (activeIndex != null) {
                     val index = activeIndex!!
                     val point = getPoint(prices[index], index)
-                    drawLine(color = Color.White.copy(alpha = 0.3f), start = Offset(point.x, 0f), end = Offset(point.x, chartHeight), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
+                    drawLine(color = indicatorPointColor.copy(alpha = 0.3f), start = Offset(point.x, 0f), end = Offset(point.x, chartHeight), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
                     drawCircle(color = if (isPositive) AccentGreen else AccentRose, radius = 10f, center = point)
-                    drawCircle(color = Color.White, radius = 5f, center = point)
+                    drawCircle(color = indicatorPointColor, radius = 5f, center = point)
                 }
             }
 
@@ -337,15 +343,19 @@ fun StockLineChart(
                 val index = activeIndex!!
                 val candle = currentCandles[index]
                 Box(
-                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.85f)).border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp)
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(DarkSurfaceElevated.copy(alpha = 0.85f)).border(1.dp, TextPrimary.copy(alpha = 0.15f), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "Price: ${String.format("%.2f", candle.close)}", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Price: ${String.format("%.2f", candle.close)}", color = TextPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         if (chartMode == "Candle") {
                             Text(text = "O: ${candle.open} H: ${candle.high} L: ${candle.low}", color = TextMuted, fontSize = 8.sp)
                         }
                     }
                 }
+            }
+
+            if (LocalThemeMode.current == ThemeMode.ARCADE) {
+                CrtScanlineOverlay()
             }
             }
         }
@@ -364,14 +374,17 @@ fun StockLineChart(
 
 @Composable
 fun RsiGraph(prices: List<Double>, activeIndex: Int?) {
+    val rsiZoneColor = VibrantPurple
+    val rsiLineColor = DynamicPrimary
+    val indicatorPointColor = TextPrimary
     Canvas(modifier = Modifier.fillMaxSize()) {
         val width = size.width
         val height = size.height
         val y70 = height * 0.3f
         val y30 = height * 0.7f
-        drawRect(color = Color(0xFF9C27B0).copy(alpha = 0.08f), topLeft = Offset(0f, y70), size = Size(width, y30 - y70))
-        drawLine(color = Color(0xFF9C27B0).copy(alpha = 0.3f), start = Offset(0f, y70), end = Offset(width, y70), strokeWidth = 1f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f), 0f))
-        drawLine(color = Color(0xFF9C27B0).copy(alpha = 0.3f), start = Offset(0f, y30), end = Offset(width, y30), strokeWidth = 1f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f), 0f))
+        drawRect(color = rsiZoneColor.copy(alpha = 0.08f), topLeft = Offset(0f, y70), size = Size(width, y30 - y70))
+        drawLine(color = rsiZoneColor.copy(alpha = 0.3f), start = Offset(0f, y70), end = Offset(width, y70), strokeWidth = 1f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f), 0f))
+        drawLine(color = rsiZoneColor.copy(alpha = 0.3f), start = Offset(0f, y30), end = Offset(width, y30), strokeWidth = 1f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f), 0f))
 
         val rsiValues = mutableListOf<Double>()
         for (i in prices.indices) {
@@ -387,13 +400,16 @@ fun RsiGraph(prices: List<Double>, activeIndex: Int?) {
 
         val points = rsiValues.mapIndexed { i, r -> Offset(i * (width / (prices.size - 1)), height - (r.toFloat() / 100f * height)) }
         val path = Path().apply { moveTo(points.first().x, points.first().y); for (i in 1 until points.size) lineTo(points[i].x, points[i].y) }
-        drawPath(path = path, color = Color(0xFFE040FB), style = Stroke(width = 2.5f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-        if (activeIndex != null) drawLine(color = Color.White.copy(alpha = 0.3f), start = Offset(activeIndex * (width / (prices.size - 1)), 0f), end = Offset(activeIndex * (width / (prices.size - 1)), height), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
+        drawPath(path = path, color = rsiLineColor, style = Stroke(width = 2.5f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        if (activeIndex != null) drawLine(color = indicatorPointColor.copy(alpha = 0.3f), start = Offset(activeIndex * (width / (prices.size - 1)), 0f), end = Offset(activeIndex * (width / (prices.size - 1)), height), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
     }
 }
 
 @Composable
 fun MacdGraph(prices: List<Double>, activeIndex: Int?) {
+    val macdColor = DynamicSecondary
+    val signalColor = AccentYellow
+    val indicatorPointColor = TextPrimary
     val (macd, signal, hist) = remember(prices) { calculateMacd(prices) }
     Canvas(modifier = Modifier.fillMaxSize()) {
         val width = size.width
@@ -404,13 +420,38 @@ fun MacdGraph(prices: List<Double>, activeIndex: Int?) {
         hist.forEachIndexed { i, h -> drawLine(color = if (h >= 0) AccentGreen.copy(alpha = 0.5f) else AccentRose.copy(alpha = 0.5f), start = Offset(i * spacing, height / 2), end = Offset(i * spacing, getY(h)), strokeWidth = 4f) }
         if (macd.isNotEmpty()) {
             val p = Path().apply { moveTo(0f, getY(macd.first())); for (i in 1 until macd.size) lineTo(i * spacing, getY(macd[i])) }
-            drawPath(path = p, color = Color(0xFF2196F3), style = Stroke(width = 2f))
+            drawPath(path = p, color = macdColor, style = Stroke(width = 2f))
         }
         if (signal.isNotEmpty()) {
             val p = Path().apply { moveTo(0f, getY(signal.first())); for (i in 1 until signal.size) lineTo(i * spacing, getY(signal[i])) }
-            drawPath(path = p, color = AccentYellow, style = Stroke(width = 2f))
+            drawPath(path = p, color = signalColor, style = Stroke(width = 2f))
         }
-        if (activeIndex != null) drawLine(color = Color.White.copy(alpha = 0.3f), start = Offset(activeIndex * spacing, 0f), end = Offset(activeIndex * spacing, height), strokeWidth = 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f))
+        if (activeIndex != null) {
+            drawLine(
+                color = indicatorPointColor.copy(alpha = 0.3f),
+                start = Offset(activeIndex * spacing, 0f),
+                end = Offset(activeIndex * spacing, height),
+                strokeWidth = 2f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+            )
+        }
+    }
+}
+
+@Composable
+fun CrtScanlineOverlay() {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val scanlineSpacing = 4.dp.toPx()
+        val scanlineCount = (size.height / scanlineSpacing).toInt()
+        for (i in 0 until scanlineCount) {
+            val y = i * scanlineSpacing
+            drawLine(
+                color = Color.Black.copy(alpha = 0.15f),
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
     }
 }
 

@@ -413,15 +413,16 @@ fun FoDeskScreen(
         ) {
             tickers.forEach { ticker ->
                 val isSelected = selectedTicker == ticker
+                val highlightColor = DynamicPrimary
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) BrandViolet.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.03f))
-                        .border(1.dp, if (isSelected) BrandViolet else Color.Transparent, RoundedCornerShape(8.dp))
+                        .background(if (isSelected) highlightColor.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.03f))
+                        .border(1.dp, if (isSelected) highlightColor else Color.Transparent, RoundedCornerShape(8.dp))
                         .clickable { selectedTicker = ticker }
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    Text(text = ticker, color = if (isSelected) BrandViolet else Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(text = ticker, color = if (isSelected) highlightColor else TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -467,13 +468,13 @@ fun FoDeskScreen(
                     }
                 }
                 
-                // Show token badge if using token
                 if (!stats.isPremium) {
+                    val highlightColor = DynamicPrimary
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(BrandViolet.copy(alpha = 0.15f))
-                            .border(1.dp, BrandViolet, RoundedCornerShape(8.dp))
+                            .background(highlightColor.copy(alpha = 0.15f))
+                            .border(1.dp, highlightColor, RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -485,7 +486,7 @@ fun FoDeskScreen(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "TOKENS: ${stats.fnoTokens}",
-                                color = BrandViolet,
+                                color = highlightColor,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -653,7 +654,7 @@ fun FoDeskScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "$selectedTicker @ ${activeOptionStrike.toInt()}",
-                                    color = Color.White,
+                                    color = TextPrimary,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -796,7 +797,7 @@ fun FoDeskScreen(
                             ) {
                                 Text(
                                     text = "$lots Lot\n(${lots * selectedLotSize} qty)",
-                                    color = if (isSel) BrandViolet else Color.White,
+                                    color = if (isSel) BrandViolet else TextPrimary,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center
@@ -831,7 +832,7 @@ fun FoDeskScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = formatCurrency(if (isBuyOrder) totalPremiumCost else collateralCost, stats.currency),
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -939,7 +940,7 @@ fun FoDeskScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "EXECUTE F&O ${if (isBuyOrder) "BUY" else "SELL"} ORDER",
-                                color = Color.White,
+                                color = TextOnAccent,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1009,7 +1010,7 @@ fun GreeksDiagnosticsBox(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Analytics, contentDescription = "Greeks", tint = BrandViolet, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("F&O Portfolio Risk Diagnostics", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text("F&O Portfolio Risk Diagnostics", color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1017,7 +1018,7 @@ fun GreeksDiagnosticsBox(
                     Text("PORTFOLIO DELTA (BIAS)", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                     Text(
                         text = "${if (totalDelta >= 0) "+" else ""}${String.format("%.2f", totalDelta)}",
-                        color = if (totalDelta >= 0.5) AccentGreen else if (totalDelta <= -0.5) AccentRose else Color.White,
+                        color = if (totalDelta >= 0.5) AccentGreen else if (totalDelta <= -0.5) AccentRose else TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )

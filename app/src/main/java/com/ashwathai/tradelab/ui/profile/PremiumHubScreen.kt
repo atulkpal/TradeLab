@@ -51,12 +51,12 @@ fun PremiumHubScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "TRADELAB PRO HUB",
-                color = Color.White,
+                color = TextPrimary,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.sp
@@ -122,7 +122,7 @@ fun PremiumHubScreen(
             ) {
                 Text(
                     text = "Upgrade to Pro Today",
-                    color = Color.White,
+                    color = TextPrimary,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -194,7 +194,7 @@ fun RoiCalculatorWidget(stats: PortfolioStats) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "The Cost of Human Bias",
-                color = Color.White,
+                color = TextPrimary,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -213,7 +213,7 @@ fun RoiCalculatorWidget(stats: PortfolioStats) {
                 colors = SliderDefaults.colors(
                     thumbColor = BrandViolet,
                     activeTrackColor = BrandViolet,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.05f)
+                    inactiveTrackColor = TextPrimary.copy(alpha = 0.05f)
                 )
             )
 
@@ -225,10 +225,10 @@ fun RoiCalculatorWidget(stats: PortfolioStats) {
                 Column {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Standard Return (${String.format(Locale.US, "%.1f", userReturnPct)}%)", color = TextMuted, fontSize = 11.sp)
-                        Text(formatCurrency(userReturnAmt, stats.currency), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(formatCurrency(userReturnAmt, stats.currency), color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
-                    Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f))) {
+                    Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(TextPrimary.copy(alpha = 0.05f))) {
                         Box(modifier = Modifier.fillMaxWidth(0.4f).fillMaxHeight().background(TextMuted))
                     }
                 }
@@ -240,7 +240,7 @@ fun RoiCalculatorWidget(stats: PortfolioStats) {
                         Text(formatCurrency(aiReturnAmt, stats.currency), color = AccentYellow, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
-                    Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.05f))) {
+                    Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(TextPrimary.copy(alpha = 0.05f))) {
                         Box(modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight().background(AccentYellow))
                     }
                 }
@@ -291,7 +291,7 @@ fun ProBenefitItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title:
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column {
-            Text(text = title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(text = title, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = desc, color = TextSubtle, fontSize = 11.sp, lineHeight = 15.sp)
         }

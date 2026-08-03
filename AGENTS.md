@@ -68,22 +68,38 @@ The **Architectural Modernization** has been successfully verified:
     *   Upgraded the **Global Leaderboard** with multi-sort (Wealth vs. Maturity) and 100-user capacity.
     *   Integrated a high-precision **Tradebook (Ledger)** tracking every virtual penny to 4 decimal places.
 
+11. **Varsity Academy (Epic 22):**
+    *   Transitioned from flat modules to a **6-Course, 68-Chapter** curriculum.
+    *   Implemented a multi-question **Knowledge Check Engine** with $\ge 60\%$ pass threshold.
+    *   Added a **Mission Reward Engine** with idempotent virtual capital claims and ledger logging.
+12. **Multi-Format Monetization (Epic 23):**
+    *   Diversified from "Watch-to-Earn" to include **App Open Ads** (on resume) and **Native Ads** (blended in lists).
+    *   Customized native ad styling with **BrandViolet** highlights to match the premium theme.
+13. **Institutional Polish (Epic 21):**
+    *   Implemented full **GTT Persistence** and **Quick Exit (Square Off)**.
+    *   Migrated 100% of UI icons to **VectorDrawables** (removing emojis).
+14. **Hyper-Personalization & Focus Suite (Epic 24):**
+    *   Transitioned to a **5-mode Theme Engine** (Serious, Vibrant, Terminal, Arcade, Light).
+    *   Implemented **Stealth Mode** with dynamic privacy blurring for portfolio values.
+    *   Integrated **Zen Mode** to hide distracting news and movers for better focus.
+    *   Introduced **Monospace Typography** and **CRT Scanline** effects for thematic immersion.
+
 ---
 
 ## 4. Current Work & Next Milestones
 
-We have successfully completed **Phase 1 (Foundations)**, the **Pre-Launch Polish**, and the **Social Arena**. The app is now at **v1.3.0 (Build 4)** and ready for production distribution.
+We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, and the **Hyper-Personalization Suite**. The app is now at **v1.7.0 (Build 6)** and ready for production distribution.
 
 ### What is Active Right Now (Post-Launch & Multi-Platform Prep)
-*   **Track A (UI/UX & Charts):** native **Candlestick** rendering and institutional overlays are stable. Future work includes Volume Profiles and advanced Fibonacci tools.
-*   **Multi-Platform Migration:** Initiating the move of core entities and repositories to Kotlin Multiplatform (KMP) to support iOS.
-*   **Web Evolution:** Transitioning the web sandbox to a professional **Next.js** application with full state parity (Epic 20).
+*   **KMP Migration:** Moving core entities and repositories to Kotlin Multiplatform (KMP) to support iOS.
+*   **Time-Travel Mode (Backlog):** Historical simulation engine.
 
 ### Parallelizable Engineering Streams
 Multiple contributors can work on these tracks in parallel to meet the launch deadline:
 *   **Track A:** `docs/epics_and_sprints.md#Epic 17`
 *   **Track B:** `docs/epics_and_sprints.md#Epic 18`
 *   **Track C:** `docs/epics_and_sprints.md#Epic 19`
+*   **Hyper-Personalization:** `docs/epics_and_sprints.md#Epic 24`
 
 ---
 
@@ -122,3 +138,16 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 6.  **Versioning & Release Policy:** NEVER automatically bump version codes or numbers in `app/build.gradle.kts`. Always ask the user for explicit approval before performing a version bump. **`RELEASES.md` and `CHANGELOG.md` MUST ONLY be updated when the project is ready for release and ONLY after explicit user confirmation.**
 7.  **No Dead-Ends:** Never add non-functional UI placeholders. Every visual affordance must connect to an active feature or remain omitted.
 8.  **Authoritative Manual Verification:** Every feature implementation must include an update to the [Authoritative Manual Verification Protocol](file:///C:/Users/Atul/AppData/Local/Google/AndroidStudio2026.1.2/projects/tradelab.55ea813f/.artifacts/b97c14b5-a8e9-4d28-9834-c46165db831b/MANUAL_VERIFICATION_PROTOCOL.artifact.md) or the checklist to ensure functional integrity can be verified by testers.
+
+---
+
+## 9. Build & Release Policy
+
+To maintain a reliable history of distributable assets and prevent accidental data loss:
+1.  **Archiving Requirement:** Before generating new build artifacts (APKs/AABs), ALL existing artifacts in the `app/build/outputs/` directory must be **moved** to the root `releases/` folder and renamed for archival.
+2.  **Safety Rule:** Never leave archived artifacts inside the `app/build/` directory, as Gradle tasks (like `clean` or `assemble`) may delete them during the next build cycle.
+3.  **Naming Convention:**
+    *   Debug APK: `debug-<versionName>-<versionCode>.apk`
+    *   Release APK: `release-apk-<versionName>-<versionCode>.apk`
+    *   Release AAB: `release-aab-<versionName>-<versionCode>.aab`
+4.  **Versioning Discipline:** Never automatically bump version codes or names without explicit user approval.

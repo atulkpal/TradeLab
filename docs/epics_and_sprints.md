@@ -57,8 +57,34 @@ This document defines the development roadmap for **Trade Lab**. It breaks down 
  │  EPIC 20: Next.js Web App Platform               [DEFERRED] │
  ├─────────────────────────────────────────────────────────────┤
  │  EPIC 22: Academy v2 — Varsity-Style Curriculum   [100% COMP.] │
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 23: Multi-Format Monetization (AppOpen/Native) [100% COMP.]│
+ ├─────────────────────────────────────────────────────────────┤
+ │  EPIC 24: Hyper-Personalization & Focus Suite    [100% COMP.]│
  └─────────────────────────────────────────────────────────────┘
  ```
+
+---
+
+## Epic 24: Hyper-Personalization & Focus Suite (Status: 🟢 Complete)
+Expand the theme engine from simple colors to functional and visual modes that adapt to user privacy and focus needs.
+
+### Sprint 24.1: Multi-Theme Engine Revamp
+*   [x] **Architecture**: Transitioned from binary Dark/Light toggle to a 5-mode `ThemeMode` system (Serious, Vibrant, Terminal, Arcade, Light).
+*   [x] **Color Centralization**: Removed 100+ hardcoded hex colors and replaced them with theme-aware dynamic getters in `Color.kt`.
+*   [x] **Persistence**: Migrated UserProfile (DB v25) to store `themeMode`, `isStealthMode`, and `isZenMode`.
+
+### Sprint 24.2: Privacy & Stealth
+*   [x] **Stealth Blur**: Implemented `Modifier.stealthBlur()` using Android 12 native blur with a frosted-alpha fallback for older devices.
+*   [x] **Global Privacy**: Applied blur masks to sensitive data (Net Worth, Cash, P&L) across all dashboards.
+
+### Sprint 24.3: Pro & Retro Aesthetics
+*   [x] **Terminal Mode**: High-density monochromatic theme with custom **JetBrains Mono-inspired Monospace typography**.
+*   [x] **Arcade Mode**: 80s Synthwave palette with CRT scanline overlay effects on price charts.
+*   [x] **Zen Mode**: Minimalist layout that reactively hides news tickers and movers to reduce trading anxiety.
+
+### Sprint 24.4: Future Roadmap (Backlog)
+*   [ ] **Time-Travel Mode**: Prototype historical simulation engine (Locked UI badge added).
 
 ---
 
@@ -552,7 +578,19 @@ Comprehensive review and improvement sprint addressing 10 product areas includin
 
 ---
 
-## Epic 22: Academy v2 — Varsity-Style Curriculum Engine (Status: 🟢 Complete)
+## Epic 23: Multi-Format Monetization (Status: 🟢 Complete)
+Diversify revenue streams by introducing non-intrusive App Open and Native ad formats.
+
+### Sprint 23.1: Global Ad Infrastructure
+*   [x] **App Open Ad Manager**: Implement `AppOpenAdManager` to load and show ads when user returns to the app.
+*   [x] **Native Ad Loader**: Centralized logic to fetch and cache native ads for inline list display.
+*   [x] **Hilt/Lifecycle Binding**: Use `ProcessLifecycleOwner` to monitor app-wide background/foreground events.
+
+### Sprint 23.2: Native Ad Blending
+*   [x] **Custom Native Layout**: Design a dark-themed XML layout for native ads with BrandViolet highlights.
+*   [x] **Watchlist Injection**: Injected a native ad row every 5 tickers.
+*   [x] **Portfolio & Academy Cards**: Added "Sponsored" native cards to high-traffic dashboards.
+*   [x] **Premium Bypass**: Enforce ad-free experience for `isPremium == true` users across all new formats.
 Expand the Learn-to-Earn Academy from 8 flat single-question modules into a two-level, Varsity-inspired curriculum: **Courses → Chapters**, each chapter containing 3–4 lectures and a 3–5 question knowledge check. Content is **100% original** (structure inspired by Zerodha Varsity; no copyrighted text reproduced).
 
 > Authoring contract: [`docs/ACADEMY_CONTENT_SPEC.md`](docs/ACADEMY_CONTENT_SPEC.md)
@@ -622,6 +660,15 @@ Expand the Learn-to-Earn Academy from 8 flat single-question modules into a two-
 *   [x] Migrate decorative emoji to **26 VectorDrawables** (6 `ic_course_*` + 20 `ic_status_*`) across the quiz dialog, PRO dialog, F&O desk (TOKENS badge, MIS warning, EXECUTE button, bias labels), and Profile (level trophy, heart footer).
 *   [x] Add `Trade Lab v1.5.0 (5)` version/build footer line under the Profile branding for bug-triage identification.
 *   [x] Add `biasIcon(totalDelta)` drawable-selection helper to `AcademyScoring` with unit coverage.
+
+---
+
+## Post-Launch Maintenance & Stability (v1.7.1)
+Continuous improvement based on production telemetry and crash reports.
+
+### Sprint: Crashlytics Hotfixes (August 2026)
+*   [x] **Database Corruption Fix**: Explicitly enabled `WRITE_AHEAD_LOGGING` in `AppDatabase` and added `.catch` handlers in `TradingRepository` flows to prevent `SQLiteDatabaseCorruptException` crashes.
+*   [x] **NaN Progress Indicator Fix**: Added safety division-by-zero checks in `ProfileScreen` and `MainActivity` to prevent `IllegalArgumentException: current must not be NaN` when data is loading.
 
 
 

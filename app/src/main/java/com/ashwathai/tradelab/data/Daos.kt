@@ -22,6 +22,15 @@ interface UserProfileDao {
 
     @Query("UPDATE user_profile SET shouldShowShieldDialog = :show WHERE id = 1")
     suspend fun updateShieldDialogPreference(show: Boolean)
+
+    @Query("UPDATE user_profile SET themeMode = :themeMode WHERE id = 1")
+    suspend fun updateThemeMode(themeMode: String)
+
+    @Query("UPDATE user_profile SET isStealthMode = :stealth WHERE id = 1")
+    suspend fun updateStealthMode(stealth: Boolean)
+
+    @Query("UPDATE user_profile SET isZenMode = :zen WHERE id = 1")
+    suspend fun updateZenMode(zen: Boolean)
 }
 
 @Dao

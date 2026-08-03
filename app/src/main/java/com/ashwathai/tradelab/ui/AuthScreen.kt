@@ -102,7 +102,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
             
             Text(
                 text = "TradeLab",
-                color = Color.White,
+                color = TextPrimary,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.sp
@@ -150,7 +150,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                     .weight(1f)
                                     .fillMaxHeight()
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) BrandViolet.copy(alpha = 0.15f) else Color.Transparent)
+                                    .background(if (isSelected) DynamicPrimary.copy(alpha = 0.15f) else Color.Transparent)
                                     .clickable {
                                         selectedTab = index
                                         errorMessage = null
@@ -160,7 +160,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                             ) {
                                 Text(
                                     text = title,
-                                    color = if (isSelected) BrandViolet else TextSecondary,
+                                    color = if (isSelected) DynamicPrimary else TextSecondary,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                     fontSize = 13.sp
                                 )
@@ -244,7 +244,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                             0 -> { // Email Auth tab
                                 Text(
                                     text = if (isRegisterMode) "Create an Account" else "Welcome Back",
-                                    color = Color.White,
+                                    color = TextPrimary,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -258,10 +258,10 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                         modifier = Modifier.fillMaxWidth().testTag("auth_name_field"),
                                         shape = RoundedCornerShape(10.dp),
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = BrandViolet,
+                                            focusedBorderColor = DynamicPrimary,
                                             unfocusedBorderColor = DarkBorder,
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White
+                                            focusedTextColor = TextPrimary,
+                                            unfocusedTextColor = TextPrimary
                                         ),
                                         singleLine = true,
                                         leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name Icon", tint = TextMuted) }
@@ -276,10 +276,10 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                     modifier = Modifier.fillMaxWidth().testTag("auth_email_field"),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = BrandViolet,
+                                        focusedBorderColor = DynamicPrimary,
                                         unfocusedBorderColor = DarkBorder,
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary
                                     ),
                                     singleLine = true,
                                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email Icon", tint = TextMuted) }
@@ -294,10 +294,10 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                     modifier = Modifier.fillMaxWidth().testTag("auth_password_field"),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = BrandViolet,
+                                        focusedBorderColor = DynamicPrimary,
                                         unfocusedBorderColor = DarkBorder,
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary
                                     ),
                                     singleLine = true,
                                     visualTransformation = PasswordVisualTransformation(),
@@ -364,8 +364,8 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                     modifier = Modifier.fillMaxWidth().height(48.dp).testTag("auth_email_submit"),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = BrandViolet,
-                                        disabledContainerColor = BrandViolet.copy(alpha = 0.5f)
+                                        containerColor = DynamicPrimary,
+                                        disabledContainerColor = DynamicPrimary.copy(alpha = 0.5f)
                                     )
                                 ) {
                                     if (isLoading) {
@@ -389,7 +389,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                     TextButton(onClick = { isRegisterMode = !isRegisterMode }) {
                                         Text(
                                             text = if (isRegisterMode) "Already have an account? Sign In" else "New to TradeLab? Register Here",
-                                            color = BrandViolet,
+                                            color = DynamicPrimary,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -529,12 +529,12 @@ fun AuthScreen(viewModel: TradingViewModel) {
                             }
                             
                             2 -> { // Phone Auth tab
-                                Text(
-                                    text = "OTP Authentication",
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                            Text(
+                                text = "OTP Authentication",
+                                color = TextPrimary,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                                 Spacer(modifier = Modifier.height(14.dp))
                                 
                                 if (!isOtpSent) {
@@ -689,10 +689,10 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                         modifier = Modifier.fillMaxWidth().testTag("auth_otp_field"),
                                         shape = RoundedCornerShape(10.dp),
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = BrandViolet,
+                                            focusedBorderColor = DynamicPrimary,
                                             unfocusedBorderColor = DarkBorder,
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White
+                                            focusedTextColor = TextPrimary,
+                                            unfocusedTextColor = TextPrimary
                                         ),
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -709,12 +709,16 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                             }
                                             isLoading = true
                                             coroutineScope.launch {
-                                                if (firebaseAuth == null || BuildConfig.DEBUG || otpInput == "123456") {
+                                                val auth = firebaseAuth
+                                                if (BuildConfig.DEBUG && (auth == null || otpInput == "123456")) {
                                                     isLoading = false
                                                     viewModel.registerOrLogin("Phone User", "phone.${phoneInput}@tradelab.com", "+91$phoneInput")
+                                                } else if (auth == null) {
+                                                    errorMessage = "Phone authentication is not available. Please try again later."
+                                                    isLoading = false
                                                 } else {
                                                     val credential = PhoneAuthProvider.getCredential(verificationId, otpInput)
-                                                    firebaseAuth.signInWithCredential(credential)
+                                                    auth.signInWithCredential(credential)
                                                         .addOnSuccessListener { authResult ->
                                                             val user = authResult.user
                                                             viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.${phoneInput}@tradelab.com", "+91$phoneInput")
@@ -775,13 +779,13 @@ fun AuthScreen(viewModel: TradingViewModel) {
                     .height(48.dp)
                     .testTag("auth_guest_button"),
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.5f)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandViolet)
+                border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.5f)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = DynamicPrimary)
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = "Guest",
-                    tint = BrandViolet,
+                    tint = DynamicPrimary,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -789,7 +793,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                     text = "Explore as Guest (No Account)",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = BrandViolet
+                    color = DynamicPrimary
                 )
             }
         }
@@ -807,7 +811,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                             viewModel.registerOrLogin(it.first, it.second)
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                    colors = ButtonDefaults.buttonColors(containerColor = DynamicPrimary),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("Proceed to Dashboard", color = Color.White, fontWeight = FontWeight.Bold)

@@ -19,6 +19,7 @@ android {
 
   val keystorePropertiesFile = file("keystore.properties")
   val keystoreProperties = Properties()
+  val isReleaseTask = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
   if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
   }
@@ -27,8 +28,8 @@ android {
     applicationId = "com.ashwathai.tradelab"
     minSdk = 24
     targetSdk = 37
-    versionCode = 5
-    versionName = "1.5.0"
+    versionCode = 6
+    versionName = "1.7.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
@@ -37,17 +38,29 @@ android {
   signingConfigs {
     create("release") {
       if (keystorePropertiesFile.exists()) {
-        storeFile = file(keystoreProperties.getProperty("storeFile"))
-        storePassword = keystoreProperties.getProperty("storePassword")
-        keyAlias = keystoreProperties.getProperty("keyAlias")
-        keyPassword = keystoreProperties.getProperty("keyPassword")
+        val storeFilePath = keystoreProperties.getProperty("storeFile")
+        val storePass = keystoreProperties.getProperty("storePassword")
+        val alias = keystoreProperties.getProperty("keyAlias")
+        val keyPass = keystoreProperties.getProperty("keyPassword")
+        if (isReleaseTask && listOf(storeFilePath, storePass, alias, keyPass).any { it.isNullOrBlank() }) {
+          error("Release signing requires storeFile, storePassword, keyAlias, and keyPassword in keystore.properties")
+        }
+        if (!storeFilePath.isNullOrBlank()) storeFile = file(storeFilePath)
+        storePassword = storePass
+        keyAlias = alias
+        keyPassword = keyPass
       } else {
-        // Fallback or skip if not found
-        val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-        storeFile = file(keystorePath)
-        storePassword = System.getenv("STORE_PASSWORD")
-        keyAlias = "upload"
-        keyPassword = System.getenv("KEY_PASSWORD")
+        val keystorePath = System.getenv("KEYSTORE_PATH")
+        val storePass = System.getenv("STORE_PASSWORD")
+        val alias = System.getenv("KEY_ALIAS") ?: "upload"
+        val keyPass = System.getenv("KEY_PASSWORD")
+        if (isReleaseTask && listOf(keystorePath, storePass, alias, keyPass).any { it.isNullOrBlank() }) {
+          error("Release signing requires KEYSTORE_PATH, STORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD environment variables")
+        }
+        if (!keystorePath.isNullOrBlank()) storeFile = file(keystorePath)
+        storePassword = storePass
+        keyAlias = alias
+        keyPassword = keyPass
       }
     }
     create("debugConfig") {
@@ -63,13 +76,14 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
       manifestPlaceholders["admobApplicationId"] = "ca-app-pub-4153575596488132~8287049082"
     }
     debug {
-      signingConfig = signingConfigs.getByName("release")
+      signingConfig = signingConfigs.getByName("debugConfig")
       manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
     }
   }
@@ -120,6 +134,7 @@ dependencies {
   // implementation(libs.androidx.datastore.preferences)
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)
+  implementation(libs.androidx.lifecycle.process)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
   // implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
@@ -137,7 +152,7 @@ dependencies {
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services)
   implementation(libs.googleid)
-  // implementation(libs.firebase.appcheck.recaptcha)
+  implementation(libs.firebase.appcheck.playintegrity)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.logging.interceptor)

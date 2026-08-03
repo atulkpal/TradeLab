@@ -86,16 +86,20 @@ The current app utilizes a localized Clean MVVM structure divided into three dis
 *   **Market TV Dashboard**: A persistent `BreakingNewsTicker` bar pinned globally below the fixed-height header, delivering real-time sentiment and channel branding (CNBC/Zee).
 *   **Premium Motion Foundation** (`com.ashwathai.tradelab.ui.common.PremiumMotion`): The app-wide animation toolkit. Provides a `LocalPremiumMotionEnabled` composition-local gate (so tests and reduced-motion environments stay deterministic), reusable specs (`PremiumSpecs`), and primitives including staggered entrances (`premiumEntrance`), pulsing neon borders (`neonGlowPulse`), shimmer progress bars (`ShimmerProgress`), rotating chevrons (`RotatingChevron`), lock-shake feedback (`LockShakeController`), one-shot sparkle bursts (`SparkleBurst`), and finite confetti overlays (`ConfettiOverlay`). All infinite animations are gated behind the composition-local so Robolectric tests never deadlock on idleness.
 *   **Accordion Course Deck**: The Academy's lessons tab renders as a single-open accordion (`CourseDeck` in `AcademyScreen.kt`). Courses expand/collapse independently (at most one open), cascade in with staggered entrances, and enforce **progressive unlocking** via `AcademyScoring.unlockedCourseIds` — course N unlocks only after every chapter of course N−1 is completed. Locked courses follow a **"read freely, earn when ready" preview model**: they expand to show chapter cards (dimmed, 🔒 "Preview" chip instead of a reward), and tapping one opens the quiz dialog where lectures are fully readable but the assessment entry point is replaced by a locked card naming the course to finish first.
+*   **Hyper-Personalization Mode Engine** (`Epic 24`): A comprehensive visual and functional adaptation layer.
+    *   **ThemeMode Enum**: Supports `SERIOUS`, `VIBRANT`, `TERMINAL`, `ARCADE`, and `LIGHT`.
+    *   **Dynamic Typography**: Switches between `Typography` (Default) and `MonospaceTypography` (JetBrains Mono-style) based on the active mode.
+    *   **Functional CompositionLocals**: Employs `LocalStealthMode` and `LocalZenMode` to drive deep UI tree pruning and data masking without re-rendering high-level containers.
+    *   **Privacy Blur**: A cross-API-version blur implementation (`Modifier.stealthBlur`) that masks sensitive portfolio data on Android 12+ (RenderEffect) and falls back to frosted-alpha overlays on legacy devices.
 
-### F. Institutional Analytics & Sentiment Logic
-*   **Sector Heatmap**: Dynamic grouping logic that calculates portfolio weights by industry (IT, Banking, Energy) and renders a multi-segment heatbar.
-*   **Equity Curve Persistence**: An `AccountSnapshot` system that stores daily total account values in Room, visualizing long-term growth trends.
-*   **Sentiment Math (Option B)**: The simulation engine is "News-Aware." It applies a velocity multiplier (`driftDelta`) based on real-world news sentiment, accelerating drift toward anchors by up to 3x.
-*   **Realistic Cost Engine**: Reactively calculates **STT (Securities Transaction Tax)**, transaction charges, and brokerage for all trades. STT rates dynamically shift based on product type (CNC vs. MIS).
-*   **Brokerage Shield**: A "Watch-to-Earn" gamified mechanism that allows users to waive the 0.05% brokerage fee by consuming credits earned via on-demand rewarded ads.
-*   **Discipline Score Engine**: A proprietary quantification algorithm (`DisciplineCalculator`) that evaluates retail behavior (position sizing, holding time, emotional bias detection via Gemini) and assigns a social "Maturity Score."
-*   **Margin & Leverage Engine**: Simulates institutional buying power (up to 5x for MIS) with a dedicated liquidation manager to handle margin calls and maintenance triggers.
-*   **Precision Tradebook**: An atomic logging system that consolidated transactions into a single statement entry with detailed breakdowns of cost components, ensuring 100% transparency.
+### G. Multi-Format Monetization Infrastructure
+*   **AppOpenAdManager (`com.ashwathai.tradelab.ui.common`):** A lifecycle-aware component that monitors app-wide background/foreground transitions using `ProcessLifecycleOwner`.
+    *   Automatically fetches and displays an **App Open Ad** when the user resumes the app after a background period (warm start).
+    *   Maintains a time-boxed cache (4 hours) to prevent showing stale ads.
+*   **Native Ad Blending:**
+    *   **NativeAdLoader:** Logic integrated into the `AppOpenAdManager` to pre-fetch and cache high-performance native ads.
+    *   **NativeAdRow / NativeAdView:** A Compose-XML hybrid wrapper that renders native ad assets (headline, icon, CTA) using Trade Lab's premium dark aesthetic. Ads are injected dynamically into the **Watchlist**, **Portfolio**, and **Academy** dashboards.
+    *   **Premium Logic:** All ad formats (Rewarded, App Open, Native) are globally gated; the UI reactively hides all ad containers if `isPremium == true`.
 
 ---
 

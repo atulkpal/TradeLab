@@ -24,7 +24,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AccountSnapshot::class,
         LedgerEntry::class
     ],
-    version = 23,
+    version = 25,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -53,8 +53,9 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "paper_trader_db"
                 )
-                .addMigrations(MIGRATION_22_23)
+                .addMigrations(MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25)
                 .fallbackToDestructiveMigration()
+                .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
                 .build()
                 INSTANCE = instance
                 instance
@@ -65,6 +66,21 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_22_23 = object : Migration(22, 23) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE user_profile ADD COLUMN claimedMissions TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        // v23 -> v24: Multi-theme support
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE user_profile ADD COLUMN themeMode TEXT NOT NULL DEFAULT 'SERIOUS'")
+            }
+        }
+
+        // v24 -> v25: Stealth and Zen modes
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE user_profile ADD COLUMN isStealthMode INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE user_profile ADD COLUMN isZenMode INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

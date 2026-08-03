@@ -1,5 +1,7 @@
 package com.ashwathai.tradelab.ui.profile
 
+import java.util.Locale
+import androidx.compose.ui.draw.alpha
 import com.ashwathai.tradelab.MainActivity
 import com.ashwathai.tradelab.rememberLaunchPromo
 import android.os.Bundle
@@ -103,8 +105,6 @@ fun ProfileScreen(
         stats.completedLevels.split(",").filter { it.isNotBlank() }.toSet()
     }
 
-    var isDarkMode by remember { mutableStateOf(true) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -131,14 +131,14 @@ fun ProfileScreen(
                         modifier = Modifier
                             .size(56.dp)
                             .background(
-                                Brush.linearGradient(listOf(BrandViolet, BrandVioletDark)),
+                                Brush.linearGradient(listOf(DynamicPrimary, BrandVioletDark)),
                                 CircleShape
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = if (userProfile?.userName?.isNotBlank() == true) userProfile!!.userName.take(1).uppercase() else "A",
-                            color = Color.White,
+                            color = TextOnAccent,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -148,7 +148,7 @@ fun ProfileScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = if (userProfile?.userName?.isNotBlank() == true) userProfile!!.userName else "Ashwath Trader",
-                                color = Color.White,
+                                color = TextPrimary,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -209,7 +209,7 @@ fun ProfileScreen(
                             }
                             Text(
                                 text = if (stats.isPremium) "TradeLab Pro" else "TradeLab Free Tier",
-                                color = if (stats.isPremium) AccentYellow else Color.White,
+                                color = if (stats.isPremium) AccentYellow else TextPrimary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
@@ -241,7 +241,7 @@ fun ProfileScreen(
                         ) {
                             Text(
                                 text = "UNLOCK PRO • ${promo.priceLabel}",
-                                color = Color.White,
+                                color = TextOnAccent,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
@@ -306,7 +306,7 @@ fun ProfileScreen(
                     }
                     Text(
                         text = levelName,
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -330,7 +330,7 @@ fun ProfileScreen(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 LinearProgressIndicator(
-                    progress = { completedSet.size / quizModules.size.toFloat() },
+                    progress = { if (quizModules.isNotEmpty()) completedSet.size / quizModules.size.toFloat() else 0f },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
@@ -368,7 +368,7 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Discipline Score: ${stats.disciplineScore}/100",
-                            color = Color.White,
+                            color = TextPrimary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -509,7 +509,7 @@ fun ProfileScreen(
                         Text("PREMIUM BYPASS AUDIT", color = AccentGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text("Features you can access without Pro:", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Features you can access without Pro:", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     val bypassItems = listOf(
                         "Futures & Options (via F&O Tokens + Academic Gate)" to !stats.isPremium, 
@@ -557,7 +557,7 @@ fun ProfileScreen(
                     Column {
                         Text(
                             text = "TRADELAB REWARDS STATION",
-                            color = BrandViolet,
+                            color = DynamicPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -565,7 +565,7 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Sponsor Station by Ashwath AI",
-                            color = Color.White,
+                            color = TextPrimary,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -637,7 +637,7 @@ fun ProfileScreen(
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     val amtStr = if (stats.currency == "INR") "₹1,000 Capital" else "$1,000 Capital"
-                                    Text("Emergency Wallet Cash", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Emergency Wallet Cash", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text("Instantly adds $amtStr to cash balance", color = TextMuted, fontSize = 10.sp)
                                 }
                             }
@@ -693,7 +693,7 @@ fun ProfileScreen(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
-                                    Text("Brokerage Shield Recharge", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Brokerage Shield Recharge", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text(
                                         text = if (stats.isPremium) "Unlimited waivers active" else "Claim +20 Credits (${stats.brokerageCredits} active)",
                                         color = TextMuted,
@@ -753,7 +753,7 @@ fun ProfileScreen(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
-                                    Text("Unlock AI Advisor Credits", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Unlock AI Advisor Credits", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text(
                                         text = if (stats.isPremium) "Claim +1 AI Consultation Audit (Unlimited available)" else "Claim +1 AI Consultation Audit (${stats.aiAuditCredits} active)",
                                         color = TextMuted,
@@ -822,7 +822,7 @@ fun ProfileScreen(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
-                                    Text("Premium Indicators Unlock", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Premium Indicators Unlock", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text(expiryLabel, color = if (indUnl) AccentGreen else TextMuted, fontSize = 10.sp)
                                 }
                             }
@@ -888,7 +888,7 @@ fun ProfileScreen(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
-                                    Text("Intraday Session Pass", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Intraday Session Pass", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     Text(levExpiryLabel, color = if (levUnl) AccentGreen else TextMuted, fontSize = 10.sp)
                                 }
                             }
@@ -909,45 +909,87 @@ fun ProfileScreen(
             colors = CardDefaults.cardColors(containerColor = DarkSurface),
             border = BorderStroke(1.dp, DarkBorder)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
+            val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val isStealthMode by viewModel.isStealthMode.collectAsStateWithLifecycle()
+            val isZenMode by viewModel.isZenMode.collectAsStateWithLifecycle()
+
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "THEME MODE",
+                    color = TextMuted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(DarkBg).padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    ThemeMode.values().forEach { mode ->
+                        val isSelected = themeMode == mode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) DynamicPrimary else Color.Transparent)
+                                .clickable { viewModel.updateThemeMode(mode) }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                     Text(
-                        text = "THEME MODE",
-                        color = TextMuted,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (isDarkMode) "Sophisticated Dark" else "Neon Light (Experimental)",
-                        color = Color.White,
-                        fontSize = 14.sp,
+                        text = mode.name.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                        color = if (isSelected) TextOnAccent else TextMuted,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
-                }
-                Switch(
-                    checked = isDarkMode,
-                    onCheckedChange = { 
-                        isDarkMode = it
-                        if (!it) {
-                            viewModel.showFeedback("Ashwath AI recommends Sophisticated Dark mode to shield your eyes during intense simulation!")
-                            isDarkMode = true // revert back automatically to keep it dark
                         }
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = BrandViolet,
-                        checkedTrackColor = BrandViolet.copy(alpha = 0.3f),
-                        uncheckedThumbColor = TextMuted,
-                        uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
-                    )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "FOCUS & PRIVACY MODES",
+                    color = TextMuted,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Stealth Toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Stealth / Privacy Mode", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("Blurs portfolio values & cash totals.", color = TextMuted, fontSize = 11.sp)
+                    }
+                    Switch(
+                        checked = isStealthMode,
+                        onCheckedChange = { viewModel.toggleStealthMode() },
+                        colors = SwitchDefaults.colors(checkedThumbColor = DynamicPrimary)
+                    )
+                }
+
+                // Zen Toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Zen / Focus Mode", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("Simplifies UI. Hides tickers & news.", color = TextMuted, fontSize = 11.sp)
+                    }
+                    Switch(
+                        checked = isZenMode,
+                        onCheckedChange = { viewModel.toggleZenMode() },
+                        colors = SwitchDefaults.colors(checkedThumbColor = DynamicPrimary)
+                    )
+                }
             }
         }
 
@@ -1044,6 +1086,51 @@ fun ProfileScreen(
                     tint = BrandViolet,
                     modifier = Modifier.size(20.dp)
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // BACKLOG: Time Travel Mode (Locked)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+                .alpha(0.6f),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = BorderStroke(1.dp, DarkBorder)
+        ) {
+            Row(
+                modifier = Modifier.padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.05f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.History, null, tint = TextMuted, modifier = Modifier.size(20.dp))
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Time-Travel Mode", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(AccentYellow.copy(alpha = 0.15f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text("COMING SOON", color = AccentYellow, fontSize = 7.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+                    Text("Re-trade historical crashes like 2008.", color = TextMuted, fontSize = 11.sp)
+                }
+                Icon(Icons.Default.Lock, null, tint = TextMuted, modifier = Modifier.size(16.dp))
             }
         }
 
@@ -1942,7 +2029,7 @@ fun PremiumStatusChip(isPremium: Boolean) {
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = if (isPremium) "PRO" else "FREE",
-            color = if (isPremium) AccentYellow else BrandViolet,
+            color = if (isPremium) AccentYellow else DynamicPrimary,
             fontSize = 10.sp,
             fontWeight = FontWeight.ExtraBold
         )

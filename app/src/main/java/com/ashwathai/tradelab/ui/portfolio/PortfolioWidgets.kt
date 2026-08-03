@@ -52,7 +52,7 @@ fun PortfolioCard(stats: PortfolioStats, onSimulateTick: () -> Unit) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             text = formatCurrencyNoDecimals(stats.totalValue, stats.currency),
-                            color = Color.White,
+                            color = TextPrimary,
                             fontSize = 38.sp,
                             fontWeight = FontWeight.Light,
                             letterSpacing = (-1).sp
@@ -88,14 +88,14 @@ fun PortfolioCard(stats: PortfolioStats, onSimulateTick: () -> Unit) {
             ) {
                 Column {
                     Text(
-                        text = "Available Cash",
+                        text = "Total Value",
                         color = TextSubtle,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = formatCurrencyNoDecimals(stats.cash, stats.currency),
-                        color = Color.White.copy(alpha = 0.9f),
+                        text = formatCurrencyNoDecimals(stats.totalValue, stats.currency),
+                        color = TextPrimary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium
                     )

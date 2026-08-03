@@ -111,4 +111,26 @@ class TradingViewModelTest {
         
         coVerify { repository.setWatchlistCompactMode(true) }
     }
+
+    @Test
+    fun `exitPosition sells MIS holding as intraday instead of delivery`() = runTest {
+        val holdingsFlow = MutableStateFlow(listOf(Holding("AAPL", shares = 4.0, averagePrice = 100.0, isDelivery = false)))
+        every { repository.holdings } returns holdingsFlow
+        coEvery { repository.sellStock("AAPL", 4.0, false) } returns Result.success(Unit)
+
+        val testViewModel = TradingViewModel(
+            context,
+            repository,
+            leaderboardManager,
+            testCoroutineRule.testDispatcher,
+            testCoroutineRule.testDispatcher
+        )
+
+        testCoroutineRule.testDispatcher.scheduler.advanceUntilIdle()
+        testViewModel.exitPosition("AAPL")
+        testCoroutineRule.testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { repository.sellStock("AAPL", 4.0, false) }
+        coVerify(exactly = 0) { repository.sellStock("AAPL", 4.0, true) }
+    }
 }
