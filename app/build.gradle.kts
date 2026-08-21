@@ -28,11 +28,11 @@ android {
     applicationId = "com.ashwathai.tradelab"
     minSdk = 24
     targetSdk = 37
-    versionCode = 6
-    versionName = "1.7.0"
+    versionCode = 9
+    versionName = "1.8.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
+    manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3038055603735419~3347511713"
   }
 
   signingConfigs {
@@ -80,11 +80,11 @@ android {
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
-      manifestPlaceholders["admobApplicationId"] = "ca-app-pub-4153575596488132~8287049082"
+      manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3038055603735419~8287049082"
     }
     debug {
       signingConfig = signingConfigs.getByName("debugConfig")
-      manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3940256099942544~3347511713"
+manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3038055603735419~8287049082"
     }
   }
   compileOptions {

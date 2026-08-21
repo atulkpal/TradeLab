@@ -3,6 +3,7 @@ package com.ashwathai.tradelab.ui.profile
 import java.util.Locale
 import androidx.compose.ui.draw.alpha
 import com.ashwathai.tradelab.MainActivity
+import com.ashwathai.tradelab.ui.common.NativeAdRow
 import com.ashwathai.tradelab.rememberLaunchPromo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -76,7 +77,8 @@ import com.ashwathai.tradelab.ui.profile.*
 @Composable
 fun ProfileScreen(
     viewModel: TradingViewModel,
-    stats: PortfolioStats
+    stats: PortfolioStats,
+    nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null
 ) {
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
@@ -96,6 +98,8 @@ fun ProfileScreen(
 
     val promo = rememberLaunchPromo()
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var showDiagnosticDialog by remember { mutableStateOf(false) }
+    var capturedCrashTrace by remember { mutableStateOf<String?>(null) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val mainActivity = context as? MainActivity
@@ -492,6 +496,12 @@ fun ProfileScreen(
                     }
                 }
             }
+        }
+
+        // Native Ad Spot 1 - After Investor Maturity
+        nativeAd?.let { ad ->
+            NativeAdRow(nativeAd = ad)
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
         // 2.6 Premium Bypass Audit
@@ -1643,6 +1653,12 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Native Ad Spot 2 - Above Sign Out
+        nativeAd?.let { ad ->
+            NativeAdRow(nativeAd = ad)
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         // Logout Button
         OutlinedButton(
             onClick = { viewModel.logout() },
@@ -1733,28 +1749,33 @@ fun ProfileScreen(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(R.drawable.ic_status_heart),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(AccentRose),
-                    modifier = Modifier.size(10.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Made by Ashwat AI",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(
+                text = "With ❤️ from Ashwath AI",
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Trade Lab v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                 color = TextMuted.copy(alpha = 0.7f),
                 fontSize = 10.sp,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            val prefs = context.getSharedPreferences("tradelab_diagnostics", android.content.Context.MODE_PRIVATE)
+                            capturedCrashTrace = prefs.getString("last_crash_trace", "No crash trace captured yet.")
+                            showDiagnosticDialog = true
+                        },
+                        onTap = {
+                            if (BuildConfig.DEBUG) {
+                                throw RuntimeException("TradeLab Diagnostic Crash Test - Build 8")
+                            }
+                        }
+                    )
+                }
             )
         }
 
@@ -2014,6 +2035,30 @@ fun ProfileScreen(
             containerColor = DarkSurfaceElevated,
             titleContentColor = Color.White,
             textContentColor = TextSubtle
+        )
+    }
+
+    if (showDiagnosticDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiagnosticDialog = false },
+            title = { Text("Diagnostic Crash Trace", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        text = capturedCrashTrace ?: "Empty trace.",
+                        color = TextMuted,
+                        fontSize = 10.sp,
+                        lineHeight = 14.sp,
+                        modifier = Modifier.background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(8.dp)).padding(8.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDiagnosticDialog = false }) {
+                    Text("Close", color = BrandViolet)
+                }
+            },
+            containerColor = DarkSurfaceElevated
         )
     }
 }

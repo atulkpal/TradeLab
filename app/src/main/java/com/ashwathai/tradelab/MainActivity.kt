@@ -105,7 +105,8 @@ class MainActivity : ComponentActivity() {
         PORTFOLIO_RESET,
         PROFILE_LEVERAGE,
         APP_OPEN,
-        NATIVE_WATCHLIST
+        NATIVE_WATCHLIST,
+        PROFILE_BANNER
     }
 
     fun getAdUnitId(adType: AdType): String {
@@ -113,21 +114,23 @@ class MainActivity : ComponentActivity() {
             when (adType) {
                 AdType.APP_OPEN -> "ca-app-pub-3940256099942544/9257395912"
                 AdType.NATIVE_WATCHLIST -> "ca-app-pub-3940256099942544/2247696110"
+                AdType.PROFILE_BANNER -> "ca-app-pub-3940256099942544/6300978111"
                 else -> "ca-app-pub-3940256099942544/5224354917"
             }
         } else {
             when (adType) {
-                AdType.ACADEMY_DOUBLE -> "ca-app-pub-4153575596488132/9800275450"
-                AdType.PORTFOLIO_SHIELD -> "ca-app-pub-4153575596488132/8679333696"
-                AdType.PROFILE_AI_ADVISOR -> "ca-app-pub-4153575596488132/5861598661"
-                AdType.PROFILE_EMERGENCY_CASH -> "ca-app-pub-4153575596488132/5777269963"
-                AdType.PROFILE_INDICATORS -> "ca-app-pub-4153575596488132/9988545931"
-                AdType.PROFILE_SHIELD_MAX -> "ca-app-pub-4153575596488132/2225726124"
-                AdType.WATCHLIST_CREATE -> "ca-app-pub-4153575596488132/5777269963"
-                AdType.PORTFOLIO_RESET -> "ca-app-pub-4153575596488132/5777269963"
-                AdType.PROFILE_LEVERAGE -> "ca-app-pub-4153575596488132/5777269963"
-                AdType.APP_OPEN -> "ca-app-pub-4153575596488132/7576025653"
-                AdType.NATIVE_WATCHLIST -> "ca-app-pub-4153575596488132/1254159884"
+                AdType.ACADEMY_DOUBLE -> "ca-app-pub-3038055603735419/2714689985"
+                AdType.PORTFOLIO_SHIELD -> "ca-app-pub-3038055603735419/4378341620"
+                AdType.PROFILE_AI_ADVISOR -> "ca-app-pub-3038055603735419/7040842603"
+                AdType.PROFILE_EMERGENCY_CASH -> "ca-app-pub-3038055603735419/1377452384"
+                AdType.PROFILE_INDICATORS -> "ca-app-pub-3038055603735419/8705383267"
+                AdType.PROFILE_SHIELD_MAX -> "ca-app-pub-3038055603735419/7392301590"
+                AdType.WATCHLIST_CREATE -> "ca-app-pub-3038055603735419/5887648231"
+                AdType.PORTFOLIO_RESET -> "ca-app-pub-3038055603735419/1948403226"
+                AdType.PROFILE_LEVERAGE -> "ca-app-pub-3038055603735419/1185880696"
+                AdType.APP_OPEN -> "ca-app-pub-3038055603735419/7727238314"
+                AdType.NATIVE_WATCHLIST -> "ca-app-pub-3038055603735419/1301430769"
+                AdType.PROFILE_BANNER -> "ca-app-pub-3038055603735419/5711604598"
             }
         }
     }
@@ -468,7 +471,8 @@ fun MainContent(
                         )
                         "Profile" -> ProfileScreen(
                             viewModel = viewModel,
-                            stats = stats
+                            stats = stats,
+                            nativeAd = appOpenAdManager.getNativeAd()
                         )
                     }
                 }

@@ -21,18 +21,19 @@ override fun onCreate(savedInstanceState: Bundle?) {
 
 ### B. AdMob IDs & Reward Map
 *   **Test Rewarded Ad Unit ID:** `ca-app-pub-3940256099942544/5224354917` (Used automatically in debug builds via `BuildConfig.DEBUG` checks).
-*   **Client Production Publisher / App ID:** Set in `AndroidManifest.xml` (e.g. `ca-app-pub-4153575596488132`).
+*   **Client Production Publisher / App ID:** Set in `AndroidManifest.xml` (e.g. `ca-app-pub-3038055603735419`).
 
 #### Production Ad Unit Mappings and Reward Outcomes:
 
 | AdType (Enum) | Ad Unit ID (Production) | Screen / Trigger Source | Reward Points / Amount | Target Method (ViewModel) |
 | :--- | :--- | :--- | :--- | :--- |
-| **`ACADEMY_DOUBLE`** | `ca-app-pub-4153575596488132/9800275450` | Academy (Quiz Completion) | **2x Virtual Capital** (Doubles current quiz reward) | `viewModel.completeTutorial(quizId, rewardAmt * 2)` |
-| **`PORTFOLIO_SHIELD`** | `ca-app-pub-4153575596488132/8679333696` | Portfolio Screen (Shield Toggle) | **50 Brokerage Credits** | `viewModel.earnBrokerageCredits(50)` |
-| **`PROFILE_EMERGENCY_CASH`** | `ca-app-pub-4153575596488132/5777269963` | Profile / Cash Card | **₹500 / $500** Virtual Cash | `viewModel.earnEmergencyCash(500.0)` |
-| **`PROFILE_SHIELD_MAX`** | `ca-app-pub-4153575596488132/2225726124` | Profile / Subscription Panel | **100 Brokerage Credits** | `viewModel.earnBrokerageCredits(100)` |
-| **`PROFILE_AI_ADVISOR`** | `ca-app-pub-4153575596488132/5861598661` | Profile / AI Coach panel | **+1 AI Audit Credit** | `viewModel.earnAiAuditCredit()` |
-| **`PROFILE_INDICATORS`** | `ca-app-pub-4153575596488132/9988545931` | Profile / SMA & RSI Toggles | **24-Hour Premium Indicator Access** | `viewModel.unlockPremiumIndicators(24)` |
+| **`ACADEMY_DOUBLE`** | `ca-app-pub-3038055603735419/2714689985` | Academy (Quiz Completion) | **2x Virtual Capital** (Doubles current quiz reward) | `viewModel.completeTutorial(quizId, rewardAmt * 2)` |
+| **`PORTFOLIO_SHIELD`** | `ca-app-pub-3038055603735419/4378341620` | Portfolio Screen (Shield Toggle) | **50 Brokerage Credits** | `viewModel.earnBrokerageCredits(50)` |
+| **`PROFILE_EMERGENCY_CASH`** | `ca-app-pub-3038055603735419/1377452384` | Profile / Cash Card | **₹500 / $500** Virtual Cash | `viewModel.earnEmergencyCash(500.0)` |
+| **`PROFILE_SHIELD_MAX`** | `ca-app-pub-3038055603735419/7392301590` | Profile / Subscription Panel | **100 Brokerage Credits** | `viewModel.earnBrokerageCredits(100)` |
+| **`PROFILE_AI_ADVISOR`** | `ca-app-pub-3038055603735419/7040842603` | Profile / AI Coach panel | **+1 AI Audit Credit** | `viewModel.earnAiAuditCredit()` |
+| **`PROFILE_INDICATORS`** | `ca-app-pub-3038055603735419/8705383267` | Profile / SMA & RSI Toggles | **24-Hour Premium Indicator Access** | `viewModel.unlockPremiumIndicators(24)` |
+| **`NATIVE_PROFILE`** | `ca-app-pub-3038055603735419/5711604598` | Profile Screen (2 spots) | **Native Advanced Ad** | Displayed inline in profile |
 
 ### C. Standard Invocation Code Snippet
 All ads are dynamically requested, pre-cached, and shown using `MainActivity`'s unified handler:

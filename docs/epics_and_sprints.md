@@ -353,7 +353,7 @@ Monetize the platform responsibly for the 16–35 demographic with a 100% non-in
 ### Sprint 8.3: Video Player Simulation & SDK Integration (✅ Production Ready)
 *   [x] Create a modular overlay showing a clean 5-second simulated video player with a progress bar and completion callback for offline testing.
 *   [x] Add dependencies and initial bindings for Google Mobile Ads (AdMob) Rewarded Video API to prepare for live production deployment.
-*   [x] Integrate official production AdMob App ID (`ca-app-pub-4153575596488132~8287049082`) and custom Rewarded Ad Unit IDs across all placements (Academy Double, Portfolio Shield, Profile Cash, AI Advisor, Indicators, Shield Max Limit).
+*   [x] Integrate official production AdMob App ID (`ca-app-pub-3038055603735419~8287049082`) and custom Rewarded Ad Unit IDs across all placements (Academy Double, Portfolio Shield, Profile Cash, AI Advisor, Indicators, Shield Max Limit).
 *   [x] Wrap the integration inside standard, compiler-enforced `BuildConfig.DEBUG` checks using Gradle manifest placeholders and enums, ensuring safety (displaying standard Google test ads during debug builds and rendering live revenue-generating ads on release signed builds).
 
 ---
@@ -663,10 +663,14 @@ Expand the Learn-to-Earn Academy from 8 flat single-question modules into a two-
 
 ---
 
-## Post-Launch Maintenance & Stability (v1.7.1)
+## Post-Launch Maintenance & Stability (v1.8.1)
 Continuous improvement based on production telemetry and crash reports.
 
-### Sprint: Crashlytics Hotfixes (August 2026)
+### Sprint: Deep Stability & R8 Hardening (August 2026)
+*   [x] **R8/Reflection Immunity**: Migrated from Moshi Reflection to **Moshi Codegen** (`@JsonClass`) to prevent release-only crashes caused by property renaming.
+*   [x] **ProGuard Hardening**: Added explicit protection for the `:shared` module and all internal data models in the `data` and `ui` packages.
+*   [x] **In-App Diagnostic Suite**: Implemented a global `UncaughtExceptionHandler` that captures fatal traces to SharedPreferences.
+*   [x] **Diagnostic Viewer**: Added a secret long-press gesture on the Profile version footer to view local crash logs on user devices.
 *   [x] **Database Corruption Fix**: Explicitly enabled `WRITE_AHEAD_LOGGING` in `AppDatabase` and added `.catch` handlers in `TradingRepository` flows to prevent `SQLiteDatabaseCorruptException` crashes.
 *   [x] **NaN Progress Indicator Fix**: Added safety division-by-zero checks in `ProfileScreen` and `MainActivity` to prevent `IllegalArgumentException: current must not be NaN` when data is loading.
 

@@ -34,11 +34,11 @@ class AppOpenAdManager(private val application: Application) : DefaultLifecycleO
 
     private val appOpenUnitId: String
         get() = if (BuildConfig.DEBUG) "ca-app-pub-3940256099942544/9257395912" 
-                else "ca-app-pub-4153575596488132/7576025653"
+                else "ca-app-pub-3038055603735419/7727238314"
 
     private val nativeUnitId: String
         get() = if (BuildConfig.DEBUG) "ca-app-pub-3940256099942544/2247696110"
-                else "ca-app-pub-4153575596488132/1254159884"
+                else "ca-app-pub-3038055603735419/1301430769"
 
     init {
         application.registerActivityLifecycleCallbacks(this)
