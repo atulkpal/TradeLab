@@ -83,12 +83,16 @@ The **Architectural Modernization** has been successfully verified:
     *   Implemented **Stealth Mode** with dynamic privacy blurring for portfolio values.
     *   Integrated **Zen Mode** to hide distracting news and movers for better focus.
     *   Introduced **Monospace Typography** and **CRT Scanline** effects for thematic immersion.
+15. **Deep Stability Recovery (v1.8.1):**
+    *   Migrated to **Moshi Codegen** (reflection-free parsing) to resolve R8/Obfuscation crashes on release builds.
+    *   Hardened **ProGuard rules** for the `:shared` module and data packages.
+    *   Implemented an **In-App Diagnostic Suite** (Crash Logger + Secret Viewer via long-press on version) for field troubleshooting.
 
 ---
 
 ## 4. Current Work & Next Milestones
 
-We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, and the **Hyper-Personalization Suite**. The app is now at **v1.7.0 (Build 6)** and ready for production distribution.
+We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, and the **Hyper-Personalization Suite**. The app is now at **v1.8.1 (Build 8)** and ready for production distribution.
 
 ### What is Active Right Now (Post-Launch & Multi-Platform Prep)
 *   **KMP Migration:** Moving core entities and repositories to Kotlin Multiplatform (KMP) to support iOS.
@@ -138,6 +142,36 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 6.  **Versioning & Release Policy:** NEVER automatically bump version codes or numbers in `app/build.gradle.kts`. Always ask the user for explicit approval before performing a version bump. **`RELEASES.md` and `CHANGELOG.md` MUST ONLY be updated when the project is ready for release and ONLY after explicit user confirmation.**
 7.  **No Dead-Ends:** Never add non-functional UI placeholders. Every visual affordance must connect to an active feature or remain omitted.
 8.  **Authoritative Manual Verification:** Every feature implementation must include an update to the [Authoritative Manual Verification Protocol](file:///C:/Users/Atul/AppData/Local/Google/AndroidStudio2026.1.2/projects/tradelab.55ea813f/.artifacts/b97c14b5-a8e9-4d28-9834-c46165db831b/MANUAL_VERIFICATION_PROTOCOL.artifact.md) or the checklist to ensure functional integrity can be verified by testers.
+
+---
+
+## NLM Video Pipeline Documentation
+
+For the automated video generation pipeline (NLM), see:
+
+| Document | Path | Purpose |
+|----------|------|---------|
+| **Pipeline Overview** | `nlm/docs/PIPELINE.md` | Full pipeline walkthrough, architecture, stages |
+| **Status Sheet** | `nlm/docs/STATUS_SHEET.md` | Master lecture tracker with current progress |
+| **Script Inventory** | `nlm/docs/SCRIPT_INVENTORY.md` | Complete script reference with usage |
+| **Quota Management** | `nlm/docs/QUOTA_MANAGEMENT.md` | Quota limits, backoff strategies |
+| **Troubleshooting** | `nlm/docs/TROUBLESHOOTING.md` | Common issues and fixes |
+
+**Key Tracking Files:**
+- `nlm/tracking/lecture_tracker.csv` - Master CSV tracking all 204 lectures
+- `nlm/pending_allocation.json` - Lecture → Account mapping
+- `nlm/batch_results.json` - Video generation results
+- `nlm/batch_progress.json` - Real-time progress tracking
+
+**Pipeline Scripts** (`nlm/scripts/`):
+```
+extract/           # Lecture extraction
+create_notebooks/  # Parallel notebook creation
+generate_videos/   # Batch video generation
+download/          # Video download
+process/           # FFmpeg processing
+upload/            # Firebase upload
+```
 
 ---
 

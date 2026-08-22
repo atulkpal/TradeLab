@@ -1,0 +1,296 @@
+{
+  "course_id": 1,
+  "course_title": "Stock Market Basics",
+  "course_tier": "BEGINNER",
+  "total_lectures": 36,
+  "lectures": [
+    {
+      "filename": "lecture_1_1_1.md",
+      "path": "lectures/course_1/lecture_1_1_1.md",
+      "lecture_code": "1.1.1",
+      "title": "Lecture 1.1.1: Fractional Ownership Explained",
+      "chapter_id": 101,
+      "chapter_title": "Chapter 1.1: What is a Stock?"
+    },
+    {
+      "filename": "lecture_1_1_2.md",
+      "path": "lectures/course_1/lecture_1_1_2.md",
+      "lecture_code": "1.1.2",
+      "title": "Lecture 1.1.2: Capital Appreciation & Dividends",
+      "chapter_id": 101,
+      "chapter_title": "Chapter 1.1: What is a Stock?"
+    },
+    {
+      "filename": "lecture_1_1_3.md",
+      "path": "lectures/course_1/lecture_1_1_3.md",
+      "lecture_code": "1.1.3",
+      "title": "Lecture 1.1.3: Shareholder Rights in India",
+      "chapter_id": 101,
+      "chapter_title": "Chapter 1.1: What is a Stock?"
+    },
+    {
+      "filename": "lecture_1_2_1.md",
+      "path": "lectures/course_1/lecture_1_2_1.md",
+      "lecture_code": "1.2.1",
+      "title": "Lecture 1.2.1: The Capital Raising Process",
+      "chapter_id": 102,
+      "chapter_title": "Chapter 1.2: Why Companies Go Public & IPOs"
+    },
+    {
+      "filename": "lecture_1_2_2.md",
+      "path": "lectures/course_1/lecture_1_2_2.md",
+      "lecture_code": "1.2.2",
+      "title": "Lecture 1.2.2: The IPO Process in India",
+      "chapter_id": 102,
+      "chapter_title": "Chapter 1.2: Why Companies Go Public & IPOs"
+    },
+    {
+      "filename": "lecture_1_2_3.md",
+      "path": "lectures/course_1/lecture_1_2_3.md",
+      "lecture_code": "1.2.3",
+      "title": "Lecture 1.2.3: Why Some Companies Stay Private",
+      "chapter_id": 102,
+      "chapter_title": "Chapter 1.2: Why Companies Go Public & IPOs"
+    },
+    {
+      "filename": "lecture_1_3_1.md",
+      "path": "lectures/course_1/lecture_1_3_1.md",
+      "lecture_code": "1.3.1",
+      "title": "Lecture 1.3.1: NSE & BSE - India's Twin Pillars",
+      "chapter_id": 103,
+      "chapter_title": "Chapter 1.3: Stock Exchanges & Indices"
+    },
+    {
+      "filename": "lecture_1_3_2.md",
+      "path": "lectures/course_1/lecture_1_3_2.md",
+      "lecture_code": "1.3.2",
+      "title": "Lecture 1.3.2: Understanding Nifty 50 & Sensex",
+      "chapter_id": 103,
+      "chapter_title": "Chapter 1.3: Stock Exchanges & Indices"
+    },
+    {
+      "filename": "lecture_1_3_3.md",
+      "path": "lectures/course_1/lecture_1_3_3.md",
+      "lecture_code": "1.3.3",
+      "title": "Lecture 1.3.3: Sectoral and Broad Market Indices",
+      "chapter_id": 103,
+      "chapter_title": "Chapter 1.3: Stock Exchanges & Indices"
+    },
+    {
+      "filename": "lecture_1_4_1.md",
+      "path": "lectures/course_1/lecture_1_4_1.md",
+      "lecture_code": "1.4.1",
+      "title": "Lecture 1.4.1: The Role of a Broker in India",
+      "chapter_id": 104,
+      "chapter_title": "Chapter 1.4: Brokers, Demat & Trading Accounts"
+    },
+    {
+      "filename": "lecture_1_4_2.md",
+      "path": "lectures/course_1/lecture_1_4_2.md",
+      "lecture_code": "1.4.2",
+      "title": "Lecture 1.4.2: The Demat Account Explained",
+      "chapter_id": 104,
+      "chapter_title": "Chapter 1.4: Brokers, Demat & Trading Accounts"
+    },
+    {
+      "filename": "lecture_1_4_3.md",
+      "path": "lectures/course_1/lecture_1_4_3.md",
+      "lecture_code": "1.4.3",
+      "title": "Lecture 1.4.3: The Trading Account - Your Interface",
+      "chapter_id": 104,
+      "chapter_title": "Chapter 1.4: Brokers, Demat & Trading Accounts"
+    },
+    {
+      "filename": "lecture_1_5_1.md",
+      "path": "lectures/course_1/lecture_1_5_1.md",
+      "lecture_code": "1.5.1",
+      "title": "Lecture 1.5.1: Market Orders",
+      "chapter_id": 105,
+      "chapter_title": "Chapter 1.5: Placing Orders"
+    },
+    {
+      "filename": "lecture_1_5_2.md",
+      "path": "lectures/course_1/lecture_1_5_2.md",
+      "lecture_code": "1.5.2",
+      "title": "Lecture 1.5.2: Limit Orders",
+      "chapter_id": 105,
+      "chapter_title": "Chapter 1.5: Placing Orders"
+    },
+    {
+      "filename": "lecture_1_5_3.md",
+      "path": "lectures/course_1/lecture_1_5_3.md",
+      "lecture_code": "1.5.3",
+      "title": "Lecture 1.5.3: GTT (Good Till Triggered) Orders",
+      "chapter_id": 105,
+      "chapter_title": "Chapter 1.5: Placing Orders"
+    },
+    {
+      "filename": "lecture_1_6_1.md",
+      "path": "lectures/course_1/lecture_1_6_1.md",
+      "lecture_code": "1.6.1",
+      "title": "Lecture 1.6.1: The T+1 Settlement Cycle in India",
+      "chapter_id": 106,
+      "chapter_title": "Chapter 1.6: Settlement Cycles"
+    },
+    {
+      "filename": "lecture_1_6_2.md",
+      "path": "lectures/course_1/lecture_1_6_2.md",
+      "lecture_code": "1.6.2",
+      "title": "Lecture 1.6.2: Intraday vs. Delivery Trades",
+      "chapter_id": 106,
+      "chapter_title": "Chapter 1.6: Settlement Cycles"
+    },
+    {
+      "filename": "lecture_1_6_3.md",
+      "path": "lectures/course_1/lecture_1_6_3.md",
+      "lecture_code": "1.6.3",
+      "title": "Lecture 1.6.3: Understanding Holdings",
+      "chapter_id": 106,
+      "chapter_title": "Chapter 1.6: Settlement Cycles"
+    },
+    {
+      "filename": "lecture_1_7_1.md",
+      "path": "lectures/course_1/lecture_1_7_1.md",
+      "lecture_code": "1.7.1",
+      "title": "Lecture 1.7.1: Price Data (OHLC)",
+      "chapter_id": 107,
+      "chapter_title": "Chapter 1.7: Reading a Stock Quote"
+    },
+    {
+      "filename": "lecture_1_7_2.md",
+      "path": "lectures/course_1/lecture_1_7_2.md",
+      "lecture_code": "1.7.2",
+      "title": "Lecture 1.7.2: Volume and 52-Week Range",
+      "chapter_id": 107,
+      "chapter_title": "Chapter 1.7: Reading a Stock Quote"
+    },
+    {
+      "filename": "lecture_1_7_3.md",
+      "path": "lectures/course_1/lecture_1_7_3.md",
+      "lecture_code": "1.7.3",
+      "title": "Lecture 1.7.3: Market Capitalization",
+      "chapter_id": 107,
+      "chapter_title": "Chapter 1.7: Reading a Stock Quote"
+    },
+    {
+      "filename": "lecture_1_8_1.md",
+      "path": "lectures/course_1/lecture_1_8_1.md",
+      "lecture_code": "1.8.1",
+      "title": "Lecture 1.8.1: The Structure of a Candlestick",
+      "chapter_id": 108,
+      "chapter_title": "Chapter 1.8: Candlestick Anatomy"
+    },
+    {
+      "filename": "lecture_1_8_2.md",
+      "path": "lectures/course_1/lecture_1_8_2.md",
+      "lecture_code": "1.8.2",
+      "title": "Lecture 1.8.2: Interpreting Body and Wicks",
+      "chapter_id": 108,
+      "chapter_title": "Chapter 1.8: Candlestick Anatomy"
+    },
+    {
+      "filename": "lecture_1_8_3.md",
+      "path": "lectures/course_1/lecture_1_8_3.md",
+      "lecture_code": "1.8.3",
+      "title": "Lecture 1.8.3: Timeframes and Candlesticks",
+      "chapter_id": 108,
+      "chapter_title": "Chapter 1.8: Candlestick Anatomy"
+    },
+    {
+      "filename": "lecture_1_9_1.md",
+      "path": "lectures/course_1/lecture_1_9_1.md",
+      "lecture_code": "1.9.1",
+      "title": "Lecture 1.9.1: The Core Trading Hours",
+      "chapter_id": 109,
+      "chapter_title": "Chapter 1.9: Market Hours & Trading Sessions"
+    },
+    {
+      "filename": "lecture_1_9_2.md",
+      "path": "lectures/course_1/lecture_1_9_2.md",
+      "lecture_code": "1.9.2",
+      "title": "Lecture 1.9.2: The Pre-Open Session",
+      "chapter_id": 109,
+      "chapter_title": "Chapter 1.9: Market Hours & Trading Sessions"
+    },
+    {
+      "filename": "lecture_1_9_3.md",
+      "path": "lectures/course_1/lecture_1_9_3.md",
+      "lecture_code": "1.9.3",
+      "title": "Lecture 1.9.3: Trading Holidays & Calendar",
+      "chapter_id": 109,
+      "chapter_title": "Chapter 1.9: Market Hours & Trading Sessions"
+    },
+    {
+      "filename": "lecture_1_10_1.md",
+      "path": "lectures/course_1/lecture_1_10_1.md",
+      "lecture_code": "1.10.1",
+      "title": "Lecture 1.10.1: Brokerage and STT",
+      "chapter_id": 110,
+      "chapter_title": "Chapter 1.10: Costs of Trading"
+    },
+    {
+      "filename": "lecture_1_10_2.md",
+      "path": "lectures/course_1/lecture_1_10_2.md",
+      "lecture_code": "1.10.2",
+      "title": "Lecture 1.10.2: GST, Stamp Duty, and SEBI Charges",
+      "chapter_id": 110,
+      "chapter_title": "Chapter 1.10: Costs of Trading"
+    },
+    {
+      "filename": "lecture_1_10_3.md",
+      "path": "lectures/course_1/lecture_1_10_3.md",
+      "lecture_code": "1.10.3",
+      "title": "Lecture 1.10.3: Impact on Profitability",
+      "chapter_id": 110,
+      "chapter_title": "Chapter 1.10: Costs of Trading"
+    },
+    {
+      "filename": "lecture_1_11_1.md",
+      "path": "lectures/course_1/lecture_1_11_1.md",
+      "lecture_code": "1.11.1",
+      "title": "Lecture 1.11.1: The 10-15% Allocation Rule",
+      "chapter_id": 111,
+      "chapter_title": "Chapter 1.11: Position Sizing"
+    },
+    {
+      "filename": "lecture_1_11_2.md",
+      "path": "lectures/course_1/lecture_1_11_2.md",
+      "lecture_code": "1.11.2",
+      "title": "Lecture 1.11.2: Calculating Position Size",
+      "chapter_id": 111,
+      "chapter_title": "Chapter 1.11: Position Sizing"
+    },
+    {
+      "filename": "lecture_1_11_3.md",
+      "path": "lectures/course_1/lecture_1_11_3.md",
+      "lecture_code": "1.11.3",
+      "title": "Lecture 1.11.3: Why It Matters More Than Stock Selection",
+      "chapter_id": 111,
+      "chapter_title": "Chapter 1.11: Position Sizing"
+    },
+    {
+      "filename": "lecture_1_12_1.md",
+      "path": "lectures/course_1/lecture_1_12_1.md",
+      "lecture_code": "1.12.1",
+      "title": "Lecture 1.12.1: The Concept of Diversification",
+      "chapter_id": 112,
+      "chapter_title": "Chapter 1.12: Diversification Across Sectors"
+    },
+    {
+      "filename": "lecture_1_12_2.md",
+      "path": "lectures/course_1/lecture_1_12_2.md",
+      "lecture_code": "1.12.2",
+      "title": "Lecture 1.12.2: Sectoral Correlations",
+      "chapter_id": 112,
+      "chapter_title": "Chapter 1.12: Diversification Across Sectors"
+    },
+    {
+      "filename": "lecture_1_12_3.md",
+      "path": "lectures/course_1/lecture_1_12_3.md",
+      "lecture_code": "1.12.3",
+      "title": "Lecture 1.12.3: Mutual Funds as a Diversification Tool",
+      "chapter_id": 112,
+      "chapter_title": "Chapter 1.12: Diversification Across Sectors"
+    }
+  ]
+}

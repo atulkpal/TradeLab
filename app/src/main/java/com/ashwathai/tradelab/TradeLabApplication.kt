@@ -11,19 +11,41 @@ class TradeLabApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // Initialize Firebase only if not in a test environment (where google-services.json might be missing/unprocessed)
-        // or ensure it's initialized before usage.
+        // Initialize Firebase Components
         try {
-            if (com.google.firebase.FirebaseApp.getApps(this).isNotEmpty()) {
-                FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
-                    PlayIntegrityAppCheckProviderFactory.getInstance()
-                )
-                // Initialize Firebase Analytics
-                FirebaseAnalytics.getInstance(this)
-            }
+            // Ensure App Check is initialized for Play Integrity in production
+            com.google.firebase.appcheck.FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
+                com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory.getInstance()
+            )
+            
+            // Explicitly enable Crashlytics collection to ensure reports are sent from release builds
+            com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
+            
+            // Initialize Firebase Analytics
+            com.google.firebase.analytics.FirebaseAnalytics.getInstance(this)
+            
+            android.util.Log.d("TradeLabApp", "Firebase components initialized successfully.")
         } catch (e: Exception) {
-            // Log or ignore for tests
-            android.util.Log.w("TradeLabApp", "Firebase initialization skipped or failed: ${e.message}")
+            // Log to logcat as a last resort
+            android.util.Log.e("TradeLabApp", "Firebase initialization error: ${e.message}", e)
+        }
+
+        // Setup Global Crash Logger for "blind" debugging on user devices
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            try {
+                val prefs = getSharedPreferences("tradelab_diagnostics", android.content.Context.MODE_PRIVATE)
+                val sw = java.io.StringWriter()
+                val pw = java.io.PrintWriter(sw)
+                throwable.printStackTrace(pw)
+                val stackTrace = sw.toString()
+                
+                prefs.edit().putString("last_crash_trace", stackTrace).apply()
+                android.util.Log.e("TradeLabApp", "FATAL CRASH CAPTURED: $stackTrace")
+            } catch (e: Exception) {
+                // Ignore errors during crash logging
+            }
+            defaultHandler?.uncaughtException(thread, throwable)
         }
     }
 }

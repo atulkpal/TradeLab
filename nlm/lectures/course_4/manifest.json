@@ -1,0 +1,296 @@
+{
+  "course_id": 4,
+  "course_title": "Futures & Options",
+  "course_tier": "ADVANCED",
+  "total_lectures": 36,
+  "lectures": [
+    {
+      "filename": "lecture_4_1_1.md",
+      "path": "lectures/course_4/lecture_4_1_1.md",
+      "lecture_code": "4.1.1",
+      "title": "Lecture 4.1.1: What is a Derivative?",
+      "chapter_id": 401,
+      "chapter_title": "Chapter 4.1: Introduction to Derivatives"
+    },
+    {
+      "filename": "lecture_4_1_2.md",
+      "path": "lectures/course_4/lecture_4_1_2.md",
+      "lecture_code": "4.1.2",
+      "title": "Lecture 4.1.2: Types of Derivatives",
+      "chapter_id": 401,
+      "chapter_title": "Chapter 4.1: Introduction to Derivatives"
+    },
+    {
+      "filename": "lecture_4_1_3.md",
+      "path": "lectures/course_4/lecture_4_1_3.md",
+      "lecture_code": "4.1.3",
+      "title": "Lecture 4.1.3: The Role of Derivatives in India",
+      "chapter_id": 401,
+      "chapter_title": "Chapter 4.1: Introduction to Derivatives"
+    },
+    {
+      "filename": "lecture_4_2_1.md",
+      "path": "lectures/course_4/lecture_4_2_1.md",
+      "lecture_code": "4.2.1",
+      "title": "Lecture 4.2.1: Mechanics of a Futures Contract",
+      "chapter_id": 402,
+      "chapter_title": "Chapter 4.2: Futures Contracts Basics"
+    },
+    {
+      "filename": "lecture_4_2_2.md",
+      "path": "lectures/course_4/lecture_4_2_2.md",
+      "lecture_code": "4.2.2",
+      "title": "Lecture 4.2.2: Long vs. Short in Futures",
+      "chapter_id": 402,
+      "chapter_title": "Chapter 4.2: Futures Contracts Basics"
+    },
+    {
+      "filename": "lecture_4_2_3.md",
+      "path": "lectures/course_4/lecture_4_2_3.md",
+      "lecture_code": "4.2.3",
+      "title": "Lecture 4.2.3: Futures vs. Spot Market",
+      "chapter_id": 402,
+      "chapter_title": "Chapter 4.2: Futures Contracts Basics"
+    },
+    {
+      "filename": "lecture_4_3_1.md",
+      "path": "lectures/course_4/lecture_4_3_1.md",
+      "lecture_code": "4.3.1",
+      "title": "Lecture 4.3.1: What is Margin?",
+      "chapter_id": 403,
+      "chapter_title": "Chapter 4.3: Margins & Leverage"
+    },
+    {
+      "filename": "lecture_4_3_2.md",
+      "path": "lectures/course_4/lecture_4_3_2.md",
+      "lecture_code": "4.3.2",
+      "title": "Lecture 4.3.2: Understanding Leverage",
+      "chapter_id": 403,
+      "chapter_title": "Chapter 4.3: Margins & Leverage"
+    },
+    {
+      "filename": "lecture_4_3_3.md",
+      "path": "lectures/course_4/lecture_4_3_3.md",
+      "lecture_code": "4.3.3",
+      "title": "Lecture 4.3.3: Auto-Liquidation & Margin Call",
+      "chapter_id": 403,
+      "chapter_title": "Chapter 4.3: Margins & Leverage"
+    },
+    {
+      "filename": "lecture_4_4_1.md",
+      "path": "lectures/course_4/lecture_4_4_1.md",
+      "lecture_code": "4.4.1",
+      "title": "Lecture 4.4.1: The Cost of Carry Model",
+      "chapter_id": 404,
+      "chapter_title": "Chapter 4.4: Futures Pricing & Mark-to-Market"
+    },
+    {
+      "filename": "lecture_4_4_2.md",
+      "path": "lectures/course_4/lecture_4_4_2.md",
+      "lecture_code": "4.4.2",
+      "title": "Lecture 4.4.2: Understanding Mark-to-Market (MTM)",
+      "chapter_id": 404,
+      "chapter_title": "Chapter 4.4: Futures Pricing & Mark-to-Market"
+    },
+    {
+      "filename": "lecture_4_4_3.md",
+      "path": "lectures/course_4/lecture_4_4_3.md",
+      "lecture_code": "4.4.3",
+      "title": "Lecture 4.4.3: Contango and Backwardation",
+      "chapter_id": 404,
+      "chapter_title": "Chapter 4.4: Futures Pricing & Mark-to-Market"
+    },
+    {
+      "filename": "lecture_4_5_1.md",
+      "path": "lectures/course_4/lecture_4_5_1.md",
+      "lecture_code": "4.5.1",
+      "title": "Lecture 4.5.1: What is a Call Option?",
+      "chapter_id": 405,
+      "chapter_title": "Chapter 4.5: Options: Call & Put Basics"
+    },
+    {
+      "filename": "lecture_4_5_2.md",
+      "path": "lectures/course_4/lecture_4_5_2.md",
+      "lecture_code": "4.5.2",
+      "title": "Lecture 4.5.2: What is a Put Option?",
+      "chapter_id": 405,
+      "chapter_title": "Chapter 4.5: Options: Call & Put Basics"
+    },
+    {
+      "filename": "lecture_4_5_3.md",
+      "path": "lectures/course_4/lecture_4_5_3.md",
+      "lecture_code": "4.5.3",
+      "title": "Lecture 4.5.3: The Option Buyer vs. Seller",
+      "chapter_id": 405,
+      "chapter_title": "Chapter 4.5: Options: Call & Put Basics"
+    },
+    {
+      "filename": "lecture_4_6_1.md",
+      "path": "lectures/course_4/lecture_4_6_1.md",
+      "lecture_code": "4.6.1",
+      "title": "Lecture 4.6.1: The Option Premium",
+      "chapter_id": 406,
+      "chapter_title": "Chapter 4.6: Option Premium, Intrinsic & Time Value"
+    },
+    {
+      "filename": "lecture_4_6_2.md",
+      "path": "lectures/course_4/lecture_4_6_2.md",
+      "lecture_code": "4.6.2",
+      "title": "Lecture 4.6.2: Intrinsic Value",
+      "chapter_id": 406,
+      "chapter_title": "Chapter 4.6: Option Premium, Intrinsic & Time Value"
+    },
+    {
+      "filename": "lecture_4_6_3.md",
+      "path": "lectures/course_4/lecture_4_6_3.md",
+      "lecture_code": "4.6.3",
+      "title": "Lecture 4.6.3: Time Value",
+      "chapter_id": 406,
+      "chapter_title": "Chapter 4.6: Option Premium, Intrinsic & Time Value"
+    },
+    {
+      "filename": "lecture_4_7_1.md",
+      "path": "lectures/course_4/lecture_4_7_1.md",
+      "lecture_code": "4.7.1",
+      "title": "Lecture 4.7.1: Understanding Option Payoffs",
+      "chapter_id": 407,
+      "chapter_title": "Chapter 4.7: Option Payoffs & Break-even"
+    },
+    {
+      "filename": "lecture_4_7_2.md",
+      "path": "lectures/course_4/lecture_4_7_2.md",
+      "lecture_code": "4.7.2",
+      "title": "Lecture 4.7.2: Calculating the Break-even Point",
+      "chapter_id": 407,
+      "chapter_title": "Chapter 4.7: Option Payoffs & Break-even"
+    },
+    {
+      "filename": "lecture_4_7_3.md",
+      "path": "lectures/course_4/lecture_4_7_3.md",
+      "lecture_code": "4.7.3",
+      "title": "Lecture 4.7.3: Payoff for Option Sellers",
+      "chapter_id": 407,
+      "chapter_title": "Chapter 4.7: Option Payoffs & Break-even"
+    },
+    {
+      "filename": "lecture_4_8_1.md",
+      "path": "lectures/course_4/lecture_4_8_1.md",
+      "lecture_code": "4.8.1",
+      "title": "Lecture 4.8.1: What are the Greeks?",
+      "chapter_id": 408,
+      "chapter_title": "Chapter 4.8: The Greeks - Delta (Intro)"
+    },
+    {
+      "filename": "lecture_4_8_2.md",
+      "path": "lectures/course_4/lecture_4_8_2.md",
+      "lecture_code": "4.8.2",
+      "title": "Lecture 4.8.2: Delta - The Directional Greek",
+      "chapter_id": 408,
+      "chapter_title": "Chapter 4.8: The Greeks - Delta (Intro)"
+    },
+    {
+      "filename": "lecture_4_8_3.md",
+      "path": "lectures/course_4/lecture_4_8_3.md",
+      "lecture_code": "4.8.3",
+      "title": "Lecture 4.8.3: Delta and Trading Strategies",
+      "chapter_id": 408,
+      "chapter_title": "Chapter 4.8: The Greeks - Delta (Intro)"
+    },
+    {
+      "filename": "lecture_4_9_1.md",
+      "path": "lectures/course_4/lecture_4_9_1.md",
+      "lecture_code": "4.9.1",
+      "title": "Lecture 4.9.1: The Covered Call Strategy",
+      "chapter_id": 409,
+      "chapter_title": "Chapter 4.9: Option Strategies - Covered Call, Bull Call Spread"
+    },
+    {
+      "filename": "lecture_4_9_2.md",
+      "path": "lectures/course_4/lecture_4_9_2.md",
+      "lecture_code": "4.9.2",
+      "title": "Lecture 4.9.2: The Bull Call Spread",
+      "chapter_id": 409,
+      "chapter_title": "Chapter 4.9: Option Strategies - Covered Call, Bull Call Spread"
+    },
+    {
+      "filename": "lecture_4_9_3.md",
+      "path": "lectures/course_4/lecture_4_9_3.md",
+      "lecture_code": "4.9.3",
+      "title": "Lecture 4.9.3: The Bear Put Spread and Other Strategies",
+      "chapter_id": 409,
+      "chapter_title": "Chapter 4.9: Option Strategies - Covered Call, Bull Call Spread"
+    },
+    {
+      "filename": "lecture_4_10_1.md",
+      "path": "lectures/course_4/lecture_4_10_1.md",
+      "lecture_code": "4.10.1",
+      "title": "Lecture 4.10.1: The Expiry Date",
+      "chapter_id": 410,
+      "chapter_title": "Chapter 4.10: Expiry, Square-off & Settlement"
+    },
+    {
+      "filename": "lecture_4_10_2.md",
+      "path": "lectures/course_4/lecture_4_10_2.md",
+      "lecture_code": "4.10.2",
+      "title": "Lecture 4.10.2: Square-off Before Expiry",
+      "chapter_id": 410,
+      "chapter_title": "Chapter 4.10: Expiry, Square-off & Settlement"
+    },
+    {
+      "filename": "lecture_4_10_3.md",
+      "path": "lectures/course_4/lecture_4_10_3.md",
+      "lecture_code": "4.10.3",
+      "title": "Lecture 4.10.3: Physical Settlement vs. Cash Settlement",
+      "chapter_id": 410,
+      "chapter_title": "Chapter 4.10: Expiry, Square-off & Settlement"
+    },
+    {
+      "filename": "lecture_4_11_1.md",
+      "path": "lectures/course_4/lecture_4_11_1.md",
+      "lecture_code": "4.11.1",
+      "title": "Lecture 4.11.1: The Double-Edged Sword",
+      "chapter_id": 411,
+      "chapter_title": "Chapter 4.11: Risks of Leverage & Auto-Liquidation"
+    },
+    {
+      "filename": "lecture_4_11_2.md",
+      "path": "lectures/course_4/lecture_4_11_2.md",
+      "lecture_code": "4.11.2",
+      "title": "Lecture 4.11.2: How Auto-Liquidation Works",
+      "chapter_id": 411,
+      "chapter_title": "Chapter 4.11: Risks of Leverage & Auto-Liquidation"
+    },
+    {
+      "filename": "lecture_4_11_3.md",
+      "path": "lectures/course_4/lecture_4_11_3.md",
+      "lecture_code": "4.11.3",
+      "title": "Lecture 4.11.3: Protecting Yourself from Leverage",
+      "chapter_id": 411,
+      "chapter_title": "Chapter 4.11: Risks of Leverage & Auto-Liquidation"
+    },
+    {
+      "filename": "lecture_4_12_1.md",
+      "path": "lectures/course_4/lecture_4_12_1.md",
+      "lecture_code": "4.12.1",
+      "title": "Lecture 4.12.1: What is Hedging?",
+      "chapter_id": 412,
+      "chapter_title": "Chapter 4.12: Hedging vs Speculation in F&O"
+    },
+    {
+      "filename": "lecture_4_12_2.md",
+      "path": "lectures/course_4/lecture_4_12_2.md",
+      "lecture_code": "4.12.2",
+      "title": "Lecture 4.12.2: What is Speculation?",
+      "chapter_id": 412,
+      "chapter_title": "Chapter 4.12: Hedging vs Speculation in F&O"
+    },
+    {
+      "filename": "lecture_4_12_3.md",
+      "path": "lectures/course_4/lecture_4_12_3.md",
+      "lecture_code": "4.12.3",
+      "title": "Lecture 4.12.3: Knowing the Difference",
+      "chapter_id": 412,
+      "chapter_title": "Chapter 4.12: Hedging vs Speculation in F&O"
+    }
+  ]
+}

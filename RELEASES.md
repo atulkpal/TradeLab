@@ -4,6 +4,29 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [1.8.1] - Personalization & Stability Release
+**Release Date:** August 4, 2026  
+**Version Code:** `8`  
+**Status:** 🟢 STABLE
+
+### Summary of Changes
+Introduction of the 5-mode Theme Engine and critical stabilization logic to resolve release-only crashes.
+
+### Core Features
+- **Hyper-Personalization Suite:** 5-mode Theme Engine (Serious, Vibrant, Terminal, Arcade, Light).
+- **Privacy & Focus:** Stealth Mode blurring and minimalist Zen Mode.
+- **Deep Stability Hardening:**
+    - **Moshi Codegen Migration:** Eliminated reflection-based parsing to prevent R8/obfuscation failures.
+    - **Shared Module Protection:** Explicit ProGuard rules to preserve the KMP core.
+    - **In-App Crash Viewer:** Secret diagnostic tool (Long-press version on Profile) to capture phone-side logs.
+
+### Build Artifacts
+- **Debug APK:** `debug-1.8.1-8.apk`
+- **Release APK:** `release-apk-1.8.1-8.apk`
+- **Release AAB:** `release-aab-1.8.1-8.aab`
+
+---
+
 ## [1.7.0] - Institutional Power Release
 **Release Date:** August 4, 2026  
 **Version Code:** `6`  

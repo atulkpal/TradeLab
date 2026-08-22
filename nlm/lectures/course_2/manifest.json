@@ -1,0 +1,296 @@
+{
+  "course_id": 2,
+  "course_title": "Technical Analysis",
+  "course_tier": "INTERMEDIATE",
+  "total_lectures": 36,
+  "lectures": [
+    {
+      "filename": "lecture_2_1_1.md",
+      "path": "lectures/course_2/lecture_2_1_1.md",
+      "lecture_code": "2.1.1",
+      "title": "Lecture 2.1.1: The Philosophy Behind Technical Analysis",
+      "chapter_id": 201,
+      "chapter_title": "Chapter 2.1: What is Technical Analysis (and its limits)"
+    },
+    {
+      "filename": "lecture_2_1_2.md",
+      "path": "lectures/course_2/lecture_2_1_2.md",
+      "lecture_code": "2.1.2",
+      "title": "Lecture 2.1.2: Technical vs. Fundamental Analysis",
+      "chapter_id": 201,
+      "chapter_title": "Chapter 2.1: What is Technical Analysis (and its limits)"
+    },
+    {
+      "filename": "lecture_2_1_3.md",
+      "path": "lectures/course_2/lecture_2_1_3.md",
+      "lecture_code": "2.1.3",
+      "title": "Lecture 2.1.3: The Limits of Technical Analysis",
+      "chapter_id": 201,
+      "chapter_title": "Chapter 2.1: What is Technical Analysis (and its limits)"
+    },
+    {
+      "filename": "lecture_2_2_1.md",
+      "path": "lectures/course_2/lecture_2_2_1.md",
+      "lecture_code": "2.2.1",
+      "title": "Lecture 2.2.1: Understanding Price Action",
+      "chapter_id": 202,
+      "chapter_title": "Chapter 2.2: Price Action & Timeframes"
+    },
+    {
+      "filename": "lecture_2_2_2.md",
+      "path": "lectures/course_2/lecture_2_2_2.md",
+      "lecture_code": "2.2.2",
+      "title": "Lecture 2.2.2: Choosing a Timeframe",
+      "chapter_id": 202,
+      "chapter_title": "Chapter 2.2: Price Action & Timeframes"
+    },
+    {
+      "filename": "lecture_2_2_3.md",
+      "path": "lectures/course_2/lecture_2_2_3.md",
+      "lecture_code": "2.2.3",
+      "title": "Lecture 2.2.3: The Multi-Timeframe Approach",
+      "chapter_id": 202,
+      "chapter_title": "Chapter 2.2: Price Action & Timeframes"
+    },
+    {
+      "filename": "lecture_2_3_1.md",
+      "path": "lectures/course_2/lecture_2_3_1.md",
+      "lecture_code": "2.3.1",
+      "title": "Lecture 2.3.1: Defining Support and Resistance",
+      "chapter_id": 203,
+      "chapter_title": "Chapter 2.3: Support & Resistance"
+    },
+    {
+      "filename": "lecture_2_3_2.md",
+      "path": "lectures/course_2/lecture_2_3_2.md",
+      "lecture_code": "2.3.2",
+      "title": "Lecture 2.3.2: Role Reversal",
+      "chapter_id": 203,
+      "chapter_title": "Chapter 2.3: Support & Resistance"
+    },
+    {
+      "filename": "lecture_2_3_3.md",
+      "path": "lectures/course_2/lecture_2_3_3.md",
+      "lecture_code": "2.3.3",
+      "title": "Lecture 2.3.3: Identifying Levels",
+      "chapter_id": 203,
+      "chapter_title": "Chapter 2.3: Support & Resistance"
+    },
+    {
+      "filename": "lecture_2_4_1.md",
+      "path": "lectures/course_2/lecture_2_4_1.md",
+      "lecture_code": "2.4.1",
+      "title": "Lecture 2.4.1: Identifying a Trend",
+      "chapter_id": 204,
+      "chapter_title": "Chapter 2.4: Trendlines & Trend Direction"
+    },
+    {
+      "filename": "lecture_2_4_2.md",
+      "path": "lectures/course_2/lecture_2_4_2.md",
+      "lecture_code": "2.4.2",
+      "title": "Lecture 2.4.2: Drawing Trendlines",
+      "chapter_id": 204,
+      "chapter_title": "Chapter 2.4: Trendlines & Trend Direction"
+    },
+    {
+      "filename": "lecture_2_4_3.md",
+      "path": "lectures/course_2/lecture_2_4_3.md",
+      "lecture_code": "2.4.3",
+      "title": "Lecture 2.4.3: Channels and the Angle of a Trend",
+      "chapter_id": 204,
+      "chapter_title": "Chapter 2.4: Trendlines & Trend Direction"
+    },
+    {
+      "filename": "lecture_2_5_1.md",
+      "path": "lectures/course_2/lecture_2_5_1.md",
+      "lecture_code": "2.5.1",
+      "title": "Lecture 2.5.1: Understanding Moving Averages",
+      "chapter_id": 205,
+      "chapter_title": "Chapter 2.5: Moving Averages - SMA & EMA"
+    },
+    {
+      "filename": "lecture_2_5_2.md",
+      "path": "lectures/course_2/lecture_2_5_2.md",
+      "lecture_code": "2.5.2",
+      "title": "Lecture 2.5.2: Simple Moving Average (SMA)",
+      "chapter_id": 205,
+      "chapter_title": "Chapter 2.5: Moving Averages - SMA & EMA"
+    },
+    {
+      "filename": "lecture_2_5_3.md",
+      "path": "lectures/course_2/lecture_2_5_3.md",
+      "lecture_code": "2.5.3",
+      "title": "Lecture 2.5.3: Exponential Moving Average (EMA)",
+      "chapter_id": 205,
+      "chapter_title": "Chapter 2.5: Moving Averages - SMA & EMA"
+    },
+    {
+      "filename": "lecture_2_6_1.md",
+      "path": "lectures/course_2/lecture_2_6_1.md",
+      "lecture_code": "2.6.1",
+      "title": "Lecture 2.6.1: What is the RSI?",
+      "chapter_id": 206,
+      "chapter_title": "Chapter 2.6: RSI - Relative Strength Index"
+    },
+    {
+      "filename": "lecture_2_6_2.md",
+      "path": "lectures/course_2/lecture_2_6_2.md",
+      "lecture_code": "2.6.2",
+      "title": "Lecture 2.6.2: Interpreting RSI Signals",
+      "chapter_id": 206,
+      "chapter_title": "Chapter 2.6: RSI - Relative Strength Index"
+    },
+    {
+      "filename": "lecture_2_6_3.md",
+      "path": "lectures/course_2/lecture_2_6_3.md",
+      "lecture_code": "2.6.3",
+      "title": "Lecture 2.6.3: RSI in Trend Analysis",
+      "chapter_id": 206,
+      "chapter_title": "Chapter 2.6: RSI - Relative Strength Index"
+    },
+    {
+      "filename": "lecture_2_7_1.md",
+      "path": "lectures/course_2/lecture_2_7_1.md",
+      "lecture_code": "2.7.1",
+      "title": "Lecture 2.7.1: The MACD Line & Signal Line",
+      "chapter_id": 207,
+      "chapter_title": "Chapter 2.7: MACD"
+    },
+    {
+      "filename": "lecture_2_7_2.md",
+      "path": "lectures/course_2/lecture_2_7_2.md",
+      "lecture_code": "2.7.2",
+      "title": "Lecture 2.7.2: The Histogram and Zero Line",
+      "chapter_id": 207,
+      "chapter_title": "Chapter 2.7: MACD"
+    },
+    {
+      "filename": "lecture_2_7_3.md",
+      "path": "lectures/course_2/lecture_2_7_3.md",
+      "lecture_code": "2.7.3",
+      "title": "Lecture 2.7.3: MACD Divergence",
+      "chapter_id": 207,
+      "chapter_title": "Chapter 2.7: MACD"
+    },
+    {
+      "filename": "lecture_2_8_1.md",
+      "path": "lectures/course_2/lecture_2_8_1.md",
+      "lecture_code": "2.8.1",
+      "title": "Lecture 2.8.1: Single Candlestick Patterns",
+      "chapter_id": 208,
+      "chapter_title": "Chapter 2.8: Candlestick Patterns"
+    },
+    {
+      "filename": "lecture_2_8_2.md",
+      "path": "lectures/course_2/lecture_2_8_2.md",
+      "lecture_code": "2.8.2",
+      "title": "Lecture 2.8.2: Two-Candlestick Patterns",
+      "chapter_id": 208,
+      "chapter_title": "Chapter 2.8: Candlestick Patterns"
+    },
+    {
+      "filename": "lecture_2_8_3.md",
+      "path": "lectures/course_2/lecture_2_8_3.md",
+      "lecture_code": "2.8.3",
+      "title": "Lecture 2.8.3: Three-Candlestick Patterns",
+      "chapter_id": 208,
+      "chapter_title": "Chapter 2.8: Candlestick Patterns"
+    },
+    {
+      "filename": "lecture_2_9_1.md",
+      "path": "lectures/course_2/lecture_2_9_1.md",
+      "lecture_code": "2.9.1",
+      "title": "Lecture 2.9.1: The Role of Volume",
+      "chapter_id": 209,
+      "chapter_title": "Chapter 2.9: Volume & Volume Spikes"
+    },
+    {
+      "filename": "lecture_2_9_2.md",
+      "path": "lectures/course_2/lecture_2_9_2.md",
+      "lecture_code": "2.9.2",
+      "title": "Lecture 2.9.2: Volume Spikes and Breakouts",
+      "chapter_id": 209,
+      "chapter_title": "Chapter 2.9: Volume & Volume Spikes"
+    },
+    {
+      "filename": "lecture_2_9_3.md",
+      "path": "lectures/course_2/lecture_2_9_3.md",
+      "lecture_code": "2.9.3",
+      "title": "Lecture 2.9.3: Volume Weighted Average Price (VWAP)",
+      "chapter_id": 209,
+      "chapter_title": "Chapter 2.9: Volume & Volume Spikes"
+    },
+    {
+      "filename": "lecture_2_10_1.md",
+      "path": "lectures/course_2/lecture_2_10_1.md",
+      "lecture_code": "2.10.1",
+      "title": "Lecture 2.10.1: Trading Styles and Timeframes",
+      "chapter_id": 210,
+      "chapter_title": "Chapter 2.10: Choosing the Right Timeframe"
+    },
+    {
+      "filename": "lecture_2_10_2.md",
+      "path": "lectures/course_2/lecture_2_10_2.md",
+      "lecture_code": "2.10.2",
+      "title": "Lecture 2.10.2: The Cost of Timeframe Mismatch",
+      "chapter_id": 210,
+      "chapter_title": "Chapter 2.10: Choosing the Right Timeframe"
+    },
+    {
+      "filename": "lecture_2_10_3.md",
+      "path": "lectures/course_2/lecture_2_10_3.md",
+      "lecture_code": "2.10.3",
+      "title": "Lecture 2.10.3: The 'Step Up, Step Down' Rule",
+      "chapter_id": 210,
+      "chapter_title": "Chapter 2.10: Choosing the Right Timeframe"
+    },
+    {
+      "filename": "lecture_2_11_1.md",
+      "path": "lectures/course_2/lecture_2_11_1.md",
+      "lecture_code": "2.11.1",
+      "title": "Lecture 2.11.1: The Problem of Indicator Soup",
+      "chapter_id": 211,
+      "chapter_title": "Chapter 2.11: Combining Indicators"
+    },
+    {
+      "filename": "lecture_2_11_2.md",
+      "path": "lectures/course_2/lecture_2_11_2.md",
+      "lecture_code": "2.11.2",
+      "title": "Lecture 2.11.2: The Three-Category Rule",
+      "chapter_id": 211,
+      "chapter_title": "Chapter 2.11: Combining Indicators"
+    },
+    {
+      "filename": "lecture_2_11_3.md",
+      "path": "lectures/course_2/lecture_2_11_3.md",
+      "lecture_code": "2.11.3",
+      "title": "Lecture 2.11.3: Price Action is King",
+      "chapter_id": 211,
+      "chapter_title": "Chapter 2.11: Combining Indicators"
+    },
+    {
+      "filename": "lecture_2_12_1.md",
+      "path": "lectures/course_2/lecture_2_12_1.md",
+      "lecture_code": "2.12.1",
+      "title": "Lecture 2.12.1: Ignoring the Bigger Trend",
+      "chapter_id": 212,
+      "chapter_title": "Chapter 2.12: Common TA Mistakes & Whipsaws"
+    },
+    {
+      "filename": "lecture_2_12_2.md",
+      "path": "lectures/course_2/lecture_2_12_2.md",
+      "lecture_code": "2.12.2",
+      "title": "Lecture 2.12.2: Overconfidence in False Signals (Whipsaws)",
+      "chapter_id": 212,
+      "chapter_title": "Chapter 2.12: Common TA Mistakes & Whipsaws"
+    },
+    {
+      "filename": "lecture_2_12_3.md",
+      "path": "lectures/course_2/lecture_2_12_3.md",
+      "lecture_code": "2.12.3",
+      "title": "Lecture 2.12.3: Failing to Use Stop-Loss",
+      "chapter_id": 212,
+      "chapter_title": "Chapter 2.12: Common TA Mistakes & Whipsaws"
+    }
+  ]
+}

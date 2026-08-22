@@ -19,6 +19,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.google.firebase.auth.FirebaseAuth
+import com.squareup.moshi.JsonClass
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -602,16 +603,21 @@ class TradingViewModel @Inject constructor(
         try {
             val assetManager = context.assets
             val moshiInstance = Moshi.Builder()
-                .addLast(KotlinJsonAdapterFactory())
+                // Removed KotlinJsonAdapterFactory to use Codegen for stability in Release/R8 builds
                 .build()
 
             // Load Academy JSON (v2 Varsity-style curriculum with legacy fallback)
             val v2Courses = try {
                 val v2Json = assetManager.open("academy_data_v2.json").bufferedReader().use { it.readText() }
                 val v2Adapter = moshiInstance.adapter(AcademyContentV2::class.java)
-                v2Adapter.fromJson(v2Json)?.courses?.filter { it.chapters.isNotEmpty() } ?: emptyList()
+                val parsed = v2Adapter.fromJson(v2Json)?.courses?.filter { it.chapters.isNotEmpty() } ?: emptyList()
+                if (parsed.isEmpty()) {
+                    android.util.Log.w("TradingViewModel", "Academy v2 JSON parsed but returned 0 courses.")
+                }
+                parsed
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("TradingViewModel", "Failed to parse Academy v2 JSON: ${e.message}", e)
+                com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().recordException(e)
                 emptyList()
             }
 
@@ -622,32 +628,43 @@ class TradingViewModel @Inject constructor(
                 }
             } else {
                 // Legacy fallback: map single-question modules into a synthetic "Stock Market Basics" course
-                val academyJson = assetManager.open("academy_data.json").bufferedReader().use { it.readText() }
-                val academyType = Types.newParameterizedType(List::class.java, QuizModule::class.java)
-                val academyAdapter = moshiInstance.adapter<List<QuizModule>>(academyType)
-                val legacyModules = academyAdapter.fromJson(academyJson) ?: emptyList()
-                val legacyChapters = legacyModules.map { it.toChapterModule(courseId = 1) }
-                _academyCourses.value = listOf(
-                    AcademyCourse(
-                        id = 1,
-                        title = "Stock Market Basics",
-                        tagline = "How markets work, what a stock is, and how trades settle.",
-                        iconEmoji = "📈",
-                        tier = "BEGINNER",
-                        order = 1,
-                        chapters = legacyChapters
+                try {
+                    val academyJson = assetManager.open("academy_data.json").bufferedReader().use { it.readText() }
+                    val academyType = Types.newParameterizedType(List::class.java, QuizModule::class.java)
+                    val academyAdapter = moshiInstance.adapter<List<QuizModule>>(academyType)
+                    val legacyModules = academyAdapter.fromJson(academyJson) ?: emptyList()
+                    val legacyChapters = legacyModules.map { it.toChapterModule(courseId = 1) }
+                    _academyCourses.value = listOf(
+                        AcademyCourse(
+                            id = 1,
+                            title = "Stock Market Basics",
+                            tagline = "How markets work, what a stock is, and how trades settle.",
+                            iconEmoji = "📈",
+                            tier = "BEGINNER",
+                            order = 1,
+                            chapters = legacyChapters
+                        )
                     )
-                )
-                _quizModules.value = legacyChapters
+                    _quizModules.value = legacyChapters
+                } catch (e: Exception) {
+                    android.util.Log.e("TradingViewModel", "Failed to parse legacy Academy JSON: ${e.message}", e)
+                    com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().recordException(e)
+                }
             }
 
             // Load Missions JSON
-            val missionsJson = assetManager.open("missions_data.json").bufferedReader().use { it.readText() }
-            val missionsType = Types.newParameterizedType(List::class.java, Mission::class.java)
-            val missionsAdapter = moshiInstance.adapter<List<Mission>>(missionsType)
-            _missionsList.value = missionsAdapter.fromJson(missionsJson) ?: emptyList()
+            try {
+                val missionsJson = assetManager.open("missions_data.json").bufferedReader().use { it.readText() }
+                val missionsType = Types.newParameterizedType(List::class.java, Mission::class.java)
+                val missionsAdapter = moshiInstance.adapter<List<Mission>>(missionsType)
+                _missionsList.value = missionsAdapter.fromJson(missionsJson) ?: emptyList()
+            } catch (e: Exception) {
+                android.util.Log.e("TradingViewModel", "Failed to parse Missions JSON: ${e.message}", e)
+                com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().recordException(e)
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("TradingViewModel", "Fatal error in loadAcademyAndMissionsData: ${e.message}", e)
+            com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance().recordException(e)
         }
     }
 
@@ -1718,6 +1735,7 @@ class TradingViewModel @Inject constructor(
 }
 
 // Data holder for live portfolio aggregates
+@JsonClass(generateAdapter = true)
 data class PortfolioStats(
     val totalValue: Double = 25000.0,
     val cash: Double = 25000.0,
@@ -1745,11 +1763,14 @@ data class PortfolioStats(
     val activeBadges: String = ""
 )
 
+@JsonClass(generateAdapter = true)
 data class Lecture(
     val title: String,
-    val content: String
+    val content: String,
+    val videoUrl: String = ""
 )
 
+@JsonClass(generateAdapter = true)
 data class QuizQuestion(
     val question: String,
     val options: List<String>,
@@ -1757,6 +1778,7 @@ data class QuizQuestion(
     val explanation: String = ""
 )
 
+@JsonClass(generateAdapter = true)
 data class ChapterModule(
     val id: Int,
     val courseId: Int = 0,
@@ -1769,6 +1791,7 @@ data class ChapterModule(
     val riskDisclosure: String = ""
 )
 
+@JsonClass(generateAdapter = true)
 data class AcademyCourse(
     val id: Int,
     val title: String,
@@ -1779,11 +1802,13 @@ data class AcademyCourse(
     val chapters: List<ChapterModule> = emptyList()
 )
 
+@JsonClass(generateAdapter = true)
 data class AcademyContentV2(
     val version: Int = 1,
     val courses: List<AcademyCourse> = emptyList()
 )
 
+@JsonClass(generateAdapter = true)
 data class QuizModule(
     val id: Int,
     val title: String,
@@ -1807,6 +1832,7 @@ data class QuizModule(
     )
 }
 
+@JsonClass(generateAdapter = true)
 data class Mission(
     val id: Int,
     val title: String,

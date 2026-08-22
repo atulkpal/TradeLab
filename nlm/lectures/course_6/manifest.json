@@ -1,0 +1,248 @@
+{
+  "course_id": 6,
+  "course_title": "Markets & Taxation",
+  "course_tier": "ADVANCED",
+  "total_lectures": 30,
+  "lectures": [
+    {
+      "filename": "lecture_6_1_1.md",
+      "path": "lectures/course_6/lecture_6_1_1.md",
+      "lecture_code": "6.1.1",
+      "title": "Lecture 6.1.1: The Distinction in Income Tax",
+      "chapter_id": 601,
+      "chapter_title": "Chapter 6.1: Trading vs Investing - Different Tax Treatments"
+    },
+    {
+      "filename": "lecture_6_1_2.md",
+      "path": "lectures/course_6/lecture_6_1_2.md",
+      "lecture_code": "6.1.2",
+      "title": "Lecture 6.1.2: Business Income vs. Capital Gains",
+      "chapter_id": 601,
+      "chapter_title": "Chapter 6.1: Trading vs Investing - Different Tax Treatments"
+    },
+    {
+      "filename": "lecture_6_1_3.md",
+      "path": "lectures/course_6/lecture_6_1_3.md",
+      "lecture_code": "6.1.3",
+      "title": "Lecture 6.1.3: What Determines Your Status",
+      "chapter_id": 601,
+      "chapter_title": "Chapter 6.1: Trading vs Investing - Different Tax Treatments"
+    },
+    {
+      "filename": "lecture_6_2_1.md",
+      "path": "lectures/course_6/lecture_6_2_1.md",
+      "lecture_code": "6.2.1",
+      "title": "Lecture 6.2.1: Securities Transaction Tax (STT)",
+      "chapter_id": 602,
+      "chapter_title": "Chapter 6.2: STT, Brokerage & Transaction Charges"
+    },
+    {
+      "filename": "lecture_6_2_2.md",
+      "path": "lectures/course_6/lecture_6_2_2.md",
+      "lecture_code": "6.2.2",
+      "title": "Lecture 6.2.2: Brokerage and Other Charges",
+      "chapter_id": 602,
+      "chapter_title": "Chapter 6.2: STT, Brokerage & Transaction Charges"
+    },
+    {
+      "filename": "lecture_6_2_3.md",
+      "path": "lectures/course_6/lecture_6_2_3.md",
+      "lecture_code": "6.2.3",
+      "title": "Lecture 6.2.3: Deductibility of These Costs",
+      "chapter_id": 602,
+      "chapter_title": "Chapter 6.2: STT, Brokerage & Transaction Charges"
+    },
+    {
+      "filename": "lecture_6_3_1.md",
+      "path": "lectures/course_6/lecture_6_3_1.md",
+      "lecture_code": "6.3.1",
+      "title": "Lecture 6.3.1: GST on Trading",
+      "chapter_id": 603,
+      "chapter_title": "Chapter 6.3: GST & Stamp Duty"
+    },
+    {
+      "filename": "lecture_6_3_2.md",
+      "path": "lectures/course_6/lecture_6_3_2.md",
+      "lecture_code": "6.3.2",
+      "title": "Lecture 6.3.2: Stamp Duty on Transfer",
+      "chapter_id": 603,
+      "chapter_title": "Chapter 6.3: GST & Stamp Duty"
+    },
+    {
+      "filename": "lecture_6_3_3.md",
+      "path": "lectures/course_6/lecture_6_3_3.md",
+      "lecture_code": "6.3.3",
+      "title": "Lecture 6.3.3: Total Transaction Cost",
+      "chapter_id": 603,
+      "chapter_title": "Chapter 6.3: GST & Stamp Duty"
+    },
+    {
+      "filename": "lecture_6_4_1.md",
+      "path": "lectures/course_6/lecture_6_4_1.md",
+      "lecture_code": "6.4.1",
+      "title": "Lecture 6.4.1: The Holding Period",
+      "chapter_id": 604,
+      "chapter_title": "Chapter 6.4: Short-Term vs Long-Term Capital Gains"
+    },
+    {
+      "filename": "lecture_6_4_2.md",
+      "path": "lectures/course_6/lecture_6_4_2.md",
+      "lecture_code": "6.4.2",
+      "title": "Lecture 6.4.2: Tax Rates on STCG and LTCG",
+      "chapter_id": 604,
+      "chapter_title": "Chapter 6.4: Short-Term vs Long-Term Capital Gains"
+    },
+    {
+      "filename": "lecture_6_4_3.md",
+      "path": "lectures/course_6/lecture_6_4_3.md",
+      "lecture_code": "6.4.3",
+      "title": "Lecture 6.4.3: Tax-Loss Harvesting",
+      "chapter_id": 604,
+      "chapter_title": "Chapter 6.4: Short-Term vs Long-Term Capital Gains"
+    },
+    {
+      "filename": "lecture_6_5_1.md",
+      "path": "lectures/course_6/lecture_6_5_1.md",
+      "lecture_code": "6.5.1",
+      "title": "Lecture 6.5.1: Intraday Trading as Speculative Business",
+      "chapter_id": 605,
+      "chapter_title": "Chapter 6.5: Intraday vs Delivery Taxation"
+    },
+    {
+      "filename": "lecture_6_5_2.md",
+      "path": "lectures/course_6/lecture_6_5_2.md",
+      "lecture_code": "6.5.2",
+      "title": "Lecture 6.5.2: Delivery Trading as Business or Capital Gains",
+      "chapter_id": 605,
+      "chapter_title": "Chapter 6.5: Intraday vs Delivery Taxation"
+    },
+    {
+      "filename": "lecture_6_5_3.md",
+      "path": "lectures/course_6/lecture_6_5_3.md",
+      "lecture_code": "6.5.3",
+      "title": "Lecture 6.5.3: Choosing Your Tax Status",
+      "chapter_id": 605,
+      "chapter_title": "Chapter 6.5: Intraday vs Delivery Taxation"
+    },
+    {
+      "filename": "lecture_6_6_1.md",
+      "path": "lectures/course_6/lecture_6_6_1.md",
+      "lecture_code": "6.6.1",
+      "title": "Lecture 6.6.1: What is Turnover?",
+      "chapter_id": 606,
+      "chapter_title": "Chapter 6.6: Turnover & Bookkeeping for Traders"
+    },
+    {
+      "filename": "lecture_6_6_2.md",
+      "path": "lectures/course_6/lecture_6_6_2.md",
+      "lecture_code": "6.6.2",
+      "title": "Lecture 6.6.2: The Importance of Bookkeeping",
+      "chapter_id": 606,
+      "chapter_title": "Chapter 6.6: Turnover & Bookkeeping for Traders"
+    },
+    {
+      "filename": "lecture_6_6_3.md",
+      "path": "lectures/course_6/lecture_6_6_3.md",
+      "lecture_code": "6.6.3",
+      "title": "Lecture 6.6.3: GST Registration and Audits",
+      "chapter_id": 606,
+      "chapter_title": "Chapter 6.6: Turnover & Bookkeeping for Traders"
+    },
+    {
+      "filename": "lecture_6_7_1.md",
+      "path": "lectures/course_6/lecture_6_7_1.md",
+      "lecture_code": "6.7.1",
+      "title": "Lecture 6.7.1: Which ITR Form to Use",
+      "chapter_id": 607,
+      "chapter_title": "Chapter 6.7: Filing Basics - ITR Forms & Schedules"
+    },
+    {
+      "filename": "lecture_6_7_2.md",
+      "path": "lectures/course_6/lecture_6_7_2.md",
+      "lecture_code": "6.7.2",
+      "title": "Lecture 6.7.2: Key Schedules for Traders and Investors",
+      "chapter_id": 607,
+      "chapter_title": "Chapter 6.7: Filing Basics - ITR Forms & Schedules"
+    },
+    {
+      "filename": "lecture_6_7_3.md",
+      "path": "lectures/course_6/lecture_6_7_3.md",
+      "lecture_code": "6.7.3",
+      "title": "Lecture 6.7.3: The Importance of Advance Tax",
+      "chapter_id": 607,
+      "chapter_title": "Chapter 6.7: Filing Basics - ITR Forms & Schedules"
+    },
+    {
+      "filename": "lecture_6_8_1.md",
+      "path": "lectures/course_6/lecture_6_8_1.md",
+      "lecture_code": "6.8.1",
+      "title": "Lecture 6.8.1: Set-off of Losses",
+      "chapter_id": 608,
+      "chapter_title": "Chapter 6.8: Set-off & Carry Forward of Losses"
+    },
+    {
+      "filename": "lecture_6_8_2.md",
+      "path": "lectures/course_6/lecture_6_8_2.md",
+      "lecture_code": "6.8.2",
+      "title": "Lecture 6.8.2: Carry Forward of Losses",
+      "chapter_id": 608,
+      "chapter_title": "Chapter 6.8: Set-off & Carry Forward of Losses"
+    },
+    {
+      "filename": "lecture_6_8_3.md",
+      "path": "lectures/course_6/lecture_6_8_3.md",
+      "lecture_code": "6.8.3",
+      "title": "Lecture 6.8.3: Practical Example",
+      "chapter_id": 608,
+      "chapter_title": "Chapter 6.8: Set-off & Carry Forward of Losses"
+    },
+    {
+      "filename": "lecture_6_9_1.md",
+      "path": "lectures/course_6/lecture_6_9_1.md",
+      "lecture_code": "6.9.1",
+      "title": "Lecture 6.9.1: The Presumptive Taxation Scheme",
+      "chapter_id": 609,
+      "chapter_title": "Chapter 6.9: Options & Futures Tax Treatment"
+    },
+    {
+      "filename": "lecture_6_9_2.md",
+      "path": "lectures/course_6/lecture_6_9_2.md",
+      "lecture_code": "6.9.2",
+      "title": "Lecture 6.9.2: Treatment of F&O Losses",
+      "chapter_id": 609,
+      "chapter_title": "Chapter 6.9: Options & Futures Tax Treatment"
+    },
+    {
+      "filename": "lecture_6_9_3.md",
+      "path": "lectures/course_6/lecture_6_9_3.md",
+      "lecture_code": "6.9.3",
+      "title": "Lecture 6.9.3: The 6% Presumptive Tax Example",
+      "chapter_id": 609,
+      "chapter_title": "Chapter 6.9: Options & Futures Tax Treatment"
+    },
+    {
+      "filename": "lecture_6_10_1.md",
+      "path": "lectures/course_6/lecture_6_10_1.md",
+      "lecture_code": "6.10.1",
+      "title": "Lecture 6.10.1: Choosing the Wrong ITR Form",
+      "chapter_id": 610,
+      "chapter_title": "Chapter 6.10: Common Filing Mistakes"
+    },
+    {
+      "filename": "lecture_6_10_2.md",
+      "path": "lectures/course_6/lecture_6_10_2.md",
+      "lecture_code": "6.10.2",
+      "title": "Lecture 6.10.2: Misreporting Turnover",
+      "chapter_id": 610,
+      "chapter_title": "Chapter 6.10: Common Filing Mistakes"
+    },
+    {
+      "filename": "lecture_6_10_3.md",
+      "path": "lectures/course_6/lecture_6_10_3.md",
+      "lecture_code": "6.10.3",
+      "title": "Lecture 6.10.3: Missing the Deadline for Loss Carry Forward",
+      "chapter_id": 610,
+      "chapter_title": "Chapter 6.10: Common Filing Mistakes"
+    }
+  ]
+}

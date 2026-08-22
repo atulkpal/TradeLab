@@ -997,6 +997,11 @@ fun MainContent(
                                                     fontSize = 11.sp,
                                                     lineHeight = 16.sp
                                                 )
+
+                                                if (selectedLecture.videoUrl.isNotBlank()) {
+                                                    Spacer(modifier = Modifier.height(12.dp))
+                                                    VideoPlayerView(videoUrl = selectedLecture.videoUrl)
+                                                }
                                             }
                                         }
                                     }
@@ -1054,36 +1059,17 @@ fun MainContent(
                                         }
                                     }
                                 } else {
-                                    OutlinedButton(
-                                        onClick = { activeLectureIndex = null },
-                                        shape = RoundedCornerShape(12.dp),
-                                        border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.5f)),
-                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandViolet),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .testTag("skip_lectures")
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Image(
-                                                painter = painterResource(R.drawable.ic_status_quiz),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(
-                                                text = "Skip Lectures → Take Assessment",
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
                                     Button(
-                                        onClick = { activeLectureIndex = null },
+                                        onClick = {
+                                            activeLectureIndex = null
+                                            questionIndex = 0
+                                            quizComplete = false
+                                        },
                                         colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
                                         shape = RoundedCornerShape(12.dp),
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .testTag("start_knowledge_check")
                                     ) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Image(

@@ -1,0 +1,296 @@
+{
+  "course_id": 5,
+  "course_title": "Risk Management & Trading Psychology",
+  "course_tier": "INTERMEDIATE",
+  "total_lectures": 36,
+  "lectures": [
+    {
+      "filename": "lecture_5_1_1.md",
+      "path": "lectures/course_5/lecture_5_1_1.md",
+      "lecture_code": "5.1.1",
+      "title": "Lecture 5.1.1: The First Rule of Trading",
+      "chapter_id": 501,
+      "chapter_title": "Chapter 5.1: Why Risk Comes First"
+    },
+    {
+      "filename": "lecture_5_1_2.md",
+      "path": "lectures/course_5/lecture_5_1_2.md",
+      "lecture_code": "5.1.2",
+      "title": "Lecture 5.1.2: The Math of Recovery",
+      "chapter_id": 501,
+      "chapter_title": "Chapter 5.1: Why Risk Comes First"
+    },
+    {
+      "filename": "lecture_5_1_3.md",
+      "path": "lectures/course_5/lecture_5_1_3.md",
+      "lecture_code": "5.1.3",
+      "title": "Lecture 5.1.3: Changing Your Mindset",
+      "chapter_id": 501,
+      "chapter_title": "Chapter 5.1: Why Risk Comes First"
+    },
+    {
+      "filename": "lecture_5_2_1.md",
+      "path": "lectures/course_5/lecture_5_2_1.md",
+      "lecture_code": "5.2.1",
+      "title": "Lecture 5.2.1: The Fixed Fractional Method",
+      "chapter_id": 502,
+      "chapter_title": "Chapter 5.2: Position Sizing Models"
+    },
+    {
+      "filename": "lecture_5_2_2.md",
+      "path": "lectures/course_5/lecture_5_2_2.md",
+      "lecture_code": "5.2.2",
+      "title": "Lecture 5.2.2: The Fixed Ratio Method",
+      "chapter_id": 502,
+      "chapter_title": "Chapter 5.2: Position Sizing Models"
+    },
+    {
+      "filename": "lecture_5_2_3.md",
+      "path": "lectures/course_5/lecture_5_2_3.md",
+      "lecture_code": "5.2.3",
+      "title": "Lecture 5.2.3: The Kelly Criterion",
+      "chapter_id": 502,
+      "chapter_title": "Chapter 5.2: Position Sizing Models"
+    },
+    {
+      "filename": "lecture_5_3_1.md",
+      "path": "lectures/course_5/lecture_5_3_1.md",
+      "lecture_code": "5.3.1",
+      "title": "Lecture 5.3.1: The Purpose of a Stop-Loss",
+      "chapter_id": 503,
+      "chapter_title": "Chapter 5.3: Stop-Loss & Trailing Stops"
+    },
+    {
+      "filename": "lecture_5_3_2.md",
+      "path": "lectures/course_5/lecture_5_3_2.md",
+      "lecture_code": "5.3.2",
+      "title": "Lecture 5.3.2: Types of Stop-Losses",
+      "chapter_id": 503,
+      "chapter_title": "Chapter 5.3: Stop-Loss & Trailing Stops"
+    },
+    {
+      "filename": "lecture_5_3_3.md",
+      "path": "lectures/course_5/lecture_5_3_3.md",
+      "lecture_code": "5.3.3",
+      "title": "Lecture 5.3.3: Psychological Impact of Stop-Losses",
+      "chapter_id": 503,
+      "chapter_title": "Chapter 5.3: Stop-Loss & Trailing Stops"
+    },
+    {
+      "filename": "lecture_5_4_1.md",
+      "path": "lectures/course_5/lecture_5_4_1.md",
+      "lecture_code": "5.4.1",
+      "title": "Lecture 5.4.1: Calculating the RRR",
+      "chapter_id": 504,
+      "chapter_title": "Chapter 5.4: Risk-to-Reward Ratio"
+    },
+    {
+      "filename": "lecture_5_4_2.md",
+      "path": "lectures/course_5/lecture_5_4_2.md",
+      "lecture_code": "5.4.2",
+      "title": "Lecture 5.4.2: RRR and Win Rate",
+      "chapter_id": 504,
+      "chapter_title": "Chapter 5.4: Risk-to-Reward Ratio"
+    },
+    {
+      "filename": "lecture_5_4_3.md",
+      "path": "lectures/course_5/lecture_5_4_3.md",
+      "lecture_code": "5.4.3",
+      "title": "Lecture 5.4.3: Using RRR in Planning",
+      "chapter_id": 504,
+      "chapter_title": "Chapter 5.4: Risk-to-Reward Ratio"
+    },
+    {
+      "filename": "lecture_5_5_1.md",
+      "path": "lectures/course_5/lecture_5_5_1.md",
+      "lecture_code": "5.5.1",
+      "title": "Lecture 5.5.1: What is a Drawdown?",
+      "chapter_id": 505,
+      "chapter_title": "Chapter 5.5: Drawdowns & Recovery Math"
+    },
+    {
+      "filename": "lecture_5_5_2.md",
+      "path": "lectures/course_5/lecture_5_5_2.md",
+      "lecture_code": "5.5.2",
+      "title": "Lecture 5.5.2: The Math of Recovery",
+      "chapter_id": 505,
+      "chapter_title": "Chapter 5.5: Drawdowns & Recovery Math"
+    },
+    {
+      "filename": "lecture_5_5_3.md",
+      "path": "lectures/course_5/lecture_5_5_3.md",
+      "lecture_code": "5.5.3",
+      "title": "Lecture 5.5.3: Psychological Impact of Drawdowns",
+      "chapter_id": 505,
+      "chapter_title": "Chapter 5.5: Drawdowns & Recovery Math"
+    },
+    {
+      "filename": "lecture_5_6_1.md",
+      "path": "lectures/course_5/lecture_5_6_1.md",
+      "lecture_code": "5.6.1",
+      "title": "Lecture 5.6.1: The Rule Explained",
+      "chapter_id": 506,
+      "chapter_title": "Chapter 5.6: The 1% Rule"
+    },
+    {
+      "filename": "lecture_5_6_2.md",
+      "path": "lectures/course_5/lecture_5_6_2.md",
+      "lecture_code": "5.6.2",
+      "title": "Lecture 5.6.2: Why 1%?",
+      "chapter_id": 506,
+      "chapter_title": "Chapter 5.6: The 1% Rule"
+    },
+    {
+      "filename": "lecture_5_6_3.md",
+      "path": "lectures/course_5/lecture_5_6_3.md",
+      "lecture_code": "5.6.3",
+      "title": "Lecture 5.6.3: Implementation",
+      "chapter_id": 506,
+      "chapter_title": "Chapter 5.6: The 1% Rule"
+    },
+    {
+      "filename": "lecture_5_7_1.md",
+      "path": "lectures/course_5/lecture_5_7_1.md",
+      "lecture_code": "5.7.1",
+      "title": "Lecture 5.7.1: Understanding FOMO",
+      "chapter_id": 507,
+      "chapter_title": "Chapter 5.7: FOMO & Greed Biases"
+    },
+    {
+      "filename": "lecture_5_7_2.md",
+      "path": "lectures/course_5/lecture_5_7_2.md",
+      "lecture_code": "5.7.2",
+      "title": "Lecture 5.7.2: Greed and Overconfidence",
+      "chapter_id": 507,
+      "chapter_title": "Chapter 5.7: FOMO & Greed Biases"
+    },
+    {
+      "filename": "lecture_5_7_3.md",
+      "path": "lectures/course_5/lecture_5_7_3.md",
+      "lecture_code": "5.7.3",
+      "title": "Lecture 5.7.3: Combating FOMO and Greed",
+      "chapter_id": 507,
+      "chapter_title": "Chapter 5.7: FOMO & Greed Biases"
+    },
+    {
+      "filename": "lecture_5_8_1.md",
+      "path": "lectures/course_5/lecture_5_8_1.md",
+      "lecture_code": "5.8.1",
+      "title": "Lecture 5.8.1: What is Revenge Trading?",
+      "chapter_id": 508,
+      "chapter_title": "Chapter 5.8: Revenge Trading & Overtrading"
+    },
+    {
+      "filename": "lecture_5_8_2.md",
+      "path": "lectures/course_5/lecture_5_8_2.md",
+      "lecture_code": "5.8.2",
+      "title": "Lecture 5.8.2: What is Overtrading?",
+      "chapter_id": 508,
+      "chapter_title": "Chapter 5.8: Revenge Trading & Overtrading"
+    },
+    {
+      "filename": "lecture_5_8_3.md",
+      "path": "lectures/course_5/lecture_5_8_3.md",
+      "lecture_code": "5.8.3",
+      "title": "Lecture 5.8.3: How to Stop the Cycle",
+      "chapter_id": 508,
+      "chapter_title": "Chapter 5.8: Revenge Trading & Overtrading"
+    },
+    {
+      "filename": "lecture_5_9_1.md",
+      "path": "lectures/course_5/lecture_5_9_1.md",
+      "lecture_code": "5.9.1",
+      "title": "Lecture 5.9.1: The Concept of a Discipline Score",
+      "chapter_id": 509,
+      "chapter_title": "Chapter 5.9: Discipline Score & Habit Loops"
+    },
+    {
+      "filename": "lecture_5_9_2.md",
+      "path": "lectures/course_5/lecture_5_9_2.md",
+      "lecture_code": "5.9.2",
+      "title": "Lecture 5.9.2: Understanding Habit Loops",
+      "chapter_id": 509,
+      "chapter_title": "Chapter 5.9: Discipline Score & Habit Loops"
+    },
+    {
+      "filename": "lecture_5_9_3.md",
+      "path": "lectures/course_5/lecture_5_9_3.md",
+      "lecture_code": "5.9.3",
+      "title": "Lecture 5.9.3: Building Good Trading Habits",
+      "chapter_id": 509,
+      "chapter_title": "Chapter 5.9: Discipline Score & Habit Loops"
+    },
+    {
+      "filename": "lecture_5_10_1.md",
+      "path": "lectures/course_5/lecture_5_10_1.md",
+      "lecture_code": "5.10.1",
+      "title": "Lecture 5.10.1: The Purpose of a Trading Journal",
+      "chapter_id": 510,
+      "chapter_title": "Chapter 5.10: Journaling & Trade Review"
+    },
+    {
+      "filename": "lecture_5_10_2.md",
+      "path": "lectures/course_5/lecture_5_10_2.md",
+      "lecture_code": "5.10.2",
+      "title": "Lecture 5.10.2: What to Record",
+      "chapter_id": 510,
+      "chapter_title": "Chapter 5.10: Journaling & Trade Review"
+    },
+    {
+      "filename": "lecture_5_10_3.md",
+      "path": "lectures/course_5/lecture_5_10_3.md",
+      "lecture_code": "5.10.3",
+      "title": "Lecture 5.10.3: The Weekly Review",
+      "chapter_id": 510,
+      "chapter_title": "Chapter 5.10: Journaling & Trade Review"
+    },
+    {
+      "filename": "lecture_5_11_1.md",
+      "path": "lectures/course_5/lecture_5_11_1.md",
+      "lecture_code": "5.11.1",
+      "title": "Lecture 5.11.1: Recognizing the Signs",
+      "chapter_id": 511,
+      "chapter_title": "Chapter 5.11: Knowing When to Step Away"
+    },
+    {
+      "filename": "lecture_5_11_2.md",
+      "path": "lectures/course_5/lecture_5_11_2.md",
+      "lecture_code": "5.11.2",
+      "title": "Lecture 5.11.2: The Benefits of Taking a Break",
+      "chapter_id": 511,
+      "chapter_title": "Chapter 5.11: Knowing When to Step Away"
+    },
+    {
+      "filename": "lecture_5_11_3.md",
+      "path": "lectures/course_5/lecture_5_11_3.md",
+      "lecture_code": "5.11.3",
+      "title": "Lecture 5.11.3: Practical Steps",
+      "chapter_id": 511,
+      "chapter_title": "Chapter 5.11: Knowing When to Step Away"
+    },
+    {
+      "filename": "lecture_5_12_1.md",
+      "path": "lectures/course_5/lecture_5_12_1.md",
+      "lecture_code": "5.12.1",
+      "title": "Lecture 5.12.1: The Components of a Trading Plan",
+      "chapter_id": 512,
+      "chapter_title": "Chapter 5.12: Building a Personal Trading Plan"
+    },
+    {
+      "filename": "lecture_5_12_2.md",
+      "path": "lectures/course_5/lecture_5_12_2.md",
+      "lecture_code": "5.12.2",
+      "title": "Lecture 5.12.2: Why You Need a Plan",
+      "chapter_id": 512,
+      "chapter_title": "Chapter 5.12: Building a Personal Trading Plan"
+    },
+    {
+      "filename": "lecture_5_12_3.md",
+      "path": "lectures/course_5/lecture_5_12_3.md",
+      "lecture_code": "5.12.3",
+      "title": "Lecture 5.12.3: Reviewing and Updating Your Plan",
+      "chapter_id": 512,
+      "chapter_title": "Chapter 5.12: Building a Personal Trading Plan"
+    }
+  ]
+}

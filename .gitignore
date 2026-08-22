@@ -26,3 +26,21 @@ debug.keystore
 *.properties
 !gradle.properties
 !local.properties.example
+
+# NLM video pipeline
+nlm/assets/
+nlm/venv_nlm/
+nlm/__pycache__/
+nlm/*.pyc
+nlm/monitor_state.json
+nlm/segoeui.ttf
+nlm/segoeuib.ttf
+
+# App video resources
+app/src/main/res/raw/*.mp4
+
+# Releases
+releases/
+
+# Artifacts
+.artifacts/

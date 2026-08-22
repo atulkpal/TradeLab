@@ -47,6 +47,52 @@ gradle :app:testDebugUnitTest
 
 ---
 
+## 🎬 NLM Video Pipeline (Academy Content)
+
+TradeLab's Academy content is powered by an automated video generation pipeline using **Google NotebookLM**:
+
+- **204 lectures** across 6 courses, 68 chapters
+- **7 Google accounts** for parallel generation
+- **SHORT format** videos (~60-90s) with branded intro/outro
+- **Download-once, play-locally** model with external cache
+- **Firebase Storage** for hosting, AdMob for monetization
+
+### Pipeline Stages
+1. **Extract** → Lecture content from `academy_data_v2.json` → `.md` files
+2. **Create** → NotebookLM notebooks + source upload (7 accounts, parallel)
+3. **Generate** → SHORT format videos via NotebookLM API
+4. **Download** → MP4s to local `nlm/assets/`
+5. **Process** → Add branded intro/outro via ffmpeg
+6. **Upload** → Firebase Storage with public URLs
+7. **Integrate** → Update `academy_data_v2.json` with `videoUrl`
+
+### Current Status (2026-08-22)
+| Metric | Count |
+|--------|-------|
+| Total Lectures | 204 |
+| Notebooks Created | 133 / 196 (65%) |
+| Videos Downloaded | 25 (8 unique lectures) |
+| Unique Lectures with Video | 10 |
+
+### Key Scripts
+| Script | Purpose |
+|--------|---------|
+| `extract_all_courses_fixed.py` | Extract 204 lectures to `.md` |
+| `create_missing_notebooks.py` | Create notebooks (parallel, 7 accounts) |
+| `batch_generate_multi.py` | Generate videos (quota-aware) |
+| `download_all_videos.py` | Download completed videos |
+| `process_videos.py` | Add intro/outro via ffmpeg |
+| `upload_to_firebase.py` | Upload to Firebase Storage |
+
+### Documentation
+- [Pipeline Overview](nlm/docs/PIPELINE.md)
+- [Status Sheet](nlm/docs/STATUS_SHEET.md)
+- [Script Inventory](nlm/docs/SCRIPT_INVENTORY.md)
+- [Quota Management](nlm/docs/QUOTA_MANAGEMENT.md)
+- [Troubleshooting](nlm/docs/TROUBLESHOOTING.md)
+
+---
+
 ## ❤️ About Ashwath AI
 
 Trade Lab is designed and developed with precision as part of the Ashwath AI suite of tools.

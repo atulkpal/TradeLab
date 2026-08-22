@@ -3,6 +3,56 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [1.8.2] - NLM Video Pipeline & Academy Content Release - 2026-08-22
+
+### Added
+- **NLM Video Generation Pipeline**:
+  - Automated video generation pipeline using Google NotebookLM for 204 Academy lectures
+  - 7 Google accounts configured for parallel video generation
+  - SHORT format videos (~60-90s) with branded intro/outro
+  - Download-once, play-locally model with external cache
+  - Firebase Storage integration for video hosting
+- **NLM Pipeline Scripts** (`nlm/scripts/`):
+  - `extract/` - Lecture extraction from `academy_data_v2.json`
+  - `create_notebooks/` - Parallel notebook creation across 7 accounts
+  - `generate_videos/` - Batch video generation with quota management
+  - `download/` - Video download from NotebookLM
+  - `process/` - FFmpeg-based intro/outro concatenation
+  - `upload/` - Firebase Storage upload with public URLs
+- **Pipeline Documentation** (`nlm/docs/`):
+  - `PIPELINE.md` - Full pipeline walkthrough
+  - `STATUS_SHEET.md` - Master lecture tracker with current status
+  - `SCRIPT_INVENTORY.md` - Complete script reference
+  - `QUOTA_MANAGEMENT.md` - Quota limits, backoff strategies
+  - `TROUBLESHOOTING.md` - Common issues and fixes
+- **Lecture Tracker** (`nlm/tracking/lecture_tracker.csv`):
+  - Master CSV tracking all 204 lectures with notebook/video status
+  - Auto-generated from audit logs, batch results, and downloaded files
+
+### Changed
+- Updated `README.md` with NLM pipeline section and status badges
+
+---
+
+## [1.8.1] - Personalization & Stability Release - 2026-08-04
+
+### Added
+- **Hyper-Personalization & Focus Suite (Epic 24)**:
+  - Formally launched the **5-mode Theme Engine** (Serious, Vibrant, Terminal, Arcade, Light) with dynamic typography and color palettes.
+  - Implemented **Stealth Mode** with privacy-first data blurring for sensitive portfolio metrics.
+  - Introduced **Zen Mode** for a distraction-free trading experience, hiding news tickers and movers.
+- **Deep Stability Hardening**:
+  - **Moshi Codegen Migration**: Replaced `KotlinJsonAdapterFactory` with compile-time code generation to make the app immune to R8 obfuscation/reflection crashes.
+  - **In-App Diagnostic Suite**: Added a custom `UncaughtExceptionHandler` that captures fatal traces to SharedPreferences.
+  - **Diagnostic Viewer**: Secret long-press gesture on the Profile version footer to view local crash logs.
+- **Critical Stability Hotfixes**:
+  - Resolved **SQLiteDatabaseCorruptException** via Write-Ahead Logging (WAL).
+  - Fixed **NaN Progress Indicator** crash during data loading.
+- **Institutional Visual Polish**:
+  - Finalized migration to high-performance **VectorDrawables** for all decorative elements.
+
+---
+
 ## [1.7.0] - Institutional Power Release - 2026-08-04
 
 ### Added

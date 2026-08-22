@@ -28,3 +28,18 @@
 
 # Firebase, Hilt, and Google Play libraries ship consumer rules; keep model fields used by Firestore reflection.
 -keepclassmembers class com.ashwathai.tradelab.data.LeaderboardEntry { *; }
+
+# Protect all Data Models used for Room, Moshi, and Firestore
+-keep class com.ashwathai.tradelab.data.** { *; }
+-keep class com.ashwathai.tradelab.ui.** { *; }
+-keep class com.ashwathai.tradelab.shared.** { *; }
+
+# Moshi Kotlin Reflection Rules
+-keep class com.squareup.moshi.** { *; }
+-keepclassmembers class com.ashwathai.tradelab.** {
+    @com.squareup.moshi.Json <fields>;
+}
+
+# Hilt & Jetpack Compose (standard precautions for minification)
+-keep class androidx.hilt.navigation.compose.** { *; }
+-keep @dagger.hilt.android.lifecycle.HiltViewModel class * extends androidx.lifecycle.ViewModel

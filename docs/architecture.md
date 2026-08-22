@@ -64,6 +64,7 @@ The current app utilizes a localized Clean MVVM structure divided into three dis
     *   `AccountSnapshotEntity`: Persists daily total values to generate historical Equity Curves.
     *   `MarketNewsEntity`: Stores real-world and simulated headlines with sentiment metadata.
     *   `LedgerEntryEntity`: A high-precision (4 decimal) account statement tracking every cash movement (Principal, Taxes, Charges, Rewards).
+*   **R8 Obfuscation Immunity:** To ensure stability in minified release builds, all JSON-adjacent data models (Academy, Missions, Stats) utilize **Moshi Codegen** via the `@JsonClass(generateAdapter = true)` annotation. This eliminates reliance on runtime reflection, which is prone to failure when field names are renamed by the R8 optimizer.
 *   **DAOs (`Daos.kt`):** Type-safe interfaces containing SQL queries for Room database compilation.
 *   **AppDatabase (`AppDatabase.kt`):** Coordinates SQLite file-handle instantiation and manages destructive/non-destructive migrations.
 
@@ -91,6 +92,11 @@ The current app utilizes a localized Clean MVVM structure divided into three dis
     *   **Dynamic Typography**: Switches between `Typography` (Default) and `MonospaceTypography` (JetBrains Mono-style) based on the active mode.
     *   **Functional CompositionLocals**: Employs `LocalStealthMode` and `LocalZenMode` to drive deep UI tree pruning and data masking without re-rendering high-level containers.
     *   **Privacy Blur**: A cross-API-version blur implementation (`Modifier.stealthBlur`) that masks sensitive portfolio data on Android 12+ (RenderEffect) and falls back to frosted-alpha overlays on legacy devices.
+
+### H. In-App Stability Monitoring & Diagnostics
+To facilitate troubleshooting on unconnected user devices (where `adb logcat` is unavailable), the app implements an internal diagnostic pipeline:
+*   **Global Crash Logger:** A custom `UncaughtExceptionHandler` registered in `TradeLabApplication` that intercepts fatal errors. It serializes the full stack trace and persists it to a dedicated `SharedPreferences` file (`tradelab_diagnostics`) before allowing the process to terminate.
+*   **Secret Diagnostic Viewer:** A developer-focused gesture integrated into the **Profile** screen. **Long-pressing** the version number footer (`v1.8.1 (8)`) retrieves the last captured crash trace and displays it in a scrollable dialog. This allows for immediate root-cause identification in the field.
 
 ### G. Multi-Format Monetization Infrastructure
 *   **AppOpenAdManager (`com.ashwathai.tradelab.ui.common`):** A lifecycle-aware component that monitors app-wide background/foreground transitions using `ProcessLifecycleOwner`.
