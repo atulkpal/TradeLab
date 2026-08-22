@@ -24,6 +24,16 @@ To avoid searching blindly, here is exactly where the core logic resides:
 │   ├── VISION_INTERVIEW_LOGS.md             # Qualitative interview logs & strategy notes
 │   ├── architecture.md                      # Comprehensive multi-platform architecture spec
 │   └── epics_and_sprints.md                 # Product roadmap, epics, sprints, and tasks
+├── nlm/                                     # NLM Video Generation Pipeline
+│   ├── docs/                                # Pipeline documentation
+│   │   ├── PIPELINE.md                      # Full pipeline walkthrough
+│   │   ├── STATUS_SHEET.md                  # Current progress
+│   │   ├── SCRIPT_INVENTORY.md              # Script reference
+│   │   ├── QUOTA_MANAGEMENT.md              # Rate limits
+│   │   └── TROUBLESHOOTING.md               # Common issues
+│   ├── lectures/course_{1..6}/              # 204 lecture .md files
+│   ├── *.py                                 # Pipeline scripts
+│   └── pending_allocation.json              # Lecture → Account mapping
 ├── app/                                     # Android Application Module
 │   ├── src/main/java/com/ashwathai/tradelab/ # Core Kotlin code
 │   │   ├── MainActivity.kt                  # Entry point (holds the Jetpack Compose navigation & views)
@@ -34,6 +44,10 @@ To avoid searching blindly, here is exactly where the core logic resides:
 │   │   │   └── TradingRepository.kt         # Data-access repository managing trade executions
 │   │   └── ui/                              # User Interface
 │   │       ├── TradingViewModel.kt          # UI state machine and business logic
+│   │       ├── common/                      # Reusable UI components
+│   │       │   ├── VideoPlayerView.kt       # WebView-based video player
+│   │       │   ├── VideoCacheManager.kt     # Download-once, play-locally cache
+│   │       │   └── BannerAdView.kt          # AdMob banner integration
 │   │       ├── di/                          # Hilt Dependency Injection Modules
 │   │       └── theme/                       # Color, Type, and Theme configurations
 │   └── src/test/                            # Local JVM & Robolectric Tests
@@ -152,26 +166,45 @@ For the automated video generation pipeline (NLM), see:
 | Document | Path | Purpose |
 |----------|------|---------|
 | **Pipeline Overview** | `nlm/docs/PIPELINE.md` | Full pipeline walkthrough, architecture, stages |
-| **Status Sheet** | `nlm/docs/STATUS_SHEET.md` | Master lecture tracker with current progress |
+| **Status Sheet** | `nlm/docs/STATUS_SHEET.md` | Current progress and account status |
 | **Script Inventory** | `nlm/docs/SCRIPT_INVENTORY.md` | Complete script reference with usage |
 | **Quota Management** | `nlm/docs/QUOTA_MANAGEMENT.md` | Quota limits, backoff strategies |
 | **Troubleshooting** | `nlm/docs/TROUBLESHOOTING.md` | Common issues and fixes |
 
-**Key Tracking Files:**
-- `nlm/tracking/lecture_tracker.csv` - Master CSV tracking all 204 lectures
-- `nlm/pending_allocation.json` - Lecture → Account mapping
-- `nlm/batch_results.json` - Video generation results
-- `nlm/batch_progress.json` - Real-time progress tracking
+**Key Files:**
+- `nlm/pending_allocation.json` - Lecture → Account mapping (196/204 allocated)
+- `nlm/academy_data_v2_pretty.json` - Source of truth for 204 lectures
+- `nlm/lectures/course_{1..6}/` - 204 lecture .md files
 
-**Pipeline Scripts** (`nlm/scripts/`):
+**Pipeline Scripts** (`nlm/`):
 ```
-extract/           # Lecture extraction
-create_notebooks/  # Parallel notebook creation
-generate_videos/   # Batch video generation
-download/          # Video download
-process/           # FFmpeg processing
-upload/            # Firebase upload
+master_notebook_manager.py  # Create notebooks, add sources, generate videos (5-min delay)
+check_auth.py               # Check auth status, re-authenticate expired accounts
+audit_notebooks.py          # Audit notebooks, find/delete duplicates
+download_all_videos.py      # Download completed videos from all 7 accounts
+polish_videos.py            # Add intro/outro/watermark branding
+extract_all_courses_fixed.py # Extract 204 lectures from academy_data_v2.json
+upload_to_firebase.py       # Upload processed videos to Firebase Storage
 ```
+
+**Quick Start:**
+```bash
+cd nlm
+python check_auth.py        # 1. Re-auth all 7 accounts
+python master_notebook_manager.py  # 2. Generate videos (runs continuously)
+python download_all_videos.py      # 3. Download completed videos
+python polish_videos.py            # 4. Add branding
+python upload_to_firebase.py       # 5. Upload to Firebase
+```
+
+**7 Google Accounts** (profiles at `C:\Users\Atul\.notebooklm\profiles\`):
+- atulkpal@gmail.com (Pro, 20 videos/day)
+- ashwathai.dev@gmail.com (Standard, 3/day)
+- boss.studio.care@gmail.com (Standard, 3/day)
+- hi.jumpdroid@gmail.com (Standard, 3/day)
+- iiidem.km@gmail.com (Standard, 3/day)
+- promptwala.xyz@gmail.com (Standard, 3/day)
+- paulritu120@gmail.com (Standard, 3/day)
 
 ---
 

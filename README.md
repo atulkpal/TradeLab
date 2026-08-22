@@ -66,22 +66,25 @@ TradeLab's Academy content is powered by an automated video generation pipeline 
 6. **Upload** → Firebase Storage with public URLs
 7. **Integrate** → Update `academy_data_v2.json` with `videoUrl`
 
-### Current Status (2026-08-22)
+### Current Status (2026-08-23)
 | Metric | Count |
 |--------|-------|
 | Total Lectures | 204 |
-| Notebooks Created | 133 / 196 (65%) |
-| Videos Downloaded | 25 (8 unique lectures) |
-| Unique Lectures with Video | 10 |
+| Notebooks on NotebookLM | 204 (all accounts) |
+| Videos Processed (branded) | 23 |
+| Unique Lectures with Video | 11 |
+| Accounts | 7 (1 Pro + 6 Standard) |
+| Capacity | 38 videos/day |
 
 ### Key Scripts
 | Script | Purpose |
 |--------|---------|
+| `check_auth.py` | Check/re-authenticate all 7 accounts |
+| `master_notebook_manager.py` | Create notebooks + generate videos (5-min delay) |
+| `audit_notebooks.py` | Audit notebooks, find/delete duplicates |
 | `extract_all_courses_fixed.py` | Extract 204 lectures to `.md` |
-| `create_missing_notebooks.py` | Create notebooks (parallel, 7 accounts) |
-| `batch_generate_multi.py` | Generate videos (quota-aware) |
 | `download_all_videos.py` | Download completed videos |
-| `process_videos.py` | Add intro/outro via ffmpeg |
+| `polish_videos.py` | Add intro/outro/watermark branding |
 | `upload_to_firebase.py` | Upload to Firebase Storage |
 
 ### Documentation
@@ -90,6 +93,16 @@ TradeLab's Academy content is powered by an automated video generation pipeline 
 - [Script Inventory](nlm/docs/SCRIPT_INVENTORY.md)
 - [Quota Management](nlm/docs/QUOTA_MANAGEMENT.md)
 - [Troubleshooting](nlm/docs/TROUBLESHOOTING.md)
+
+### Quick Start (NLM Pipeline)
+```bash
+cd nlm
+python check_auth.py        # 1. Re-auth all 7 accounts
+python master_notebook_manager.py  # 2. Generate videos (runs continuously)
+python download_all_videos.py      # 3. Download completed videos
+python polish_videos.py            # 4. Add branding
+python upload_to_firebase.py       # 5. Upload to Firebase
+```
 
 ---
 
