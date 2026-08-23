@@ -218,3 +218,34 @@ To maintain a reliable history of distributable assets and prevent accidental da
     *   Release APK: `release-apk-<versionName>-<versionCode>.apk`
     *   Release AAB: `release-aab-<versionName>-<versionCode>.aab`
 4.  **Versioning Discipline:** Never automatically bump version codes or names without explicit user approval.
+
+---
+
+## 10. Rejected Implementations (Historical Reference)
+
+> **DO NOT USE** - The following implementations were attempted but rejected. They are preserved in their respective branches for historical reference only.
+
+### feature/academy-video-monetization (REJECTED)
+
+**Branch:** `feature/academy-video-monetization`
+**Status:** REJECTED - Do not merge or continue work on this implementation.
+
+**What was attempted:**
+- Video-first lecture dialog with language selector
+- Chapter-level accordion (only one chapter expanded at a time)
+- Spring bounce animation via `Modifier.animateItem()`
+- Native ad integration between courses
+- Rewarded ad gate every 3 lectures for free users
+- Centralized `AcademyAdConfig` for monetization
+
+**Why it was rejected:** User found the implementation unsatisfactory.
+
+**Files changed:**
+- `AcademyAdConfig.kt` - Centralized ad config
+- `AcademyListItem.kt` - Sealed class + flatten function
+- `AcademyScreen.kt` - New Lessons tab with accordion
+- `MainActivity.kt` - Video-first dialog, ad gating
+- `TradingViewModel.kt` - Lecture data class, ad counters
+- `Entities.kt` - preferredLanguage field
+- `AppDatabase.kt` - v26 migration
+- Unit tests: `AcademyAdConfigTest`, `AcademyListItemTest`, `LectureMultiLanguageTest`
