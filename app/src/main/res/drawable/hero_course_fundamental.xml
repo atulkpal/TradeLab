@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="200dp"
+    android:viewportWidth="360"
+    android:viewportHeight="200">
+    <!-- Fundamental: balance sheet + rising bars + coin stack -->
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.07"
+        android:pathData="M40,30 L200,30 A8,8 0 0,1 208,38 L208,150 A8,8 0 0,1 200,158 L40,158 A8,8 0 0,1 32,150 L32,38 A8,8 0 0,1 40,30 Z"/>
+    <path android:strokeColor="#10B981" android:strokeAlpha="0.5" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M52,58 L150,58 M52,78 L170,78 M52,98 L140,98"/>
+    <path android:fillColor="#10B981" android:fillAlpha="0.55" android:pathData="M60,150 L84,150 L84,110 L60,110 Z"/>
+    <path android:fillColor="#10B981" android:fillAlpha="0.75" android:pathData="M96,150 L120,150 L120,92 L96,92 Z"/>
+    <path android:fillColor="#10B981" android:pathData="M132,150 L156,150 L156,74 L132,74 Z"/>
+    <path android:fillColor="#10B981" android:fillAlpha="0.3"
+        android:pathData="M262,120 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0"/>
+    <path android:fillColor="#10B981" android:fillAlpha="0.6"
+        android:pathData="M262,104 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0"/>
+    <path android:fillColor="#10B981"
+        android:pathData="M262,88 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0"/>
+    <path android:strokeColor="#FFFFFF" android:strokeAlpha="0.25" android:strokeWidth="2"
+        android:pathData="M244,88 L280,88"/>
+</vector>

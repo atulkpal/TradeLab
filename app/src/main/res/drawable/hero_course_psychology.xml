@@ -1,0 +1,33 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="200dp"
+    android:viewportWidth="360"
+    android:viewportHeight="200">
+    <!-- Psychology: profile with market-mind waves -->
+    <path android:fillColor="#5856D6" android:fillAlpha="0.22"
+        android:pathData="M150,170 C150,120 140,95 160,70 C180,45 220,40 245,60 C270,80 272,110 258,130 C248,144 246,155 246,170 Z"/>
+    <path android:strokeColor="#5856D6" android:strokeAlpha="0.8" android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M150,170 C150,120 140,95 160,70 C180,45 220,40 245,60 C270,80 272,110 258,130 C248,144 246,155 246,170"/>
+    <path android:strokeColor="#FFFFFF" android:strokeAlpha="0.55" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M180,85 C195,75 215,75 228,85"/>
+    <path android:strokeColor="#5856D6" android:strokeAlpha="0.9" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M175,105 C192,93 216,93 232,105"/>
+    <path android:strokeColor="#FFFFFF" android:strokeAlpha="0.4" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M182,125 C198,113 214,113 226,125"/>
+    <path android:strokeColor="#5856D6" android:strokeAlpha="0.55" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M290,60 C305,75 305,95 290,110"/>
+    <path android:strokeColor="#FFFFFF" android:strokeAlpha="0.35" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M305,45 C328,68 328,102 305,125"/>
+    <path android:fillColor="#5856D6"
+        android:pathData="M70,60 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0"/>
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.4"
+        android:pathData="M52,100 m-6,0 a6,6 0 1,1 12,0 a6,6 0 1,1 -12,0"/>
+    <path android:fillColor="#5856D6" android:fillAlpha="0.5"
+        android:pathData="M76,140 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0"/>
+</vector>

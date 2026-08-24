@@ -1,0 +1,28 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="200dp"
+    android:viewportWidth="360"
+    android:viewportHeight="200">
+    <!-- Taxation: percent emblem + ledger + coins -->
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.07"
+        android:pathData="M210,40 L300,40 A8,8 0 0,1 308,48 L308,160 L288,148 L272,160 L256,148 L240,160 L224,148 L210,160 Z"/>
+    <path android:strokeColor="#FACC15" android:strokeAlpha="0.6" android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M228,66 L288,132"/>
+    <path android:fillColor="#FACC15"
+        android:pathData="M240,58 m-12,0 a12,12 0 1,1 24,0 a12,12 0 1,1 -24,0"/>
+    <path android:fillColor="#0B0E17" android:fillAlpha="0.9"
+        android:pathData="M240,58 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0"/>
+    <path android:fillColor="#FACC15"
+        android:pathData="M278,140 m-12,0 a12,12 0 1,1 24,0 a12,12 0 1,1 -24,0"/>
+    <path android:fillColor="#0B0E17" android:fillAlpha="0.9"
+        android:pathData="M278,140 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0"/>
+    <path android:fillColor="#FACC15" android:fillAlpha="0.35"
+        android:pathData="M80,120 m-34,0 a34,34 0 1,1 68,0 a34,34 0 1,1 -68,0"/>
+    <path android:fillColor="#FACC15" android:fillAlpha="0.6"
+        android:pathData="M80,104 m-34,0 a34,34 0 1,1 68,0 a34,34 0 1,1 -68,0"/>
+    <path android:fillColor="#FACC15"
+        android:pathData="M80,88 m-34,0 a34,34 0 1,1 68,0 a34,34 0 1,1 -68,0"/>
+    <path android:strokeColor="#0B0E17" android:strokeAlpha="0.55" android:strokeWidth="2.5"
+        android:pathData="M62,88 L98,88"/>
+</vector>
