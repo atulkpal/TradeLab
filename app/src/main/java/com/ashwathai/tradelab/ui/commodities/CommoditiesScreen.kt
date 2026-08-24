@@ -64,30 +64,29 @@ import com.ashwathai.tradelab.ui.watchlist.*
 import com.ashwathai.tradelab.ui.academy.*
 import com.ashwathai.tradelab.ui.derivatives.*
 import com.ashwathai.tradelab.ui.commodities.*
+import com.ashwathai.tradelab.ui.common.RewardedAdLauncher
 import com.ashwathai.tradelab.ui.profile.*
 
 @Composable
 fun CommoditiesScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
-    onTickerClick: (String) -> Unit
+    onTickerClick: (String) -> Unit,
+    onShowRewardedAd: RewardedAdLauncher
 ) {
     val stockPrices by viewModel.stockPrices.collectAsStateWithLifecycle()
     val isUnlocked by viewModel.commoditiesUnlocked.collectAsStateWithLifecycle()
     val isPremium = stats.isPremium
 
     var activeSubTab by remember { mutableStateOf("MCX") } // "MCX" or "Global"
-    var showSimulatedAd by remember { mutableStateOf(false) }
-    var adCountdown by remember { mutableStateOf(5) }
+    var isRewardedLoading by remember { mutableStateOf(false) }
 
-    if (showSimulatedAd) {
+    if (isRewardedLoading) {
         LaunchedEffect(Unit) {
-            for (i in 5 downTo 1) {
-                adCountdown = i
-                kotlinx.coroutines.delay(1000)
-            }
-            showSimulatedAd = false
-            viewModel.unlockCommodities()
+            onShowRewardedAd(
+                { viewModel.unlockCommodities(); isRewardedLoading = false },
+                { isRewardedLoading = false }
+            )
         }
 
         // Full Screen Sponsor Ad Overlay
@@ -123,7 +122,7 @@ fun CommoditiesScreen(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "Reward in $adCountdown s",
+                            text = "Loading reward...",
                             color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
@@ -284,7 +283,10 @@ fun CommoditiesScreen(
 
                         // FREE WATCH AD OPTION
                         Button(
-                            onClick = { showSimulatedAd = true },
+                            onClick = { isRewardedLoading = true; onShowRewardedAd(
+        { viewModel.unlockCommodities(); isRewardedLoading = false },
+        { isRewardedLoading = false }
+    ) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)

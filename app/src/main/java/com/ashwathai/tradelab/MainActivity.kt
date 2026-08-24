@@ -68,11 +68,6 @@ import com.ashwathai.tradelab.ui.Mission
 import com.ashwathai.tradelab.ui.theme.*
 import com.ashwathai.tradelab.ui.AuthScreen
 import com.ashwathai.tradelab.billing.BillingManager
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.rewarded.RewardedAd
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.ashwathai.tradelab.BuildConfig
 
 // Import modular layouts and functions
@@ -92,7 +87,6 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: TradingViewModel by viewModels()
     private lateinit var billingManager: BillingManager
-    private lateinit var appOpenAdManager: AppOpenAdManager
 
     enum class AdType {
         ACADEMY_DOUBLE,
@@ -109,30 +103,14 @@ class MainActivity : ComponentActivity() {
         PROFILE_BANNER
     }
 
-    fun getAdUnitId(adType: AdType): String {
-        return if (BuildConfig.DEBUG) {
-            when (adType) {
-                AdType.APP_OPEN -> "ca-app-pub-3940256099942544/9257395912"
-                AdType.NATIVE_WATCHLIST -> "ca-app-pub-3940256099942544/2247696110"
-                AdType.PROFILE_BANNER -> "ca-app-pub-3940256099942544/6300978111"
-                else -> "ca-app-pub-3940256099942544/5224354917"
-            }
-        } else {
-            when (adType) {
-                AdType.ACADEMY_DOUBLE -> "ca-app-pub-3038055603735419/2714689985"
-                AdType.PORTFOLIO_SHIELD -> "ca-app-pub-3038055603735419/4378341620"
-                AdType.PROFILE_AI_ADVISOR -> "ca-app-pub-3038055603735419/7040842603"
-                AdType.PROFILE_EMERGENCY_CASH -> "ca-app-pub-3038055603735419/1377452384"
-                AdType.PROFILE_INDICATORS -> "ca-app-pub-3038055603735419/8705383267"
-                AdType.PROFILE_SHIELD_MAX -> "ca-app-pub-3038055603735419/7392301590"
-                AdType.WATCHLIST_CREATE -> "ca-app-pub-3038055603735419/5887648231"
-                AdType.PORTFOLIO_RESET -> "ca-app-pub-3038055603735419/1948403226"
-                AdType.PROFILE_LEVERAGE -> "ca-app-pub-3038055603735419/1185880696"
-                AdType.APP_OPEN -> "ca-app-pub-3038055603735419/7727238314"
-                AdType.NATIVE_WATCHLIST -> "ca-app-pub-3038055603735419/1301430769"
-                AdType.PROFILE_BANNER -> "ca-app-pub-3038055603735419/5711604598"
-            }
-        }
+    fun showRewardedFor(placement: String, onEarned: () -> Unit) {
+        LevelPlayAdManager.loadAndShowRewardedAd(
+            adType = placement,
+            activity = this,
+            onAdLoaded = {},
+            onAdFailed = { viewModel.showFeedback("No ad available right now") },
+            onUserEarnedReward = onEarned
+        )
     }
 
     fun loadAndShowRewardedAd(
@@ -141,24 +119,12 @@ class MainActivity : ComponentActivity() {
         onAdFailed: (String) -> Unit,
         onUserEarnedReward: () -> Unit
     ) {
-        val adUnitId = getAdUnitId(adType)
-        val adRequest = AdRequest.Builder().build()
-        RewardedAd.load(
-            this,
-            adUnitId,
-            adRequest,
-            object : RewardedAdLoadCallback() {
-                override fun onAdFailedToLoad(adError: LoadAdError) {
-                    onAdFailed(adError.message)
-                }
-
-                override fun onAdLoaded(rewardedAd: RewardedAd) {
-                    onAdLoaded()
-                    rewardedAd.show(this@MainActivity) {
-                        onUserEarnedReward()
-                    }
-                }
-            }
+        LevelPlayAdManager.loadAndShowRewardedAd(
+            adType = adType.name,
+            activity = this,
+            onAdLoaded = onAdLoaded,
+            onAdFailed = onAdFailed,
+            onUserEarnedReward = onUserEarnedReward
         )
     }
 
@@ -195,11 +161,9 @@ class MainActivity : ComponentActivity() {
             viewModel.completePremiumPurchase()
         }
 
-        // Initialize the Google Mobile Ads SDK
-        MobileAds.initialize(this) {}
-        
-        appOpenAdManager = AppOpenAdManager(application)
-        appOpenAdManager.fetchNativeAd() // Pre-load native ad for watchlist
+        // Initialize Unity LevelPlay (Epic 26) - replaces AdMob
+        LevelPlayAdManager.init(application)
+        LevelPlayAdManager.trackActivity(this)
         
         createNotificationChannel()
 
@@ -233,9 +197,8 @@ class MainActivity : ComponentActivity() {
                     AuthScreen(viewModel = viewModel)
                 } else {
                     MainContent(
-                        viewModel = viewModel, 
-                        billingManager = billingManager,
-                        appOpenAdManager = appOpenAdManager
+                        viewModel = viewModel,
+                        billingManager = billingManager
                     )
                 }
             }
@@ -290,10 +253,10 @@ private fun TradeLabLoadingScreen() {
 
 @Composable
 fun MainContent(
-    viewModel: TradingViewModel, 
-    billingManager: BillingManager,
-    appOpenAdManager: AppOpenAdManager
+    viewModel: TradingViewModel,
+    billingManager: BillingManager
 ) {
+    val mainActivity = androidx.compose.ui.platform.LocalContext.current as? MainActivity
     val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val stats by viewModel.portfolioStats.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -426,7 +389,6 @@ fun MainContent(
                             viewModel = viewModel,
                             stats = stats,
                             latestNews = latestNews,
-                            nativeAd = appOpenAdManager.getNativeAd(),
                             onTickerClick = { symbol ->
                                 viewModel.selectStock(symbol)
                                 tradeSheetIsBuy = true
@@ -438,7 +400,6 @@ fun MainContent(
                             viewModel = viewModel,
                             stats = stats,
                             latestNews = latestNews,
-                            nativeAd = appOpenAdManager.getNativeAd(),
                             onTickerClick = { symbol, isBuy, isExpanded ->
                                 viewModel.selectStock(symbol)
                                 tradeSheetIsBuy = isBuy
@@ -457,23 +418,36 @@ fun MainContent(
                                 tradeSheetIsBuy = true
                                 tradeSheetIsExpanded = true
                                 showTradeSheet = true
+                            },
+                            onShowRewardedAd = { onEarned, onFailed ->
+                                val act = mainActivity
+                                if (act != null) act.showRewardedFor("commodities_unlock", onEarned)
+                                else onFailed("unavailable")
                             }
                         )
                         "F&O" -> FoDeskScreen(
                             viewModel = viewModel,
-                            stats = stats
+                            stats = stats,
+                            onShowRewardedAd = { onEarned, onFailed ->
+                                val act = mainActivity
+                                if (act != null) act.showRewardedFor("fno_tokens", onEarned)
+                                else onFailed("unavailable")
+                            }
                         )
                         "Academy" -> AcademyScreen(
                             viewModel = viewModel,
                             stats = stats,
-                            nativeAd = appOpenAdManager.getNativeAd(),
-                            onOpenQuiz = { activeQuizLevelId = it }
+                            onOpenQuiz = { activeQuizLevelId = it },
+                            onShowRewardedAd = { onEarned, onFailed ->
+                                val act = mainActivity
+                                if (act != null) act.showRewardedFor("ai_credits", onEarned)
+                                else onFailed("unavailable")
+                            }
                         )
                         "Profile" -> ProfileScreen(
                             viewModel = viewModel,
                             stats = stats,
-                            nativeAd = appOpenAdManager.getNativeAd()
-                        )
+                                            )
                     }
                 }
 

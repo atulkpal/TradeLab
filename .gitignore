@@ -70,3 +70,10 @@ nlm/0[1-6]-*.md
 
 # Preview-only bundled videos (regenerable from nlm/assets/out; production = Firebase)
 app/src/main/res/raw/lecture_*.mp4
+
+# adb screenshots (temp)
+/_*.png
+
+# Office lock files (CSV open in Excel/LibreOffice during runs)
+nlm/.~lock.*
+*.~lock.*

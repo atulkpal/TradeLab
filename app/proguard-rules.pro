@@ -43,3 +43,9 @@
 # Hilt & Jetpack Compose (standard precautions for minification)
 -keep class androidx.hilt.navigation.compose.** { *; }
 -keep @dagger.hilt.android.lifecycle.HiltViewModel class * extends androidx.lifecycle.ViewModel
+
+# Unity LevelPlay (ironSource) - Epic 26
+-keep class com.ironsource.** { *; }
+-keep class com.unity3d.** { *; }
+-dontwarn com.ironsource.**
+-dontwarn com.unity3d.**

@@ -76,8 +76,8 @@ import com.ashwathai.tradelab.ui.profile.*
 fun AcademyScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
-    nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null,
-    onOpenQuiz: (Int) -> Unit
+    onOpenQuiz: (Int) -> Unit,
+    onShowRewardedAd: RewardedAdLauncher
 ) {
     var activeSubTab by rememberSaveable { mutableStateOf("Lessons") }
     val quizModules by viewModel.quizModules.collectAsStateWithLifecycle()
@@ -251,10 +251,6 @@ fun AcademyScreen(
                     }
                 }
 
-                if (nativeAd != null && !stats.isPremium) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    NativeAdRow(nativeAd = nativeAd)
-                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -577,12 +573,6 @@ fun AcademyScreen(
                     }
                 }
 
-                if (nativeAd != null && !stats.isPremium) {
-                    Box(modifier = Modifier.padding(bottom = 12.dp)) {
-                        NativeAdRow(nativeAd = nativeAd)
-                    }
-                }
-
                 // If global leaders are empty, show local placeholder for better UX
                 val displayLeaders = if (globalLeaders.isEmpty()) {
                     listOf(
@@ -670,7 +660,7 @@ fun AcademyScreen(
                 Spacer(modifier = Modifier.height(40.dp))
             }
         } else {
-            AiCoachScreen(viewModel = viewModel, stats = stats)
+            AiCoachScreen(viewModel = viewModel, stats = stats, onShowRewardedAd = onShowRewardedAd)
         }
     }
 }
@@ -1198,15 +1188,14 @@ fun MissionRow(
 @Composable
 fun AiCoachScreen(
     viewModel: TradingViewModel,
-    stats: PortfolioStats
+    stats: PortfolioStats,
+    onShowRewardedAd: RewardedAdLauncher
 ) {
     val aiChatLog by viewModel.aiChatLog.collectAsStateWithLifecycle()
     val isAiLoading by viewModel.isAiLoading.collectAsStateWithLifecycle()
     var inputMessage by remember { mutableStateOf("") }
     
-    var showAdPlayer by remember { mutableStateOf(false) }
-    var isAdLoadingLocal by remember { mutableStateOf(false) }
-    var adTimerSecLocal by remember { mutableStateOf(0) }
+    var isRewardedLoading by remember { mutableStateOf(false) }
     
     val listState = rememberLazyListState()
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -1499,8 +1488,14 @@ fun AiCoachScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .background(DynamicPrimary.copy(alpha = 0.15f))
                             .clickable {
-                                showAdPlayer = true
-                                isAdLoadingLocal = true
+                                isRewardedLoading = true
+                                onShowRewardedAd(
+                                    { viewModel.earnAiAuditCredits(3); isRewardedLoading = false },
+                                    { err ->
+                                        isRewardedLoading = false
+                                        viewModel.showFeedback("No ad available right now")
+                                    }
+                                )
                             }
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -1520,90 +1515,6 @@ fun AiCoachScreen(
                         )
                     }
                 }
-            }
-        }
-
-        // --- LOCAL AD PLAYER DIALOG ---
-        if (showAdPlayer) {
-            androidx.compose.ui.window.Dialog(onDismissRequest = { }) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
-                    border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.5f))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (isAdLoadingLocal) {
-                            CircularProgressIndicator(color = DynamicPrimary, modifier = Modifier.size(36.dp))
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Loading Sponsored stream...",
-                                color = TextPrimary,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Matching relevant investor ads dynamically",
-                                color = TextSubtle,
-                                fontSize = 11.sp,
-                                textAlign = TextAlign.Center
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Playing Ad",
-                                tint = AccentYellow,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(AccentYellow.copy(alpha = 0.15f))
-                                    .padding(10.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Streaming Sponsored Message...",
-                                color = TextPrimary,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Please do not close. Your +3 AI Credits unlock in ${adTimerSecLocal}s.",
-                                color = TextSubtle,
-                                fontSize = 11.sp,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            LinearProgressIndicator(
-                                progress = (3 - adTimerSecLocal) / 3f,
-                                color = DynamicPrimary,
-                                trackColor = TextPrimary.copy(alpha = 0.08f),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(6.dp)
-                                    .clip(RoundedCornerShape(3.dp))
-                            )
-                        }
-                    }
-                }
-            }
-            
-            LaunchedEffect(showAdPlayer) {
-                kotlinx.coroutines.delay(1200)
-                isAdLoadingLocal = false
-                adTimerSecLocal = 3
-                while (adTimerSecLocal > 0) {
-                    kotlinx.coroutines.delay(1000)
-                    adTimerSecLocal--
-                }
-                viewModel.earnAiAuditCredits(3)
-                showAdPlayer = false
             }
         }
 

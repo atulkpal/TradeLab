@@ -125,7 +125,7 @@ class AcademyAccordionTest {
         val courses = listOf(course(1, 1, listOf(101)), course(2, 2, listOf(201)))
         setDeck(courses)
 
-        composeTestRule.onNodeWithText("Preview — complete the previous course to earn rewards").assertExists()
+        composeTestRule.onNodeWithText("Locked — complete the previous course to earn rewards").assertExists()
         composeTestRule.onNodeWithTag("academy_module_201").assertDoesNotExist()
 
         composeTestRule.onNodeWithTag("academy_course_2").performClick()

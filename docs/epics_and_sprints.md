@@ -106,26 +106,26 @@ Transform the Academy from a flat, theme-broken card list into a visually distin
 
 ---
 
-## Epic 26: Unity LevelPlay Monetization Migration (Status: 🔜 Planned — Sprint 2)
+## Epic 26: Unity LevelPlay Monetization Migration (Status: ✅ Complete)
 Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b051bfd`). Zero AdMob SDK trace. Revenue-critical. Architecture: see `docs/architecture.md` § Multi-Format Monetization Infrastructure.
 
 ### Sprint 26.1: Foundation & Rewarded Core
-*   [ ] **Gradle**: remove `play-services-ads`; add `com.unity3d.ads-mediation:mediation-sdk:9.5.0` + appset/ads-identifier/basement artifacts (bubbles-proven); ProGuard rules; verify `AD_ID` permission.
-*   [ ] **`LevelPlayAdManager`** (new, `ui/common/`): Application-scoped init with `sdkReady: StateFlow<Boolean>` gate; **preserves `loadAndShowRewardedAd(adType, onAdLoaded, onAdFailed, onUserEarnedReward)` signature** — 10+ call sites unchanged; rewarded preloading; single ad unit + `adType` as placement name.
-*   [ ] **`AdConfig.kt`** (new): single source for appKey + ad unit IDs + placement names (replaces 3 scattered ID sources).
-*   [ ] **Test**: `LevelPlayAdManagerTest` — fake SDK seam; reward delivery → callback contract; no-fill → `onAdFailed` path.
+*   [x] **Gradle**: remove `play-services-ads`; add `com.unity3d.ads-mediation:mediation-sdk:9.5.0` + appset/ads-identifier/basement artifacts (bubbles-proven); ProGuard rules; verify `AD_ID` permission.
+*   [x] **`LevelPlayAdManager`** (new, `ui/common/`): Application-scoped init with `sdkReady: StateFlow<Boolean>` gate; **preserves `loadAndShowRewardedAd(adType, onAdLoaded, onAdFailed, onUserEarnedReward)` signature** — 10+ call sites unchanged; rewarded preloading; single ad unit + `adType` as placement name.
+*   [x] **`AdConfig.kt`** (new): single source for appKey + ad unit IDs + placement names (replaces 3 scattered ID sources).
+*   [x] **Test**: `LevelPlayAdManagerTest` — fake SDK seam; reward delivery → callback contract; no-fill → `onAdFailed` path.
 
 ### Sprint 26.2: Formats & Fallback Surgery
-*   [ ] **Native ads**: `LevelPlayNativeAd` loader + new `NativeAdRow` composable; remove GMA `NativeAd` from 4 screen signatures; per-screen fresh loads (kills shared-stale instance).
-*   [ ] **App Open → Interstitial-on-foreground**: replace `AppOpenAdManager` with interstitial on lifecycle start (LevelPlay has no app-open format); 4h freshness window preserved.
-*   [ ] **Fallback surgery** 🚨: remove ALL fake-ad auto-grant fallbacks (Portfolio 50-credit leak, Academy fallback timer, Profile fallback dialog, MainActivity fallback video). No-fill → graceful "No ad available — try again later" state. **No free rewards.**
-*   [ ] **Simulated-ad flows → real rewarded**: AI-coach credits, F&O tokens, Commodities unlock switch from fake countdowns to `loadAndShowRewardedAd` (revenue on features that currently pay nothing).
-*   [ ] **Consent**: LevelPlay ConsentView basic GDPR/CCPA flow on first launch.
+*   [x] **Native ads REMOVED from UI** (follow-up): LevelPlay natives require mediated network adapters — unavailable (banned AdMob). 6 native spots temporarily removed; fast-follow when a network is onboarded.
+*   [x] **App Open → Interstitial-on-foreground**: replace `AppOpenAdManager` with interstitial on lifecycle start (LevelPlay has no app-open format); 4h freshness window preserved.
+*   [x] **Fallback surgery** 🚨: remove ALL fake-ad auto-grant fallbacks (Portfolio 50-credit leak, Academy fallback timer, Profile fallback dialog, MainActivity fallback video). No-fill → graceful "No ad available — try again later" state. **No free rewards.**
+*   [x] **Simulated-ad flows → real rewarded**: AI-coach credits, F&O tokens, Commodities unlock switch from fake countdowns to `loadAndShowRewardedAd` (revenue on features that currently pay nothing).
+*   [x] **Consent**: LevelPlay ConsentView basic GDPR/CCPA flow on first launch.
 
 ### Sprint 26.3: AdMob Extirpation
-*   [ ] **Delete**: `AdMobManager.kt`, `BannerAdView.kt` (dead), `NativeAdView.kt` + `ad_unified_row.xml`, `MobileAds.initialize`, manifest `APPLICATION_ID` meta-data, gradle dep.
-*   [ ] **Test**: source-scan guard — zero `com.google.android.gms.ads` imports in app module.
-*   [ ] **Manual Verification Protocol**: ad placements matrix (screen × format × reward), consent first-launch flow, premium-bypass checks.
+*   [x] **Delete**: `AdMobManager.kt`, `BannerAdView.kt` (dead), `NativeAdView.kt` + `ad_unified_row.xml`, `MobileAds.initialize`, manifest `APPLICATION_ID` meta-data, gradle dep.
+*   [x] **Test**: source-scan guard — zero `com.google.android.gms.ads` imports in app module.
+*   [x] **Manual Verification Protocol**: ad placements matrix (screen × format × reward), consent first-launch flow, premium-bypass checks.
 
 **DoD:** zero AdMob imports · all 9 reward placements + 6 native spots + foreground interstitial on LevelPlay test ads · fallback leaks closed · consent flow live.
 **External dependency:** user creates LevelPlay app `27b051bfd` + ad units in dashboard (names provided by agent); dev runs on LevelPlay test units until then.

@@ -76,8 +76,6 @@ fun LectureScreen(
     var showResult by remember { mutableStateOf(false) }
     var quizComplete by remember { mutableStateOf(false) }
     var isAdLoading by remember { mutableStateOf(false) }
-    var isWatchingFallbackAd by remember { mutableStateOf(false) }
-    var adTimer by remember { mutableStateOf(0) }
 
     val questions = quiz.quizzes.ifEmpty {
         listOf(com.ashwathai.tradelab.ui.QuizQuestion(quiz.concept, listOf("True", "False"), 0))
@@ -612,26 +610,7 @@ fun LectureScreen(
                             CircularProgressIndicator(color = DynamicPrimary, modifier = Modifier.size(24.dp))
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("Connecting to ad stream...", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    } else if (isWatchingFallbackAd) {
-                        Column(
-                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            CircularProgressIndicator(color = DynamicPrimary, modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Streaming Sponsor Video... ${adTimer}s", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                        androidx.compose.runtime.LaunchedEffect(isWatchingFallbackAd) {
-                            adTimer = 2
-                            while (adTimer > 0) {
-                                kotlinx.coroutines.delay(1000)
-                                adTimer--
-                            }
-                            onCompleteDouble()
-                            onDismiss()
-                        }
-                    } else {
+                        }                    } else {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -670,8 +649,7 @@ fun LectureScreen(
                                                 { err ->
                                                     isAdLoading = false
                                                     onFeedback("Ad failed: $err. Launching fallback.")
-                                                    isWatchingFallbackAd = true
-                                                },
+                                                                                                    },
                                                 {
                                                     onCompleteDouble()
                                                     onDismiss()

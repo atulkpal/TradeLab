@@ -67,13 +67,15 @@ import com.ashwathai.tradelab.ui.portfolio.*
 import com.ashwathai.tradelab.ui.watchlist.*
 import com.ashwathai.tradelab.ui.academy.*
 import com.ashwathai.tradelab.ui.derivatives.*
+import com.ashwathai.tradelab.ui.common.RewardedAdLauncher
 import com.ashwathai.tradelab.ui.commodities.*
 import com.ashwathai.tradelab.ui.profile.*
 
 @Composable
 fun FoDeskScreen(
     viewModel: TradingViewModel,
-    stats: PortfolioStats
+    stats: PortfolioStats,
+    onShowRewardedAd: RewardedAdLauncher
 ) {
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -183,9 +185,7 @@ fun FoDeskScreen(
     val hasAccess = stats.isPremium || stats.fnoTokens > 0
 
     if (!hasAccess) {
-        var isWatchingAd by remember { mutableStateOf(false) }
         var isAdLoading by remember { mutableStateOf(false) }
-        var adTimer by remember { mutableStateOf(0) }
 
         if (isAdLoading) {
             Column(
@@ -199,15 +199,12 @@ fun FoDeskScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Connecting to sponsored ad network...", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
-        } else if (isWatchingAd) {
+        } else if (isAdLoading) {
             LaunchedEffect(Unit) {
-                adTimer = 3
-                while (adTimer > 0) {
-                    kotlinx.coroutines.delay(1000)
-                    adTimer--
-                }
-                viewModel.earnFnoTokens(3)
-                isWatchingAd = false
+                onShowRewardedAd(
+                    { viewModel.earnFnoTokens(3); isAdLoading = false },
+                    { isAdLoading = false }
+                )
             }
 
             Column(
@@ -217,24 +214,10 @@ fun FoDeskScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(BrandViolet.copy(alpha = 0.1f))
-                        .border(2.dp, BrandViolet, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$adTimer",
-                        color = BrandViolet,
-                        fontSize = 44.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                CircularProgressIndicator(color = DynamicPrimary, modifier = Modifier.size(44.dp))
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Streaming Sponsor Video Promo...", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text("Hold tight! Unlocking your +3 Free F&O Tokens in a moment.", color = TextSubtle, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+                Text("Loading rewarded ad...", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Earn +3 Free F&O Tokens for completing it.", color = TextSubtle, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
             }
         } else {
             Column(
@@ -321,7 +304,7 @@ fun FoDeskScreen(
                                 coroutineScope.launch {
                                     kotlinx.coroutines.delay(1000)
                                     isAdLoading = false
-                                    isWatchingAd = true
+                                    onShowRewardedAd({ viewModel.earnFnoTokens(3); isAdLoading = false }, { isAdLoading = false })
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),

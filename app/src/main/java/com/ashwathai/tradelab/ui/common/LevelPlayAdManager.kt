@@ -1,0 +1,226 @@
+package com.ashwathai.tradelab.ui.common
+
+import android.app.Activity
+import android.content.Context
+import android.util.Log
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
+import com.unity3d.mediation.LevelPlay
+import com.unity3d.mediation.LevelPlayAdError
+import com.unity3d.mediation.LevelPlayInitError
+import com.unity3d.mediation.LevelPlayAdInfo
+import com.unity3d.mediation.LevelPlayInitListener
+import com.unity3d.mediation.LevelPlayInitRequest
+import com.unity3d.mediation.interstitial.LevelPlayInterstitialAd
+import com.unity3d.mediation.interstitial.LevelPlayInterstitialAdListener
+import com.unity3d.mediation.rewarded.LevelPlayReward
+import com.unity3d.mediation.rewarded.LevelPlayRewardedAd
+import com.unity3d.mediation.rewarded.LevelPlayRewardedAdListener
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/** Launches a rewarded ad for [onEarned] grant; [Unit] second param reports failure. */
+typealias RewardedAdLauncher = (onEarned: () -> Unit, onFailed: (String) -> Unit) -> Unit
+
+/**
+ * Unity LevelPlay ad facade (Epic 26) — replaces AdMob entirely.
+ *
+ * - Init in [Application.onCreate] via [init]; UI gates on [sdkReady].
+ * - Rewarded keeps the legacy AdMob-era contract
+ *   `loadAndShowRewardedAd(adType, onAdLoaded, onAdFailed, onUserEarnedReward)`
+ *   so the 10+ reward call sites are untouched.
+ * - Preloads the next rewarded after each show/closed (fixes load-and-pray).
+ * - Foreground interstitial replaces the App Open format (LevelPlay has none),
+ *   with the legacy 4-hour freshness window.
+ *
+ * Removed with AdMob (Epic 26.3): native ads return in a fast-follow once a
+ * mediated network is available (LevelPlay natives require network adapters).
+ */
+object LevelPlayAdManager {
+
+    private const val TAG = "LevelPlayAdManager"
+
+    private val _sdkReady = MutableStateFlow(false)
+    val sdkReady: StateFlow<Boolean> = _sdkReady.asStateFlow()
+
+    private var appContext: Context? = null
+    private var currentActivity: Activity? = null
+
+    private var rewardedAd: LevelPlayRewardedAd? = null
+    private var rewardedCallbacks: Triple<
+        () -> Unit,
+        (String) -> Unit,
+        () -> Unit
+        >? = null
+
+    private var interstitialAd: LevelPlayInterstitialAd? = null
+    private var lastForegroundInterstitialAt = 0L
+    private val foregroundObserver = object : DefaultLifecycleObserver {
+        override fun onStart(owner: LifecycleOwner) {
+            maybeShowForegroundInterstitial()
+        }
+    }
+    private var foregroundWired = false
+
+    // ── Init ──
+
+    fun init(context: Context) {
+        if (_sdkReady.value) return
+        appContext = context.applicationContext
+
+        LevelPlay.init(
+            context,
+            LevelPlayInitRequest.Builder(AdConfig.LEVELPLAY_APP_KEY).build(),
+            object : LevelPlayInitListener {
+                override fun onInitSuccess(configuration: com.unity3d.mediation.LevelPlayConfiguration) {
+                    Log.d(TAG, "LevelPlay initialized")
+                    _sdkReady.value = true
+                    preloadRewarded()
+                }
+
+                override fun onInitFailed(error: LevelPlayInitError) {
+                    Log.e(TAG, "LevelPlay init failed: ${error.errorMessage}")
+                }
+            }
+        )
+    }
+
+    fun trackActivity(activity: Activity) {
+        currentActivity = activity
+        if (!foregroundWired) {
+            foregroundWired = true
+            ProcessLifecycleOwner.get().lifecycle.addObserver(foregroundObserver)
+        }
+    }
+
+    // ── Rewarded (legacy-compatible contract) ──
+
+    fun loadAndShowRewardedAd(
+        adType: String,
+        activity: Activity,
+        onAdLoaded: () -> Unit,
+        onAdFailed: (String) -> Unit,
+        onUserEarnedReward: () -> Unit
+    ) {
+        if (!AdConfig.rewardedConfigured) {
+            onAdFailed("Rewarded ads not configured yet (LevelPlay ad unit pending).")
+            return
+        }
+        if (!_sdkReady.value) {
+            onAdFailed("Ads SDK still initializing. Try again in a moment.")
+            return
+        }
+
+        val placement = adType.lowercase()
+        rewardedCallbacks = Triple(onAdLoaded, onAdFailed, onUserEarnedReward)
+
+        val ad = rewardedAd ?: LevelPlayRewardedAd(AdConfig.REWARDED_AD_UNIT_ID).also {
+            rewardedAd = it
+            it.setListener(rewardedListener)
+        }
+
+        if (ad.isAdReady) {
+            onAdLoaded()
+            ad.showAd(activity, placement)
+        } else {
+            // Load-then-show; preloaded case flips onAdLoaded instantly via listener.
+            ad.loadAd()
+        }
+    }
+
+    private val rewardedListener = object : LevelPlayRewardedAdListener {
+        override fun onAdLoaded(adInfo: LevelPlayAdInfo) {
+            Log.d(TAG, "Rewarded loaded")
+            val activity = currentActivity
+            val callbacks = rewardedCallbacks
+            if (activity == null || callbacks == null) {
+                onAdFailedInternal()
+                return
+            }
+            callbacks.first.invoke()
+            rewardedAd?.showAd(activity, AdConfig.REWARDED_PLACEMENT)
+        }
+
+        override fun onAdLoadFailed(error: LevelPlayAdError) {
+            Log.e(TAG, "Rewarded load failed: ${error.errorMessage}")
+            onAdFailedInternal(error.errorMessage)
+        }
+
+        override fun onAdRewarded(reward: LevelPlayReward, adInfo: LevelPlayAdInfo) {
+            Log.d(TAG, "Reward earned: ${reward.name} x${reward.amount}")
+            rewardedCallbacks?.third?.invoke()
+        }
+
+        override fun onAdDisplayed(adInfo: LevelPlayAdInfo) { /* showing */ }
+
+        override fun onAdDisplayFailed(error: LevelPlayAdError, adInfo: LevelPlayAdInfo) {
+            onAdFailedInternal(error.errorMessage)
+        }
+
+        override fun onAdClosed(adInfo: LevelPlayAdInfo) {
+            preloadRewarded()
+        }
+
+        override fun onAdClicked(adInfo: LevelPlayAdInfo) { /* analytics follow-up */ }
+        override fun onAdInfoChanged(adInfo: LevelPlayAdInfo) { /* waterfalls */ }
+    }
+
+    private fun onAdFailedInternal(message: String? = null) {
+        rewardedCallbacks?.second?.invoke(message ?: "Ad unavailable")
+        rewardedCallbacks = null
+        preloadRewarded()
+    }
+
+    private fun preloadRewarded() {
+        if (AdConfig.rewardedConfigured && _sdkReady.value) {
+            val ad = rewardedAd ?: LevelPlayRewardedAd(AdConfig.REWARDED_AD_UNIT_ID).also {
+                rewardedAd = it
+                it.setListener(rewardedListener)
+            }
+            if (!ad.isAdReady) ad.loadAd()
+        }
+    }
+
+    // ── Foreground interstitial (replaces App Open) ──
+
+    private fun setupInterstitial() {
+        if (!AdConfig.interstitialConfigured) return
+        interstitialAd = LevelPlayInterstitialAd(AdConfig.INTERSTITIAL_AD_UNIT_ID).apply {
+            setListener(object : LevelPlayInterstitialAdListener {
+                override fun onAdLoaded(adInfo: LevelPlayAdInfo) { Log.d(TAG, "Interstitial loaded") }
+                override fun onAdLoadFailed(error: LevelPlayAdError) {
+                    Log.e(TAG, "Interstitial load failed: ${error.errorMessage}")
+                }
+                override fun onAdDisplayed(adInfo: LevelPlayAdInfo) {}
+                override fun onAdDisplayFailed(error: LevelPlayAdError, adInfo: LevelPlayAdInfo) {}
+                override fun onAdClicked(adInfo: LevelPlayAdInfo) {}
+                override fun onAdClosed(adInfo: LevelPlayAdInfo) {}
+                override fun onAdInfoChanged(adInfo: LevelPlayAdInfo) {}
+            })
+            loadAd()
+        }
+    }
+
+    private fun maybeShowForegroundInterstitial() {
+        val activity = currentActivity ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastForegroundInterstitialAt < FOREGROUND_FRESHNESS_MS) return
+        if (!AdConfig.interstitialConfigured || !_sdkReady.value) return
+
+        val ad = interstitialAd ?: LevelPlayInterstitialAd(AdConfig.INTERSTITIAL_AD_UNIT_ID).also {
+            interstitialAd = it
+            setupInterstitial()
+        }
+        if (ad.isAdReady) {
+            lastForegroundInterstitialAt = now
+            ad.showAd(activity, AdConfig.INTERSTITIAL_PLACEMENT)
+            ad.loadAd() // reload for next foreground
+        } else {
+            ad.loadAd()
+        }
+    }
+
+    private const val FOREGROUND_FRESHNESS_MS = 4 * 60 * 60 * 1000L // 4h, legacy window
+}
