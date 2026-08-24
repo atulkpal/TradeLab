@@ -4,6 +4,37 @@
 
 NotebookLM imposes strict quotas on video generation operations. Understanding and managing these quotas is critical for successful pipeline execution.
 
+> **✅ CONFIRMED EMPIRICALLY (2026-08-23/24, 7-account campaign)** — the caps and
+> handling below are now enforced automatically by `pipeline.py`'s `QuotaTracker`
+> (backed by `quota_state.json`). See [`PIPELINE_V2.md`](./PIPELINE_V2.md) §4 for the
+> mechanism. The older speculative notes remain below for reference.
+
+## Confirmed Facts (drive the current implementation)
+
+| Fact | Value | Evidence |
+|------|-------|----------|
+| Standard-tier daily video cap | **3/day** | Every standard account triggered exactly 3, 4th → refusal |
+| Pro-tier daily video cap | **20/day** | atulkpal: 8 pre-existing + exactly 20 new, then refused |
+| Refusal signature (daily) | `RateLimitError`, `rpc_code=USER_DISPLAYABLE_ERROR`, no `retry_after` | Captured in logs, multiple accounts |
+| Transient signature (burst) | `RateLimitError` with `retry_after` (≤300s) | Library transport layer |
+| Reset timing | **Unconfirmed** — configured UTC 00:00 (per earlier empirical note); tracker auto-calibrates +1h slides if server refuses past it | Library only hints "1–24 hours" |
+| Pre-stop works | Cap enforced locally BEFORE the 4th request | QuotaTracker design |
+
+### How the pipeline handles it now
+
+1. **Classify**: `retry_after` → transient (wait + retry once) ·
+   `USER_DISPLAYABLE_ERROR` → daily (park account).
+2. **Pre-stop** at `daily_limits` (3/20) — never provoke the 4th refusal.
+3. **Persist** usage + `exhausted_until` in `quota_state.json` (restart-safe).
+4. **Auto-resume**: RUN ALL sleeps to the configured reset with a live countdown,
+   clears parking, continues. Standalone GENERATE prints the ETA and exits.
+5. **Calibrate**: refusals past the expected reset slide the window +1h and log —
+   the true reset clock is learned, not guessed.
+
+---
+
+## Legacy / Reference Notes (pre-confirmation)
+
 ---
 
 ## Quota Limits (Observed)

@@ -4,17 +4,31 @@ Complete reference of all scripts in the NLM video generation pipeline.
 
 ---
 
-## Active Scripts (in `nlm/`)
+## Primary Manager (in `nlm/`)
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `master_notebook_manager.py` | Create notebooks, add sources, generate videos | `python master_notebook_manager.py` |
-| `check_auth.py` | Check auth status, re-authenticate expired accounts | `python check_auth.py` |
-| `audit_notebooks.py` | Audit notebooks, find/delete duplicates | `python audit_notebooks.py [--delete]` |
-| `download_all_videos.py` | Download completed videos from all accounts | `python download_all_videos.py` |
-| `polish_videos.py` | Add intro/outro/watermark branding | `python polish_videos.py` |
-| `extract_all_courses_fixed.py` | Extract 204 lectures from academy_data_v2.json | `python extract_all_courses_fixed.py` |
-| `upload_to_firebase.py` | Upload processed videos to Firebase Storage | `python upload_to_firebase.py` |
+| **`pipeline.py`** ⭐ | Unified manager v2 — modes 0-8: CHECK / CREATE / GENERATE / DOWNLOAD / STATUS / RUN ALL / AUTH / REASSIGN. Autonomous, self-healing (L3), quota-aware (pre-stop 3/20), CSV lock-killer, reassignment engine. **See [`PIPELINE_V2.md`](./PIPELINE_V2.md).** | `python pipeline.py` (menu 0-8) |
+| `dashboard.html` | Static control panel — Accounts/Config/Progress viewer+editor (File System Access API; Chrome/Edge). Server phase parked. | Double-click; connect `nlm/` folder |
+| `probe_auth.py` | Instant per-account alive/dead diagnostic | `python probe_auth.py` |
+
+Helper state files (auto-managed, do not hand-edit while running):
+`pipeline_state.csv` · `auth_state.json` · `quota_state.json` · `cleanup_queue.json`
+(+ `.recover.csv` fallback, `.tmp` atomics, `.lock`s).
+
+---
+
+## Legacy Scripts (in `nlm/`)
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `master_notebook_manager.py` | Legacy: create notebooks, add sources, generate videos (superseded by `pipeline.py`) | `python master_notebook_manager.py` |
+| `check_auth.py` | Legacy: auth check (superseded by mode 7) | `python check_auth.py` |
+| `audit_notebooks.py` | Legacy: duplicate audit (superseded by mode 1 + dedupe) | `python audit_notebooks.py [--delete]` |
+| `download_all_videos.py` | Legacy: downloads (superseded by mode 4) | `python download_all_videos.py` |
+| `polish_videos.py` | Add intro/outro/watermark branding (still needed post-campaign) | `python polish_videos.py` |
+| `extract_all_courses_fixed.py` | Extract 204 lectures from academy_data_v2.json (still valid) | `python extract_all_courses_fixed.py` |
+| `upload_to_firebase.py` | Upload processed videos to Firebase Storage (still needed post-campaign) | `python upload_to_firebase.py` |
 
 ---
 

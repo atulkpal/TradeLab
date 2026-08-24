@@ -161,40 +161,48 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 
 ## NLM Video Pipeline Documentation
 
-For the automated video generation pipeline (NLM), see:
+> **⚡ CURRENT SYSTEM: `nlm/pipeline.py` (Manager v2)** — a unified menu-driven manager
+> (modes 0-8) that replaces the manual script sequence. It is autonomous (RUN ALL),
+> self-healing (L3 silent re-auth), quota-aware (pre-stop at confirmed 3/20 daily caps
+> with persistent state), lock-safe (kills CSV lockers), and owns a reassignment engine
+> (stranded rescue + capacity rebalance + orphan-notebook cleanup queue).
+> **Read [`nlm/docs/PIPELINE_V2.md`](nlm/docs/PIPELINE_V2.md) — the authoritative doc.**
 
 | Document | Path | Purpose |
 |----------|------|---------|
-| **Pipeline Overview** | `nlm/docs/PIPELINE.md` | Full pipeline walkthrough, architecture, stages |
+| **Pipeline Manager v2** ⭐ | `nlm/docs/PIPELINE_V2.md` | **Authoritative**: architecture, subsystems, state files, config, runbooks |
 | **Status Sheet** | `nlm/docs/STATUS_SHEET.md` | Current progress and account status |
-| **Script Inventory** | `nlm/docs/SCRIPT_INVENTORY.md` | Complete script reference with usage |
-| **Quota Management** | `nlm/docs/QUOTA_MANAGEMENT.md` | Quota limits, backoff strategies |
-| **Troubleshooting** | `nlm/docs/TROUBLESHOOTING.md` | Common issues and fixes |
+| **Troubleshooting** | `nlm/docs/TROUBLESHOOTING.md` | Auto-handled scenarios + manual recovery runbooks |
+| **Quota Management** | `nlm/docs/QUOTA_MANAGEMENT.md` | Confirmed caps (3/20), classification, calibration |
+| **Legacy Scripts** | `nlm/docs/PIPELINE.md` | Old one-shot scripts (extract/polish/firebase) — superseded for ops |
+| **Script Inventory** | `nlm/docs/SCRIPT_INVENTORY.md` | Legacy script reference |
 
-**Key Files:**
-- `nlm/pending_allocation.json` - Lecture → Account mapping (196/204 allocated)
-- `nlm/academy_data_v2_pretty.json` - Source of truth for 204 lectures
-- `nlm/lectures/course_{1..6}/` - 204 lecture .md files
+**Manager state files** (all in `nlm/`): `pipeline_state.csv` (ownership+progress
+ledger, incl. `download_status`), `auth_state.json` (health + `blocked` flags),
+`quota_state.json` (daily usage + parking), `cleanup_queue.json` (orphan notebooks
+awaiting deletion), `config.json` (all knobs), plus `dashboard.html` (static
+Accounts/Config/Progress panel) and `probe_auth.py` (alive/dead diagnostic).
 
-**Pipeline Scripts** (`nlm/`):
+**Legacy Scripts** (`nlm/`, still valid for their niche):
 ```
-master_notebook_manager.py  # Create notebooks, add sources, generate videos (5-min delay)
-check_auth.py               # Check auth status, re-authenticate expired accounts
-audit_notebooks.py          # Audit notebooks, find/delete duplicates
-download_all_videos.py      # Download completed videos from all 7 accounts
-polish_videos.py            # Add intro/outro/watermark branding
-extract_all_courses_fixed.py # Extract 204 lectures from academy_data_v2.json
-upload_to_firebase.py       # Upload processed videos to Firebase Storage
+pipeline.py                  # ⭐ Unified manager — CHECK/CREATE/GENERATE/DOWNLOAD/
+                             #   STATUS/RUN ALL/AUTH/REASSIGN (modes 0-8)
+master_notebook_manager.py   # Legacy: create + generate (superseded)
+check_auth.py                # Legacy: auth check (superseded by mode 7)
+audit_notebooks.py           # Legacy: duplicate audit (superseded by mode 1 + dedupe)
+download_all_videos.py       # Legacy: downloads (superseded by mode 4)
+polish_videos.py             # Intro/outro branding — still needed post-campaign
+extract_all_courses_fixed.py # Lecture extraction — still valid
+upload_to_firebase.py        # Firebase upload — still needed post-campaign
 ```
 
-**Quick Start:**
+**Quick Start (Manager v2):**
 ```bash
 cd nlm
-python check_auth.py        # 1. Re-auth all 7 accounts
-python master_notebook_manager.py  # 2. Generate videos (runs continuously)
-python download_all_videos.py      # 3. Download completed videos
-python polish_videos.py            # 4. Add branding
-python upload_to_firebase.py       # 5. Upload to Firebase
+python pipeline.py    # menu 0-8
+# Campaign flow: 7 (AUTH) → 2 (CREATE) → 6 (RUN ALL, autonomous ~days)
+# Recovery:      7 (AUTH) → 8 (REASSIGN) → 6
+# Diagnostics:   5 (STATUS) · probe_auth.py · dashboard.html
 ```
 
 **7 Google Accounts** (profiles at `C:\Users\Atul\.notebooklm\profiles\`):
@@ -205,6 +213,12 @@ python upload_to_firebase.py       # 5. Upload to Firebase
 - iiidem.km@gmail.com (Standard, 3/day)
 - promptwala.xyz@gmail.com (Standard, 3/day)
 - paulritu120@gmail.com (Standard, 3/day)
+
+**Operational notes (learned 2026-08-23/24):** Google revokes this farm's sessions
+roughly daily (two waves so far) — the pipeline self-heals via L3 headless re-mint
+when the browser-profile SSO survives, otherwise option 7 fresh logins are required
+(space them out). Daily caps are hard: never provoke the 4th request. Keep the CSV
+out of Excel while running — the manager kills lockers automatically.
 
 ---
 

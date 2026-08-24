@@ -10,9 +10,14 @@ Master Notebook Manager - Complete Pipeline
 
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 from datetime import datetime
+
+# Windows CRT mis-parses IANA TZ names (e.g. Asia/Kolkata -> bogus +01:00 offset),
+# shifting every datetime.now() by hours. Popping TZ uses the true system locale.
+os.environ.pop("TZ", None)
 
 SCRIPT_DIR = Path(__file__).parent
 VENV_PATH = SCRIPT_DIR / "venv_nlm" / "Lib" / "site-packages"

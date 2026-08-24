@@ -1,6 +1,61 @@
 # NLM Pipeline Troubleshooting Guide
 
+> **For `pipeline.py` (menu 0-8) scenarios** — the unified manager auto-handles most
+> of the situations below. This guide covers what the automation does for you, plus
+> the cases that still need a human. Architecture reference:
+> [`PIPELINE_V2.md`](./PIPELINE_V2.md).
+
 ## Common Issues & Solutions
+
+### ✅ AUTO-HANDLED by `pipeline.py` (no action needed)
+
+| Symptom | What the pipeline does automatically |
+|---------|--------------------------------------|
+| `Authentication expired or invalid` on one account | Marks it **BLOCKED** in `auth_state.json`, skips it everywhere (incl. rotation), keeps running on the rest. Clear with option 7 re-auth. |
+| `RateLimitError` with `retry_after` (HTTP 429) | Waits `min(retry_after, 300s)`, retries the same lecture once. |
+| `RateLimitError` `USER_DISPLAYABLE_ERROR` (daily quota) | Parks the account in `quota_state.json` until the configured reset; RUN ALL auto-sleeps with a live countdown and resumes. |
+| Daily cap reached (3 std / 20 pro) | **Pre-stops locally** — the 4th server request is never sent. |
+| `pipeline_state.csv` locked by Excel | **Kills the locking process** (Restart Manager + taskkill, announced in the log), retries atomically. Unkillable lock → buffers to `pipeline_state.recover.csv`, auto-loaded next start. |
+| Ran DOWNLOAD but "nothing new" right after triggering | Mode 4 **auto-polls `generating` rows** against the server first — freshly finished videos download immediately, no separate CHECK needed. |
+| Videos finished while RUN ALL was quota-parked | The quota-wait wakes every ~10 min (`quota_wait_checkpoint_sec`) to CHECK + DOWNLOAD — completions are banked continuously, never stranded overnight. |
+| Ctrl+C | Clean exit: *"Stopped — progress saved."* Incremental saves mean at most one row reverts; restart self-heals via artifact re-checks. |
+| Storage cookies die mid-run | **L3 silent headless re-mint** from the persistent browser profile (`NOTEBOOKLM_HEADLESS_REAUTH=1` is set automatically). No popup. Fails only if the profile's Google SSO is dead too → see AUTH ladder below. |
+| Timestamps look GMT/wrong | Fixed — the pipeline pops the `TZ` env var (Windows CRT mis-parses IANA names). |
+| Blocked account's videos stranded | Option `8. REASSIGN` proposes permanent ownership transfer to alive accounts (weighted ∝ daily caps), chains CREATE, and queues old notebooks for cleanup. |
+
+### AUTH recovery ladder (option 7) — in order
+1. **L3 silent headless re-mint** — uses the profile's persistent browser SSO. No
+   popup. Fails with *"persisted browser profile's Google session is expired"* when a
+   revocation wave killed SSO too.
+2. Browser-cookies extraction — currently unavailable (needs `rookiepy`, no wheel for
+   Python 3.14).
+3. **Fresh login popup** — the reliable path. **Space logins** (never 7 in a few
+   minutes — rapid-login patterns invite session-revocation waves). Work each account
+   immediately after it heals.
+4. Master token — only if `master_token.json` exists (none do currently).
+
+### Session revocation waves (2026-08-23/24 incident pattern)
+Google killed sessions **while idle**, twice in two days, across all accounts. What
+worked: option 7 fresh logins → immediate work per healed account. What's armed:
+L3 self-heal (works when SSO survives the wave — save the log next wave to decide
+whether the password vault is needed).
+
+### Manual recovery sequence (all accounts dead)
+```
+1. 7. AUTH  → complete popups one at a time (space them)
+2. 4. DOWNLOAD  → bank completed videos immediately
+3. 2. CREATE    → rebuild anything pending on new/moved owners
+4. 6. RUN ALL   → resume autonomous operation
+```
+
+### CSV state reference
+- `download_status`: '' → downloaded / failed. `artifact_url` always keeps the CLOUD
+  URL (local path is derivable; re-download source preserved).
+- `cleanup_queue.json`: orphan notebooks awaiting deletion on their old owner; drained
+  automatically when that owner is next alive. Divergence-guarded — never deletes a
+  notebook the CSV still owns.
+
+## Common Issues & Solutions (legacy scripts)
 
 ---
 

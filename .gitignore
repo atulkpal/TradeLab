@@ -44,3 +44,18 @@ releases/
 
 # Artifacts
 .artifacts/
+
+# NLM runtime state (local-only — the CSV is the app's brain, never versioned)
+nlm/auth_state.json
+nlm/quota_state.json
+nlm/cleanup_queue.json
+nlm/pipeline_state.csv
+nlm/pipeline_state.recover.csv
+nlm/pipeline_state.csv.tmp
+nlm/.pipeline.lock
+nlm/STOP.txt
+nlm/logs/
+nlm/assets_old/
+nlm/tracking/
+nlm/batch_progress.json
+nlm/batch_results.json
