@@ -1,0 +1,26 @@
+{
+  "project_name": "TradeLab",
+  "notebook_prefix": "TradeLab",
+  "notebook_title_format": "{prefix} - {title}",
+  "source_dir": "lectures",
+  "output_dir": "assets",
+  "lecture_data_file": "../app/src/main/assets/academy_data_v2.json",
+  "state_file": "pipeline_state.csv",
+  "accounts_file": "accounts.json",
+  "video_format": "short",
+  "video_style": "auto_select",
+  "language": "en",
+  "delay_between_lectures_sec": 60,
+  "delay_between_accounts_sec": 30,
+  "rotate_before_session": true,
+  "rotate_min_interval_sec": 600,
+  "quota_reset": {
+    "timezone": "UTC",
+    "hour": 0
+  },
+  "daily_limits": {
+    "default": 3,
+    "pro": 20
+  },
+  "pro_accounts": ["atulkpal@gmail.com"]
+}

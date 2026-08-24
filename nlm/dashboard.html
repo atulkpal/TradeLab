@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeLab NLM Control Panel</title>
+<style>
+:root{
+  --bg:#0b0d14; --panel:#12151f; --panel2:#171b28; --line:#232838;
+  --txt:#e6e9f2; --dim:#8b93a7;
+  --violet:#7c5cff; --cyan:#22d3ee; --green:#34d399; --red:#f87171;
+  --orange:#fbbf24; --gray:#4b5563;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+.mono{font-family:Consolas,'Cascadia Code',monospace}
+
+header{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#141827,#10131d);position:sticky;top:0;z-index:50}
+.logo{font-size:18px;font-weight:700}
+.logo .accent{color:var(--violet)}
+.conn{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dim)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red)}
+.dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--txt);padding:8px 16px;border-radius:8px;
+  cursor:pointer;font-size:13.5px;transition:.15s}
+.btn:hover:not(:disabled){border-color:var(--violet);transform:translateY(-1px)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:linear-gradient(135deg,var(--violet),#5a3fd4);border-color:transparent;font-weight:600}
+.btn.primary:hover:not(:disabled){filter:brightness(1.15)}
+.btn.small{padding:5px 11px;font-size:12px}
+
+nav{display:flex;gap:6px;padding:12px 22px 0}
+nav button{background:none;border:none;color:var(--dim);padding:10px 20px;font-size:14px;cursor:pointer;
+  border-radius:10px 10px 0 0;border-bottom:2px solid transparent}
+nav button.active{color:var(--txt);border-bottom-color:var(--violet);background:rgba(124,92,255,.07)}
+main{padding:22px;max-width:1200px;margin:0 auto}
+.tabpane{display:none}.tabpane.active{display:block}
+
+#overlay{position:fixed;inset:0;background:rgba(8,10,17,.94);z-index:100;display:flex;
+  align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;padding:30px}
+#overlay h2{font-size:24px}
+#overlay p{color:var(--dim);max-width:520px;line-height:1.65;font-size:14px}
+#overlay .steps{text-align:left;color:var(--dim);font-size:13.5px;line-height:2}
+#overlay .steps b{color:var(--cyan)}
+
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:7px 15px;border-radius:999px;font-size:13px;background:var(--panel);border:1px solid var(--line)}
+.chip b{font-size:15px}
+.banner{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13.5px;line-height:1.6;
+  border:1px solid #7f1d1d;background:rgba(248,113,113,.08)}
+.banner.info{border-color:#155e75;background:rgba(34,211,238,.07)}
+
+.acct-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;
+  transition:border-color .15s}
+.acct-card:hover{border-color:#2e3550}
+.acct-card.blocked{border-color:rgba(248,113,113,.45)}
+.acct-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.acct-email{font-weight:600;font-size:14.5px}
+.tier-chip{font-size:11px;padding:2px 9px;border-radius:99px;background:rgba(124,92,255,.15);color:#b7a5ff;text-transform:uppercase;letter-spacing:.5px}
+.pill{font-size:11.5px;padding:3px 11px;border-radius:99px;font-weight:600}
+.pill.valid{background:rgba(52,211,153,.13);color:var(--green)}
+.pill.expired{background:rgba(251,191,36,.13);color:var(--orange)}
+.pill.error{background:rgba(248,113,113,.13);color:var(--red)}
+.pill.unknown{background:rgba(107,114,128,.15);color:var(--dim)}
+.blocked-flag{font-size:11.5px;padding:3px 11px;border-radius:99px;background:rgba(248,113,113,.16);color:var(--red);
+  font-weight:700;border:1px dashed var(--red)}
+.acct-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 18px;margin:13px 0;
+  font-size:12.5px;color:var(--dim)}
+.acct-meta b{color:var(--txt);font-weight:500;display:block;margin-top:1px}
+.acct-actions{display:flex;gap:8px;flex-wrap:wrap}
+.switch{position:relative;width:38px;height:20px;flex:none;display:inline-block}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--gray);border-radius:99px;cursor:pointer;transition:.2s}
+.slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+input:checked+.slider{background:var(--red)}
+input:checked+.slider::before{transform:translateX(18px)}
+.switch-label{font-size:12.5px;color:var(--dim)}
+
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.field label{display:block;font-size:12.5px;color:var(--dim);margin-bottom:6px;letter-spacing:.3px}
+.field input,.field select,textarea.raw{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);
+  padding:9px 12px;border-radius:8px;font-size:13.5px;outline:none}
+.field input:focus,.field select:focus,textarea.raw:focus{border-color:var(--violet)}
+textarea.raw{min-height:170px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.55;resize:vertical}
+.section-title{font-size:13px;color:var(--violet);text-transform:uppercase;letter-spacing:1.2px;margin:26px 0 12px;
+  padding-bottom:7px;border-bottom:1px solid var(--line)}
+.section-title:first-child{margin-top:0}
+
+.bar-row{margin-bottom:14px}
+.bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.bar-track{height:10px;background:var(--panel);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar-fill{height:100%;border-radius:99px;transition:width .4s}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+table.tbl th{color:var(--dim);text-align:left;font-weight:500;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px}
+table.tbl td{padding:8px 10px;border-bottom:1px solid rgba(35,40,56,.55)}
+table.tbl tr:hover td{background:rgba(124,92,255,.04)}
+
+#modal{position:fixed;inset:0;background:rgba(5,7,12,.8);z-index:200;display:none;align-items:center;justify-content:center}
+#modal.open{display:flex}
+.modal-box{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:22px;width:min(680px,92vw);
+  max-height:86vh;overflow:auto}
+.modal-box h3{margin-bottom:14px;font-size:16px}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+#toasts{position:fixed;bottom:22px;right:22px;z-index:300;display:flex;flex-direction:column;gap:9px}
+.toast{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--green);padding:11px 17px;
+  border-radius:9px;font-size:13px;animation:slideIn .25s;box-shadow:0 8px 26px rgba(0,0,0,.45)}
+.toast.err{border-left-color:var(--red)}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0}}
+.hint{font-size:12px;color:var(--dim);line-height:1.6}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Trade<span class="accent">Lab</span> · NLM Control Panel</div>
+  <div class="conn"><span class="dot" id="connDot"></span><span id="connLabel">not connected</span></div>
+  <button class="btn" id="btnReload" title="Discard changes and reload from disk">↺ Reload</button>
+  <button class="btn primary" id="btnSave" disabled>💾 Save All</button>
+</header>
+
+<nav>
+  <button data-tab="accounts" class="active">Accounts</button>
+  <button data-tab="config">Config</button>
+  <button data-tab="progress">Progress</button>
+</nav>
+
+<main>
+  <section class="tabpane active" id="tab-accounts">
+    <div id="blockedBanner"></div>
+    <div class="banner info">
+      Actual Google login happens via the CLI (<b>option 7 · AUTH</b>). This panel updates
+      the records — press <b>Mark Re-Authed</b> after a successful login to unblock an account.
+    </div>
+    <div class="chips" id="acctChips"></div>
+    <div id="acctList"></div>
+  </section>
+
+  <section class="tabpane" id="tab-config">
+    <div class="form-grid" id="configForm"></div>
+    <div class="section-title">Advanced — raw keys not shown above</div>
+    <textarea class="raw" id="configRaw" spellcheck="false" placeholder="{}"></textarea>
+    <p class="hint" style="margin-top:8px">Advanced edits merge over form values on save. Unknown keys survive round-trips.</p>
+  </section>
+
+  <section class="tabpane" id="tab-progress">
+    <div id="progTotals"></div>
+    <div class="section-title">Per-Account Breakdown</div>
+    <div id="progAccounts"></div>
+  </section>
+</main>
+
+<div id="overlay">
+  <h2>Connect your <span style="color:var(--violet)">nlm</span> folder</h2>
+  <p>This panel reads &amp; writes <b>auth_state.json</b>, <b>config.json</b> and
+     <b>pipeline_state.csv</b> directly on disk. Grant access once — it remembers next time.</p>
+  <div class="steps">
+     1 · Click <b>Connect Folder</b> below<br>
+     2 · Pick your <b>TradeLab\nlm</b> folder<br>
+     3 · Choose “<b>Save changes</b>” when the browser asks permission
+  </div>
+  <button class="btn primary" id="btnConnect" style="font-size:15px;padding:12px 30px">📁 Connect Folder</button>
+  <p class="hint" id="fallbackHint"></p>
+</div>
+
+<div id="modal"><div class="modal-box">
+  <h3 id="modalTitle">Edit JSON</h3>
+  <textarea class="raw" id="modalText" spellcheck="false"></textarea>
+  <div class="modal-foot">
+    <button class="btn" id="modalCancel">Cancel</button>
+    <button class="btn primary" id="modalOk">Apply</button>
+  </div>
+</div></div>
+
+<div id="toasts"></div>
+
+<script>
+'use strict';
+/* ══════════ Data Adapter layer ══════════
+   FileAdapter (now): File System Access API → direct disk read/write.
+   ServerAdapter (later phase): identical interface via fetch('/api/...'). */
+const Adapter = {
+  kind: null, dir: null,
+  async read(name){
+    const fh = await this.dir.getFileHandle(name);
+    return (await fh.getFile()).text();
+  },
+  async write(name, text){
+    try{
+      const cur = await this.dir.getFileHandle(name);
+      const bak = await this.dir.getFileHandle(name + '.bak', {create:true});
+      const bw  = await bak.createWritable();
+      await bw.write(await (await cur.getFile()).text());
+      await bw.close();
+    }catch(e){ if(e.name !== 'NotFoundError') console.warn('backup skip', name, e); }
+    const fh = await this.dir.getFileHandle(name, {create:true});
+    const w  = await fh.createWritable();
+    await w.write(text);
+    await w.close();
+  },
+};
+
+/* ══════════ IndexedDB handle persistence ══════════ */
+function idb(){ return new Promise((res,rej)=>{
+  const r=indexedDB.open('nlm-dash',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});}
+async function idbSet(k,v){const d=await idb();return new Promise((res,rej)=>{
+  const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);
+  t.oncomplete=res;t.onerror=()=>rej(t.error);});}
+async function idbGet(k){const d=await idb();return new Promise((res,rej)=>{
+  const t=d.transaction('kv','readonly');const q=t.objectStore('kv').get(k);
+  q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+
+/* ══════════ App state ══════════ */
+const S = {
+  auth:{accounts:{}}, authSnap:'', config:{}, configSnap:'',
+  accounts:[], csv:'', dirtyAuth:false, dirtyCfg:false,
+};
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nowLocal = () => new Date().toLocaleString('sv-SE');
+
+function toast(msg, err=false){
+  const d=document.createElement('div');
+  d.className='toast'+(err?' err':''); d.textContent=msg;
+  $('#toasts').appendChild(d); setTimeout(()=>d.remove(), 3400);
+}
+function setConn(on,label){ $('#connDot').classList.toggle('on',on); $('#connLabel').textContent=label; }
+function markDirty(){
+  S.dirtyAuth = JSON.stringify(S.auth) !== S.authSnap;
+  S.dirtyCfg  = JSON.stringify(S.config) !== S.configSnap;
+  const dirty = S.dirtyAuth || S.dirtyCfg;
+  const b=$('#btnSave');
+  b.disabled=!dirty;
+  b.textContent='💾 Save All'+(S.dirtyAuth?' · auth':'')+(S.dirtyCfg?' · config':'')+(dirty?' ●':'');
+}
+
+/* JSON dotted-path helpers */
+function getPath(o,path){ return path.split('.').reduce((a,k)=>(a==null?a:a[k]), o); }
+function setPath(o,path,v){
+  const ks=path.split('.'), last=ks.pop();
+  let cur=o;
+  ks.forEach(k=>{ if(typeof cur[k]!=='object'||cur[k]===null) cur[k]={}; cur=cur[k]; });
+  cur[last]=v;
+}
+
+/* Tiny RFC-ish CSV parser (handles quotes/commas/newlines) */
+function parseCSV(text){
+  const rows=[]; let row=[], cell='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){row.push(cell);cell='';}
+    else if(c==='\n'||c==='\r'){
+      if(c==='\r'&&text[i+1]==='\n')i++;
+      row.push(cell);cell='';
+      if(row.length>1||row[0]!=='')rows.push(row);
+      row=[];
+    } else cell+=c;
+  }
+  if(cell!==''||row.length){row.push(cell);rows.push(row);}
+  if(!rows.length) return [];
+  const head=rows.shift().map(h=>h.trim());
+  return rows.map(r=>Object.fromEntries(head.map((h,i)=>[h,(r[i]??'').trim()])));
+}
+
+/* ══════════ Connect flow ══════════ */
+async function connect(pickNew=false){
+  if(!window.showDirectoryPicker){
+    $('#fallbackHint').textContent =
+      'This browser lacks the File System Access API — open this file in Chrome or Edge for full read/write.';
+    return;
+  }
+  try{
+    let h = pickNew ? null : await idbGet('dir');
+    if(!h || pickNew){
+      h = await window.showDirectoryPicker({id:'nlm', mode:'readwrite'});
+      await idbSet('dir', h);
+    }else{
+      const perm = await h.queryPermission({mode:'readwrite'});
+      if(perm !== 'granted'){
+        const req = await h.requestPermission({mode:'readwrite'});
+        if(req !== 'granted'){ toast('Permission denied', true); return; }
+      }
+    }
+    Adapter.kind='file'; Adapter.dir=h;
+    $('#overlay').style.display='none';
+    setConn(true, h.name + '/');
+    await loadAll();
+  }catch(e){
+    if(e.name!=='AbortError'){ console.error(e); toast('Connect failed: '+e.message,true); }
+  }
+}
+
+async function loadAll(){
+  try{ S.accounts = JSON.parse(await Adapter.read('accounts.json')); }
+  catch(e){ S.accounts=[]; console.warn('accounts.json unreadable'); }
+  try{ S.auth = JSON.parse(await Adapter.read('auth_state.json')); }
+  catch(e){ S.auth={accounts:{}}; toast('auth_state.json missing — showing empty', true); }
+  try{ S.config = JSON.parse(await Adapter.read('config.json')); }
+  catch(e){ S.config={}; toast('config.json missing — showing empty', true); }
+  try{ S.csv = await Adapter.read('pipeline_state.csv'); }
+  catch(e){ S.csv=''; console.warn('pipeline_state.csv unreadable'); }
+  S.auth.accounts ??= {};
+  S.authSnap  = JSON.stringify(S.auth);
+  S.configSnap= JSON.stringify(S.config);
+  renderAll();
+  markDirty();
+}
+
+/* ══════════ Accounts tab ══════════ */
+const SEV = {error:0, expired:1, unknown:2, valid:3};
+function ensureRecord(email){
+  S.auth.accounts[email] ??= {
+    email,
+    auth_status:'unknown', blocked:false,
+    last_check:null, last_auth_fail:null,
+    last_reauth:null, reauth_method:null,
+    error_count_today:0, notebook_count:0,
+  };
+  return S.auth.accounts[email];   // LIVE reference — mutations persist
+}
+
+function renderAccounts(){
+  const emails = S.accounts.length
+    ? S.accounts.map(a => a.email)
+    : Object.keys(S.auth.accounts);
+  // LIVE record references — display extras merged in-place, never copied
+  const withMeta = emails.map(email => {
+    const roster = S.accounts.find(a => a.email === email) || {};
+    const r = ensureRecord(email);
+    r.profile ||= roster.profile || email.split('@')[0];
+    r.tier     ||= roster.tier  || 'standard';
+    return r;
+  });
+  withMeta.sort((a,b)=> (b.blocked - a.blocked) ||
+    ((SEV[a.auth_status]??2)-(SEV[b.auth_status]??2)) || a.email.localeCompare(b.email));
+
+  const n = k => withMeta.filter(a=>k(a)).length;
+  $('#acctChips').innerHTML =
+    `<span class="chip">✅ Valid <b>${n(a=>a.auth_status==='valid' && !a.blocked)}</b></span>
+     <span class="chip">⛔ Blocked <b>${n(a=>a.blocked)}</b></span>
+     <span class="chip">🟠 Expired <b>${n(a=>a.auth_status==='expired')}</b></span>
+     <span class="chip">🔴 Error <b>${n(a=>a.auth_status==='error')}</b></span>
+     <span class="chip">📋 Total <b>${withMeta.length}</b></span>`;
+
+  const blocked = withMeta.filter(a=>a.blocked);
+  $('#blockedBanner').innerHTML = blocked.length
+    ? `<div class="banner">⛔ <b>${blocked.length} account(s) blocked</b> — the pipeline skips them everywhere
+       until re-authed: ${blocked.map(a=>'<b>'+esc(a.email)+'</b>').join(', ')}</div>` : '';
+
+  $('#acctList').innerHTML = withMeta.map((r,i)=>`
+    <div class="acct-card ${r.blocked?'blocked':''}">
+      <div class="acct-head">
+        <span class="acct-email">${esc(r.email)}</span>
+        <span class="tier-chip">${esc(r.tier)} · ${esc(r.profile)}</span>
+        <span class="pill ${esc(r.auth_status)}">${esc(r.auth_status).toUpperCase()}</span>
+        ${r.blocked ? '<span class="blocked-flag">⛔ BLOCKED</span>' : ''}
+        <label style="margin-left:auto;display:flex;align-items:center;gap:8px;cursor:pointer">
+          <span class="switch-label">Blocked</span>
+          <span class="switch"><input type="checkbox" data-blk="${i}" ${r.blocked?'checked':''}><span class="slider"></span></span>
+        </label>
+      </div>
+      <div class="acct-meta">
+        <div>last check<b>${esc(r.last_check ?? '—')}</b></div>
+        <div>last auth fail<b>${esc(r.last_auth_fail ?? '—')}</b></div>
+        <div>last re-auth<b>${esc(r.last_reauth ?? '—')}</b></div>
+        <div>method / errors<b>${esc(r.reauth_method ?? '—')} · ${r.error_count_today ?? 0} today</b></div>
+        <div>notebooks<b>${r.notebook_count ?? '—'}</b></div>
+        <div>last error<b>${esc(r.last_error ? String(r.last_error).slice(0,60)+'…' : '—')}</b></div>
+      </div>
+      <div class="acct-actions">
+        <button class="btn small primary" data-mkra="${i}" title="Stamp valid + now + unblock">✓ Mark Re-Authed</button>
+        <button class="btn small" data-unblk="${i}" ${!r.blocked?'disabled':''}>Unblock</button>
+        <button class="btn small" data-edit="${i}">{ } Edit raw</button>
+      </div>
+    </div>`).join('') || '<p class="hint">No accounts found.</p>';
+
+  $$('[data-blk]').forEach(el=>el.onchange=()=>{
+    withMeta[+el.dataset.blk].blocked = el.checked;
+    markDirty(); renderAccounts();
+  });
+  $$('[data-mkra]').forEach(el=>el.onclick=()=>{
+    const r=withMeta[+el.dataset.mkra];
+    Object.assign(r,{auth_status:'valid',blocked:false,last_reauth:nowLocal(),
+                     reauth_method:'manual_dashboard',last_error:null,error_count_today:0});
+    toast('Marked re-authed: '+r.email);
+    markDirty(); renderAccounts();
+  });
+  $$('[data-unblk]').forEach(el=>el.onclick=()=>{
+    withMeta[+el.dataset.unblk].blocked=false;
+    toast('Unblocked'); markDirty(); renderAccounts();
+  });
+  $$('[data-edit]').forEach(el=>el.onclick=()=>openJsonModal(
+    'Edit raw — '+withMeta[+el.dataset.edit].email,
+    withMeta[+el.dataset.edit],
+    obj=>Object.assign(withMeta[+el.dataset.edit], obj)));
+}
+
+/* ══════════ Config tab ══════════ */
+const CFG_FIELDS = [
+  {k:'project_name',              label:'Project name',      t:'text'},
+  {k:'notebook_prefix',           label:'Notebook prefix',   t:'text'},
+  {k:'delay_between_lectures_sec',label:'Delay between lectures (sec)', t:'num'},
+  {k:'delay_between_accounts_sec',label:'Delay between accounts (sec)', t:'num'},
+  {k:'daily_limits.default',      label:'Daily limit · standard tier',  t:'num'},
+  {k:'daily_limits.pro',          label:'Daily limit · pro tier',       t:'num'},
+  {k:'video_format', label:'Video format', t:'sel',
+   opts:['short','explainer','brief','cinematic']},
+  {k:'video_style',  label:'Video style', t:'sel',
+   opts:['auto_select','classic','whiteboard','kawaii','anime','watercolor','retro_print','heritage','paper_craft']},
+  {k:'language',     label:'Language code', t:'text'},
+  {k:'pro_accounts', label:'Pro accounts (comma-separated)', t:'tags'},
+];
+const KNOWN_KEYS = new Set(CFG_FIELDS.map(f=>f.k));
+
+function renderConfig(){
+  $('#configForm').innerHTML = CFG_FIELDS.map(f=>{
+    const v = getPath(S.config, f.k);
+    let input;
+    if(f.t==='sel')
+      input=`<select data-cfg="${f.k}">`+f.opts.map(o=>
+        `<option ${o===v?'selected':''}>${o}</option>`).join('')+'</select>';
+    else if(f.t==='tags')
+      input=`<input data-cfg="${f.k}" value="${esc(Array.isArray(v)?v.join(', '):(v??''))}" placeholder="a@x.com, b@y.com">`;
+    else if(f.t==='num')
+      input=`<input type="number" data-cfg="${f.k}" value="${esc(v??'')}">`;
+    else
+      input=`<input data-cfg="${f.k}" value="${esc(v??'')}">`;
+    return `<div class="field"><label>${f.label}</label>${input}</div>`;
+  }).join('');
+
+  const advanced={};
+  for(const [k,v] of Object.entries(S.config))
+    if(!KNOWN_KEYS.has(k)) advanced[k]=v;
+  const advKeysLeft = Object.keys(advanced).length;
+  $('#configRaw').value = advKeysLeft ? JSON.stringify(advanced,null,2) : '{}';
+
+  $$('[data-cfg]').forEach(el=>el.oninput=()=>{
+    const k=el.dataset.cfg, f=CFG_FIELDS.find(x=>x.k===k);
+    let v=el.value;
+    if(f.t==='num') v=v===''?0:Number(v)||0;
+    if(f.t==='tags') v=v.split(',').map(s=>s.trim()).filter(Boolean);
+    setPath(S.config,k,v); markDirty();
+  });
+}
+$('#configRaw')?.addEventListener('change', e=>{
+  try{
+    const extra=JSON.parse(e.target.value||'{}');
+    for(const k of Object.keys(S.config))
+      if(!KNOWN_KEYS.has(k)) delete S.config[k];
+    Object.assign(S.config,extra);
+    markDirty(); toast('Advanced keys applied');
+  }catch(err){ toast('Invalid JSON in advanced box: '+err.message,true); }
+});
+
+/* ══════════ Progress tab ══════════ */
+function renderProgress(){
+  const rows=parseCSV(S.csv||'');
+  const tot=rows.length;
+  const cnt=s=>rows.filter(r=>r.video_status===s).length;
+  const complete=cnt('complete'), generating=cnt('generating'),
+        failed=cnt('failed'), srcUp=rows.filter(r=>r.source_status==='uploaded').length,
+        dl=rows.filter(r=>r.download_status==='downloaded').length;
+  const pct=(v)=>tot?Math.round(v/tot*100):0;
+
+  $('#progTotals').innerHTML=`
+    <div class="chips">
+      <span class="chip">📋 Lectures <b>${tot}</b></span>
+      <span class="chip">✅ Complete <b>${complete}</b></span>
+      <span class="chip">⬇ Downloaded <b>${dl}</b></span>
+      <span class="chip">⏳ Generating <b>${generating}</b></span>
+      <span class="chip">❌ Failed <b>${failed}</b></span>
+      <span class="chip">📄 Sources uploaded <b>${srcUp}</b></span>
+    </div>
+    ${bar('Complete',complete,pct(complete),'var(--green)')}
+    ${bar('Downloaded',dl,pct(dl),'var(--violet)')}
+    ${bar('Generating',generating,pct(generating),'var(--cyan)')}
+    ${bar('Failed',failed,pct(failed),'var(--red)')}
+    ${bar('Remaining',tot-complete-generating-failed,pct(tot-complete-generating-failed),'var(--gray)')}`;
+
+  const byAcc={};
+  rows.forEach(r=>{ const e=r.assigned_email||'(unallocated)';
+    byAcc[e]??={c:0,g:0,m:0,s:0,d:0,t:0};
+    const b=byAcc[e]; b.t++;
+    if(r.video_status==='complete')b.c++;
+    else if(r.video_status==='generating')b.g++; else b.m++;
+    if(r.source_status==='uploaded')b.s++;
+    if(r.download_status==='downloaded')b.d++;
+  });
+  $('#progAccounts').innerHTML=`<table class="tbl">
+    <tr><th>Account</th><th>Total</th><th>Complete</th><th>Downloaded</th><th>Generating</th><th>Missing</th><th>Sources</th><th>% done</th></tr>
+    ${Object.entries(byAcc).map(([e,b])=>`<tr><td>${esc(e)}</td><td>${b.t}</td><td>${b.c}</td>
+      <td>${b.d}</td><td>${b.g}</td><td>${b.m}</td><td>${b.s}</td><td><b>${pct(b.c)}%</b></td></tr>`).join('')}
+  </table>`;
+}
+function bar(label,val,pct,color){
+  return `<div class="bar-row"><div class="bar-label"><span>${label}</span><span class="mono">${val} (${pct}%)</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div></div>`;
+}
+
+/* ══════════ Modal ══════════ */
+let modalApply=null;
+function openJsonModal(title,obj,apply){
+  $('#modalTitle').textContent=title;
+  $('#modalText').value=JSON.stringify(obj,null,2);
+  modalApply=apply;
+  $('#modal').classList.add('open');
+}
+$('#modalCancel').onclick=()=>$('#modal').classList.remove('open');
+$('#modalOk').onclick=()=>{
+  try{
+    const obj=JSON.parse($('#modalText').value);
+    modalApply?.(obj);
+    $('#modal').classList.remove('open');
+    markDirty(); renderAll();
+    toast('Applied');
+  }catch(e){ toast('Invalid JSON: '+e.message,true); }
+};
+
+/* ══════════ Save / Reload ══════════ */
+async function saveAll(){
+  const changed=[];
+  if(S.dirtyAuth)changed.push('auth_state.json');
+  if(S.dirtyCfg)changed.push('config.json');
+  if(!changed.length)return;
+  if(!confirm('Write '+changed.join(' + ')+' to disk?\n(A .bak backup of each is created first)'))return;
+  try{
+    if(S.dirtyAuth){
+      await Adapter.write('auth_state.json',JSON.stringify(S.auth,null,2));
+      S.authSnap=JSON.stringify(S.auth);
+    }
+    if(S.dirtyCfg){
+      await Adapter.write('config.json',JSON.stringify(S.config,null,2));
+      S.configSnap=JSON.stringify(S.config);
+    }
+    toast('Saved: '+changed.join(' + ')+' (backups written)');
+    markDirty();
+  }catch(e){ console.error(e); toast('Save failed: '+e.message,true); }
+}
+
+/* ══════════ Render / tabs / boot ══════════ */
+function renderAll(){ renderAccounts(); renderConfig(); renderProgress(); }
+
+$$('nav button').forEach(b=>b.onclick=()=>{
+  $$('nav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  $$('.tabpane').forEach(p=>p.classList.remove('active'));
+  $('#tab-'+b.dataset.tab).classList.add('active');
+});
+
+$('#btnConnect').onclick = ()=>connect(false);
+$('#btnSave').onclick    = saveAll;
+$('#btnReload').onclick  = async ()=>{
+  if((S.dirtyAuth||S.dirtyCfg) &&
+     !confirm('Discard unsaved changes?')) return;
+  await loadAll();
+};
+
+window.addEventListener('beforeunload', e=>{
+  if(S.dirtyAuth||S.dirtyCfg){ e.preventDefault(); e.returnValue=''; }
+});
+
+(async function boot(){
+  if(!window.showDirectoryPicker){
+    setConn(false,'needs Chrome/Edge');
+    $('#fallbackHint').textContent =
+      'This browser lacks the File System Access API — open this file in Chrome or Edge.';
+    return;
+  }
+  try{
+    const h=await idbGet('dir');
+    if(h){
+      const perm=await h.queryPermission({mode:'readwrite'});
+      if(perm==='granted'){ await connect(false); return; }
+      // permission needs a user gesture — keep overlay, prefill hint
+      $('#fallbackHint').textContent =
+        'Saved folder found: "'+h.name+'" — click Connect to re-grant access for this session.';
+      $('#btnConnect').textContent='📁 Reconnect "'+h.name+'"';
+    }
+  }catch(e){ console.warn(e); }
+})();
+</script>
+</body>
+</html>

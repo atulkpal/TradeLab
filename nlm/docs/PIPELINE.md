@@ -1,4 +1,13 @@
-# NLM Video Generation Pipeline
+# NLM Video Generation Pipeline (LEGACY SCRIPTS)
+
+> **⚠️ SUPERSEDED for day-to-day operation** — the unified manager **`pipeline.py`**
+> (menu modes 0-8) replaces the manual script sequence below. Its architecture,
+> subsystems, state files, config reference, and runbooks live in
+> **[`PIPELINE_V2.md`](./PIPELINE_V2.md) — read that first.**
+>
+> This doc remains accurate for the legacy one-shot scripts
+> (`extract_all_courses_fixed.py`, `polish_videos.py`, `upload_to_firebase.py`)
+> and the original Firebase/FFmpeg stages, which `pipeline.py` does not cover.
 
 ## Overview
 
