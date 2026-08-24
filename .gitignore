@@ -67,3 +67,6 @@ nlm/unicode_chars.txt
 check_main.py
 academy_data_v2_pretty.json
 nlm/0[1-6]-*.md
+
+# Preview-only bundled videos (regenerable from nlm/assets/out; production = Firebase)
+app/src/main/res/raw/lecture_*.mp4

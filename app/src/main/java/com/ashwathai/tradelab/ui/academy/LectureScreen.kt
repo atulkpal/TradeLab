@@ -180,31 +180,47 @@ fun LectureScreen(
 
                     val selectedLecture = quiz.lectures.getOrNull(activeLectureIndex ?: 0)
                     if (selectedLecture != null) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                            border = BorderStroke(1.dp, DarkBorder),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = selectedLecture.title,
-                                    color = TextPrimary,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = selectedLecture.content,
-                                    color = TextSecondary,
-                                    fontSize = 12.sp,
-                                    lineHeight = 18.sp
-                                )
-
-                                if (selectedLecture.videoUrl.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(14.dp))
-                                    VideoPlayerView(videoUrl = selectedLecture.videoUrl)
-                                } else {
+                        // ── VIDEO-FIRST: the video leads when present ──
+                        if (selectedLecture.videoUrl.isNotBlank()) {
+                            VideoPlayerView(
+                                videoUrl = selectedLecture.videoUrl,
+                                videoHeight = 540.dp // portrait-immersive: NotebookLM videos are vertical
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Text(
+                                text = selectedLecture.title,
+                                color = TextPrimary,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = selectedLecture.content,
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                lineHeight = 18.sp
+                            )
+                        } else {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                                border = BorderStroke(1.dp, DarkBorder),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = selectedLecture.title,
+                                        color = TextPrimary,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = selectedLecture.content,
+                                        color = TextSecondary,
+                                        fontSize = 12.sp,
+                                        lineHeight = 18.sp
+                                    )
                                     Spacer(modifier = Modifier.height(14.dp))
                                     Row(
                                         modifier = Modifier

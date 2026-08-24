@@ -92,7 +92,15 @@ Transform the Academy from a flat, theme-broken card list into a visually distin
 *   [x] **Celebrations**: `SparkleBurst` extended to chapter completion; certificate flow unchanged.
 *   [x] **Manual Verification Protocol**: add Academy section — theme sweep across 5 modes, full-screen lecture flow, streak/XP visibility.
 
-**DoD:** zero hardcoded violets/whites in Academy · lectures full-screen with video slot · streak/XP visible · all existing tests green + new test files.
+**DoD:** zero hardcoded violets/whites in Academy
+### Sprint 25.5: Video-First & Shorts Fullscreen (added post-review)
+*   [x] **Video-first layout**: `LectureScreen` renders the video full-bleed at the top when present; reading content below. No-video lectures keep the reading card + coming-soon state.
+*   [x] **Shorts-style fullscreen**: `VideoPlayerView` intercepts the HTML5 fullscreen request (`WebChromeClient.onShowCustomView`) and renders it edge-to-edge in a dialog with system bars hidden — portrait-immersive for vertical videos. Back exits.
+*   [x] **WebView reload fix**: lecture pill switches now reload the WebView source (`AndroidView.update` + tag-guard) — previously the same video kept playing.
+*   [x] **Internal video cache**: `VideoCacheManager` moved to `context.cacheDir` (FUSE-proof on emulators; correct evictable-cache semantics).
+*   [x] **92 polished videos bundled** for preview: `res/raw/lecture_X_Y_Z_final.mp4` (gitignored — production distributes via Firebase, Epic 27); `academy_data_v2.json` wired to raw-resource names.
+*   [x] **Verified on Pixel emulator**: Lec 1 ↔ Lec 2 pill switching plays distinct branded videos; fullscreen immersive confirmed manually.
+ · lectures full-screen with video slot · streak/XP visible · all existing tests green + new test files.
 
 ---
 
