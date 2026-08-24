@@ -765,19 +765,18 @@ fun CourseDeck(
             )
         }
 
-        val heroBrush = Brush.verticalGradient(
-            listOf(
-                identityColor.copy(alpha = if (isUnlocked) 0.20f else 0.08f),
-                DarkSurface.copy(alpha = 0.6f),
-                DarkSurface
-            )
+        // Rich diagonal identity gradient + glow orb — depth without imagery
+        val cardBrush = Brush.linearGradient(
+            0f to identityColor.copy(alpha = 0.30f),
+            0.45f to identityColor.copy(alpha = 0.12f),
+            1f to DarkSurface
         )
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)
                 .premiumEntrance(index)
-                .background(heroBrush, RoundedCornerShape(20.dp))
+                .background(cardBrush, RoundedCornerShape(20.dp))
                 .testTag("academy_course_${course.id}")
                 .then(borderModifier)
                 .clickable {
@@ -786,50 +785,61 @@ fun CourseDeck(
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.Transparent)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Image(
-                            painter = painterResource(AcademyScoring.courseIcon(course.id)),
-                            contentDescription = course.title,
-                            modifier = Modifier
-                                .size(28.dp)
-                                .padding(end = 10.dp)
+            Box {
+                // Decorative glow orb (clipped by card shape) — adds life, no imagery
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 34.dp, y = (-26).dp)
+                        .size(120.dp)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(identityColor.copy(alpha = 0.22f), Color.Transparent)
+                            ),
+                            CircleShape
                         )
+                )
+
+                Column(modifier = Modifier.padding(16.dp)) {
+
+                    // ── Row 1: glassy icon chip + title + tagline ──
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(
+                                            identityColor.copy(alpha = 0.45f),
+                                            identityColor.copy(alpha = 0.15f)
+                                        )
+                                    )
+                                )
+                                .border(
+                                    1.dp,
+                                    identityColor.copy(alpha = 0.45f),
+                                    RoundedCornerShape(16.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(AcademyScoring.courseIcon(course.id)),
+                                contentDescription = course.title,
+                                modifier = Modifier.size(34.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = course.title.uppercase(),
-                                color = if (isUnlocked) tierColor else TextMuted,
-                                fontSize = 11.sp,
+                                color = if (isUnlocked) TextPrimary else TextMuted,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.8.sp,
-                                maxLines = 1,
+                                letterSpacing = 0.5.sp,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(tierColor.copy(alpha = 0.15f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = course.tier.uppercase(),
-                                        color = if (isUnlocked) tierColor else TextMuted,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 0.6.sp
-                                    )
-                                }
-                            }
                             Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = course.tagline.ifBlank { "Master this module to level up." },
@@ -841,59 +851,76 @@ fun CourseDeck(
                             )
                         }
                     }
-                    when {
-                        isCourseComplete -> Box(modifier = Modifier.size(40.dp)) {
-                            SparkleBurst(trigger = true, color = tierColor)
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = "Course complete",
-                                tint = tierColor,
-                                modifier = Modifier.size(18.dp).align(Alignment.Center)
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // ── Row 2: tier chip + progress ring + state ──
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(tierColor.copy(alpha = 0.18f))
+                                .border(1.dp, tierColor.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = course.tier.uppercase(),
+                                color = if (isUnlocked) tierColor else TextMuted,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.6.sp
                             )
                         }
-                        !isUnlocked -> Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Locked",
-                            tint = TextMuted,
-                            modifier = Modifier.size(20.dp)
+                        Spacer(modifier = Modifier.weight(1f))
+                        ProgressRing(
+                            progress = if (chapters.isNotEmpty()) completedCount / chapters.size.toFloat() else 0f,
+                            color = if (isUnlocked) identityColor else identityColor.copy(alpha = 0.3f),
+                            label = "$completedCount/${chapters.size}"
                         )
-                        else -> RotatingChevron(
-                            expanded = isExpanded,
-                            modifier = Modifier.size(22.dp),
-                            tint = TextSubtle
-                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        when {
+                            isCourseComplete -> Box(modifier = Modifier.size(36.dp)) {
+                                SparkleBurst(trigger = true, color = tierColor)
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Course complete",
+                                    tint = tierColor,
+                                    modifier = Modifier.size(22.dp).align(Alignment.Center)
+                                )
+                            }
+                            !isUnlocked -> Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Locked",
+                                tint = TextMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            else -> RotatingChevron(
+                                expanded = isExpanded,
+                                modifier = Modifier.size(24.dp),
+                                tint = TextSubtle
+                            )
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                Text(
-                    text = if (isUnlocked) {
-                        "Progress: $completedCount of ${chapters.size} chapters"
-                    } else {
-                        "Preview â€” complete the previous course to earn rewards"
-                    },
-                    color = TextMuted,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ProgressRing(
-                        progress = if (chapters.isNotEmpty()) completedCount / chapters.size.toFloat() else 0f,
-                        color = if (isUnlocked) tierColor else tierColor.copy(alpha = 0.3f),
-                        label = "$completedCount/${chapters.size}"
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    // ── Row 3: status line ──
                     Text(
                         text = when {
                             isCourseComplete -> "Course mastered — reward claimed!"
-                            !isUnlocked -> "Locked — finish the previous course"
-                            else -> "$completedCount of ${chapters.size} knowledge checks passed"
+                            !isUnlocked -> "Locked — complete the previous course to earn rewards"
+                            completedCount > 0 -> "$completedCount of ${chapters.size} knowledge checks passed"
+                            else -> "Start • ${chapters.size} chapters • earn virtual capital"
                         },
-                        color = if (isCourseComplete) AccentGreen else TextMuted,
+                        color = when {
+                            isCourseComplete -> AccentGreen
+                            isUnlocked && completedCount > 0 -> DynamicPrimary
+                            isUnlocked -> TextMuted
+                            else -> TextMuted
+                        },
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )

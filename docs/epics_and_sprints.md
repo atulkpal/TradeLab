@@ -93,6 +93,8 @@ Transform the Academy from a flat, theme-broken card list into a visually distin
 *   [x] **Manual Verification Protocol**: add Academy section — theme sweep across 5 modes, full-screen lecture flow, streak/XP visibility.
 
 **DoD:** zero hardcoded violets/whites in Academy
+### Sprint 25.6: Full UI/UX Polish Pass (PARKED — post-campaign)
+*   [ ] **Whole-app visual polish**: audit every screen against the 5-mode theme engine, unify spacing rhythm (4/8dp), typography scale, icon sizing tokens, imagery/hero language, micro-interactions. Course-card v3 (gradient + icon-chip + glow) is the first artifact of this direction.
 ### Sprint 25.5: Video-First & Shorts Fullscreen (added post-review)
 *   [x] **Video-first layout**: `LectureScreen` renders the video full-bleed at the top when present; reading content below. No-video lectures keep the reading card + coming-soon state.
 *   [x] **Shorts-style fullscreen**: `VideoPlayerView` intercepts the HTML5 fullscreen request (`WebChromeClient.onShowCustomView`) and renders it edge-to-edge in a dialog with system bars hidden — portrait-immersive for vertical videos. Back exits.
