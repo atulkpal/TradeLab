@@ -16,6 +16,9 @@
 | `RateLimitError` `USER_DISPLAYABLE_ERROR` (daily quota) | Parks the account in `quota_state.json` until the configured reset; RUN ALL auto-sleeps with a live countdown and resumes. |
 | Daily cap reached (3 std / 20 pro) | **Pre-stops locally** — the 4th server request is never sent. |
 | `pipeline_state.csv` locked by Excel | **Kills the locking process** (Restart Manager + taskkill, announced in the log), retries atomically. Unkillable lock → buffers to `pipeline_state.recover.csv`, auto-loaded next start. |
+| Ran DOWNLOAD but "nothing new" right after triggering | Mode 4 **auto-polls `generating` rows** against the server first — freshly finished videos download immediately, no separate CHECK needed. |
+| Videos finished while RUN ALL was quota-parked | The quota-wait wakes every ~10 min (`quota_wait_checkpoint_sec`) to CHECK + DOWNLOAD — completions are banked continuously, never stranded overnight. |
+| Ctrl+C | Clean exit: *"Stopped — progress saved."* Incremental saves mean at most one row reverts; restart self-heals via artifact re-checks. |
 | Storage cookies die mid-run | **L3 silent headless re-mint** from the persistent browser profile (`NOTEBOOKLM_HEADLESS_REAUTH=1` is set automatically). No popup. Fails only if the profile's Google SSO is dead too → see AUTH ladder below. |
 | Timestamps look GMT/wrong | Fixed — the pipeline pops the `TZ` env var (Windows CRT mis-parses IANA names). |
 | Blocked account's videos stranded | Option `8. REASSIGN` proposes permanent ownership transfer to alive accounts (weighted ∝ daily caps), chains CREATE, and queues old notebooks for cleanup. |

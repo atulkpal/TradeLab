@@ -90,8 +90,11 @@ needed (see AUTH ladder). AUTH also tries L3 explicitly as Method 0.
 ### 3. Auth Blocking
 Any auth-expiry failure anywhere → the account is instantly marked
 `blocked: true` in `auth_state.json` and **skipped by every mode** (including rotation)
-until a successful option-7 re-auth clears it. Startup prints a banner listing blocked
-accounts. RUN ALL aborts cleanly if *all* accounts become blocked.
+until a successful option-7 re-auth clears it. Mid-mode deaths are visible to the
+running loop **immediately** (runtime blocked set unioned with the file) — dead
+accounts are skipped on their very next iteration, never retried. Startup prints a
+banner listing blocked accounts. RUN ALL aborts cleanly if *all* accounts become
+blocked. Ctrl+C anywhere exits cleanly with *"Stopped — progress saved"*.
 
 ### 4. Rate-Limit Classification + Quota Tracking
 Two distinct server refusals, handled differently:
@@ -110,8 +113,10 @@ Two distinct server refusals, handled differently:
 - **Rollover**: counters wipe automatically at the configured reset
   (`quota_reset.timezone/hour`, default UTC 00:00).
 - **RUN ALL**: when everything is exhausted (and nothing is pending download), sleeps to
-  reset with a live `HH:MM:SS` countdown, then resumes. Standalone GENERATE prints the
-  ETA and exits instead.
+  reset with a live `HH:MM:SS` countdown — **waking every ~10 min
+  (`quota_wait_checkpoint_sec`) to CHECK + DOWNLOAD videos that finished while we
+  waited**, so completed work is banked continuously instead of sitting on the cloud
+  overnight. Standalone GENERATE prints the ETA and exits instead.
 
 ### 5. Reassignment Engine (menu 8 + auto-prompt in GENERATE)
 Permanent **ownership transfer** in the CSV ledger:
@@ -145,9 +150,12 @@ per download).
 ### 7. Self-Healing Downloads
 `download_status` drives everything: `downloaded` skips; vanished files re-download;
 files present but unmarked are recognized (manual-copy friendly); failures retry next
-cycle. `pending_downloads_exist()` gates GENERATE's quota-sleep — **downloads are never
-starved by generation waits** — and RUN ALL only declares victory when everything is
-downloaded, not merely generated.
+cycle. Mode 4 opens with a **readiness poll** — `generating` rows are polled against
+the server first, so freshly finished videos download immediately without a separate
+CHECK run. `pending_downloads_exist()` gates GENERATE's quota-sleep — **downloads are
+never starved by generation waits** — and RUN ALL only declares victory when
+everything is downloaded, not merely generated. After a successful AUTH run, option 7
+offers to **bank immediately** (DOWNLOAD + CREATE) with the freshly-alive accounts.
 
 ### 8. Duplicate-Dedupe Hardening
 CREATE's dedupe prefers keeping the duplicate that holds a completed video, so dedupe
@@ -170,6 +178,7 @@ all timestamps by hours. All logs now use true system locale.
 | `rotate_before_session` | true | Master switch for pre-flight rotation. |
 | `rotate_min_interval_sec` | 600 | Skip rotation if storage file younger than this. |
 | `quota_reset.timezone` / `.hour` | UTC / 0 | When daily quotas refresh. |
+| `quota_wait_checkpoint_sec` | 600 | Quota-wait banking checkpoint interval (CHECK + DOWNLOAD). |
 | `daily_limits` | `{"default": 3, "pro": 20}` | Confirmed server caps (empirical 2026-08-23/24). |
 | `video_format` / `video_style` / `language` | short / auto_select / en | Generation params. |
 | `output_dir` | assets | Download target. |

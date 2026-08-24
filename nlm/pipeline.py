@@ -846,14 +846,30 @@ class QuotaTracker:
         """True if at least one account may still generate right now."""
         return any(self.can_generate_detail(a)[0] for a in accounts)
 
-    async def wait_for_reset(self):
-        """Sleep until the daily reset with a live HH:MM:SS countdown."""
+    async def wait_for_reset(self, max_wait=None):
+        """Sleep toward the daily reset with a live HH:MM:SS countdown.
+
+        max_wait: optional cap (seconds). Returns True when the reset was
+        reached (parking cleared), False when the cap hit first — callers
+        use the False return to run banking checkpoints (CHECK + DOWNLOAD)
+        for videos that finished while we waited."""
         nr = self.next_reset_utc()
         eta = (nr - datetime.now(timezone.utc)).total_seconds()
         local_target = nr.astimezone(self.tz).strftime('%Y-%m-%d %H:%M')
-        log(f"  All accounts exhausted — auto-resuming at reset {local_target} "
+
+        if eta <= 0:
+            self.state['exhausted_until'] = {}
+            self._save_state()
+            log("  Reset boundary already passed — quota windows refreshed", "OK")
+            return True
+
+        full = max_wait is None or eta <= max_wait
+        wait = eta if full else float(max_wait)
+        verb = "auto-resuming at reset" if full else "banking checkpoint before resuming"
+        log(f"  All accounts exhausted — {verb} {local_target} "
             f"(in {fmt_eta(eta)}). Ctrl+C stops; progress saved.", "WAIT")
-        secs = int(eta) + 5  # small buffer past the boundary
+
+        secs = int(wait) + (5 if full else 0)
         while secs > 0:
             h, rem = divmod(secs, 3600)
             m, s = divmod(rem, 60)
@@ -862,9 +878,13 @@ class QuotaTracker:
             await asyncio.sleep(1)
             secs -= 1
         print()
-        self.state['exhausted_until'] = {}
-        self._save_state()
-        log("  Reset reached — quota windows refreshed, resuming", "OK")
+
+        if full:
+            self.state['exhausted_until'] = {}
+            self._save_state()
+            log("  Reset reached — quota windows refreshed, resuming", "OK")
+            return True
+        return False
 
 
 def fmt_eta(seconds):
@@ -900,6 +920,11 @@ def classify_rate_limit(e):
 # ──────────────────────────────────────────────
 AUTH_STATE_FILE = SCRIPT_DIR / "auth_state.json"
 
+# Accounts blocked DURING this process run (mid-mode deaths). get_blocked_emails()
+# unions these with the file so running loops see fresh marks immediately instead
+# of retrying dead accounts until their next snapshot.
+_runtime_blocked = set()
+
 
 def load_auth_state():
     """Load auth_state.json; tolerant of missing/corrupt file."""
@@ -919,13 +944,15 @@ def save_auth_state(auth_state):
 
 
 def get_blocked_emails():
-    """Emails currently marked blocked in auth_state.json."""
+    """Emails currently blocked: file flags + anything marked this run."""
     st = load_auth_state()
-    return [e for e, a in st.get('accounts', {}).items() if a.get('blocked')]
+    file_blocked = {e for e, a in st.get('accounts', {}).items() if a.get('blocked')}
+    return file_blocked | _runtime_blocked
 
 
 def mark_account_blocked(email, error):
     """Persist a mid-run auth death: account stops processing until re-auth."""
+    _runtime_blocked.add(email)
     st = load_auth_state()
     acc = st.setdefault('accounts', {}).setdefault(email, {})
     acc.setdefault('email', email)
@@ -939,6 +966,7 @@ def mark_account_blocked(email, error):
 
 def unmark_account_blocked(email):
     """Clear the block after successful re-auth."""
+    _runtime_blocked.discard(email)
     st = load_auth_state()
     acc = st.get('accounts', {}).get(email)
     if acc is not None:
@@ -1433,6 +1461,21 @@ async def mode_create(state):
 # ──────────────────────────────────────────────
 # MODE: GENERATE
 # ──────────────────────────────────────────────
+async def quota_wait_with_banking(state, quota_tracker):
+    """Sleep toward the quota reset, waking every ~10 minutes to CHECK +
+    DOWNLOAD videos that finished while we waited — completed work is banked
+    continuously instead of sitting on the cloud overnight. Returns when the
+    reset is reached (parking cleared)."""
+    checkpoint = int(config.get('quota_wait_checkpoint_sec', 600))
+    while True:
+        reached = await quota_tracker.wait_for_reset(max_wait=checkpoint)
+        if reached:
+            return
+        log("  Checkpoint: polling for finished videos and banking them...", "PROGRESS")
+        state = await mode_check(state)
+        state = await mode_download(state)
+
+
 async def mode_generate(state, quota_tracker, auto_wait=False):
     """Trigger video generation with daily-cap pre-stop and error classification.
 
@@ -1502,7 +1545,7 @@ async def mode_generate(state, quota_tracker, auto_wait=False):
                     break
                 quota_summary(len(to_generate))
                 if auto_wait:
-                    await quota_tracker.wait_for_reset()
+                    await quota_wait_with_banking(state, quota_tracker)
                     continue
                 log("  Standalone GENERATE stops here — rerun after reset, or use RUN ALL to auto-resume.", "WAIT")
             else:
@@ -1638,7 +1681,7 @@ async def mode_generate(state, quota_tracker, auto_wait=False):
                 break
             quota_summary(len(pending))
             if auto_wait:
-                await quota_tracker.wait_for_reset()
+                await quota_wait_with_banking(state, quota_tracker)
                 continue
             log("  Standalone GENERATE stops here — rerun after reset, or use RUN ALL to auto-resume.", "WAIT")
             break
@@ -1655,6 +1698,56 @@ async def mode_generate(state, quota_tracker, auto_wait=False):
 # ──────────────────────────────────────────────
 # MODE: DOWNLOAD
 # ──────────────────────────────────────────────
+async def poll_generating_artifacts(state, rows, accounts, blocked_set, delay=0.3, client_factory=None):
+    """Refresh 'generating' rows by listing their artifacts (targeted mini-CHECK
+    for download readiness). Flips finished rows to 'complete' (+artifact_url),
+    failed ones to 'failed'. Returns count flipped.
+    client_factory: test seam — defaults to the real NotebookLMClient."""
+    if client_factory is None:
+        from notebooklm import NotebookLMClient as client_factory
+
+    by_account = {}
+    for r in rows:
+        by_account.setdefault(r.get('assigned_email', ''), []).append(r)
+
+    flipped = 0
+    for email, rlist in by_account.items():
+        acc = next((a for a in accounts if a['email'] == email), None)
+        if not acc or email in blocked_set:
+            continue
+        profile_path = str(Path.home() / ".notebooklm" / "profiles" / acc['profile'] / "storage_state.json")
+        try:
+            async with client_factory.from_storage(profile_path, keepalive=600) as client:
+                for r in rlist:
+                    try:
+                        videos = await client.artifacts.list(r['notebook_id'])
+                        vids = [a for a in videos if a.kind.name == "VIDEO"]
+                        completed = [v for v in vids if v.is_completed]
+                        if completed:
+                            r['video_status'] = 'complete'
+                            for v in completed:
+                                if v.url:
+                                    r['artifact_url'] = v.url
+                            flipped += 1
+                            log(f"  [{r['lecture_code']}] Finished on server — ready to download", "OK")
+                        elif not any(v.is_processing or v.is_pending for v in vids) and vids:
+                            if any(v.is_failed for v in vids):
+                                r['video_status'] = 'failed'
+                                log(f"  [{r['lecture_code']}] Generation FAILED on server", "FAIL")
+                    except Exception as e:
+                        if is_auth_error(e):
+                            mark_account_blocked(email, e)
+                            break
+                        log(f"  [{r['lecture_code']}] Poll error: {str(e)[:60]}", "WAIT")
+                    await asyncio.sleep(delay)
+        except Exception as e:
+            if is_auth_error(e):
+                mark_account_blocked(email, e)
+            else:
+                log(f"  Poll error on {email}: {str(e)[:80]}", "WAIT")
+    return flipped
+
+
 def pending_downloads_exist(state):
     """True if any completed video still needs download bookkeeping or the
     actual file. Rows with a cloud URL but no download_status count as
@@ -1688,7 +1781,20 @@ async def mode_download(state):
     
     output_dir = Path(config.get('output_dir', 'assets'))
     output_dir.mkdir(exist_ok=True)
-    
+
+    # Pre-pass: poll 'generating' rows so fresh finishes are downloadable
+    # without a separate CHECK run — mode 4 means "download what's ready NOW".
+    generating = [r for r in state.values()
+                  if r.get('video_status') == 'generating' and r.get('notebook_id')]
+    if generating:
+        log(f"  Polling {len(generating)} generating video(s) for readiness...", "PROGRESS")
+        flipped = await poll_generating_artifacts(state, generating, accounts, blocked_set)
+        if flipped:
+            save_state(state)
+            log(f"+ {flipped} video(s) finished while polling — downloading below", "OK")
+        else:
+            log("  None finished yet — downloading what's already complete.", "INFO")
+
     downloaded = 0
     current_email = None
     
@@ -1720,7 +1826,7 @@ async def mode_download(state):
         if not acc:
             continue
         
-        if acc['email'] in blocked_set:
+        if acc['email'] in set(get_blocked_emails()):
             log(f"⛔ [{code}] Skipping — {acc['email']} BLOCKED (run option 7)", "WAIT")
             continue
         
@@ -2112,7 +2218,14 @@ async def mode_auth(state, quota_tracker):
     valid = sum(1 for a in auth_state['accounts'].values() if a['auth_status'] == 'valid')
     errors = sum(1 for a in auth_state['accounts'].values() if a['auth_status'] == 'error')
     print(f"\n{GREEN}Summary: {valid} valid, {errors} error{RESET}\n")
-    
+
+    # Post-auth banking: freshly alive accounts should immediately download
+    # stranded completions and build pending notebooks (no video quota needed).
+    if valid > 0 and ask("Bank now? Run DOWNLOAD + CREATE with the freshly-authed accounts", default_yes=True):
+        state = await mode_download(state)
+        state = await mode_create(state)
+        log("  Banked. Next: GENERATE / RUN ALL when quota allows.", "INFO")
+
     return auth_state
 
 
@@ -2259,46 +2372,56 @@ def main():
         log("  These are skipped everywhere until re-auth — run option 7 (AUTH).", "WAIT")
     
     # Auto-check & refresh auth if needed (before CREATE/GENERATE operations)
-    if should_auto_auth(accounts, config):
-        log("Auto-checking auth status...", "PROGRESS")
-        asyncio.run(mode_auth(state, quota_tracker))
-    
-    while True:
-        show_menu()
-        choice = input(f"\n{WHITE}Enter choice (0-8): {RESET}").strip()
-        
-        if choice == '0':
-            log("👋 Exiting. State saved.", "OK")
-            save_state(state)
-            break
-        
-        elif choice == '1':
-            asyncio.run(mode_check(state))
-        
-        elif choice == '2':
-            asyncio.run(mode_create(state))
-        
-        elif choice == '3':
-            asyncio.run(mode_generate(state, quota_tracker))
-        
-        elif choice == '4':
-            asyncio.run(mode_download(state))
-        
-        elif choice == '5':
-            mode_status(state)
-        
-        elif choice == '6':
-            asyncio.run(mode_run_all(state, quota_tracker))
-        
-        elif choice == '7':
+    try:
+        if should_auto_auth(accounts, config):
+            log("Auto-checking auth status...", "PROGRESS")
             asyncio.run(mode_auth(state, quota_tracker))
-        
-        elif choice == '8':
-            state = asyncio.run(mode_reassign(state, quota_tracker))
-            state = load_state()  # reload: reassignment/CREATE may have rewritten CSV
-        
-        else:
-            log("fail Invalid choice. Enter 0-8.", "FAIL")
+    except KeyboardInterrupt:
+        print()
+        save_state(state)
+        log("Stopped during auth check — progress saved.", "OK")
+
+    try:
+        while True:
+            show_menu()
+            choice = input(f"\n{WHITE}Enter choice (0-8): {RESET}").strip()
+
+            if choice == '0':
+                log("👋 Exiting. State saved.", "OK")
+                save_state(state)
+                break
+
+            elif choice == '1':
+                asyncio.run(mode_check(state))
+
+            elif choice == '2':
+                asyncio.run(mode_create(state))
+
+            elif choice == '3':
+                asyncio.run(mode_generate(state, quota_tracker))
+
+            elif choice == '4':
+                asyncio.run(mode_download(state))
+
+            elif choice == '5':
+                mode_status(state)
+
+            elif choice == '6':
+                asyncio.run(mode_run_all(state, quota_tracker))
+
+            elif choice == '7':
+                asyncio.run(mode_auth(state, quota_tracker))
+
+            elif choice == '8':
+                state = asyncio.run(mode_reassign(state, quota_tracker))
+                state = load_state()  # reload: reassignment/CREATE may have rewritten CSV
+
+            else:
+                log("fail Invalid choice. Enter 0-8.", "FAIL")
+    except KeyboardInterrupt:
+        print()
+        save_state(state)
+        log("Stopped — progress saved. Relaunch anytime; the CSV is the brain.", "OK")
 
 
 if __name__ == "__main__":
