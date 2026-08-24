@@ -9,13 +9,26 @@ package com.ashwathai.tradelab.ui.common
  * no silent rewards.
  */
 object AdConfig {
-    /** LevelPlay app key — TradeLab (grow.unity.com). */
-    const val LEVELPLAY_APP_KEY = "27b051bfd"
+    /**
+     * TEST MODE: uses Unity's universal test app key (85460dcd) whose documented
+     * test ad units serve real test ads immediately — no dashboard setup needed.
+     * Flip to false + paste your production IDs (app 27b051bfd) to go live.
+     */
+    const val USE_TEST_ADS = true
 
-    // ── Ad unit IDs (from LevelPlay dashboard) ──
-    // TODO(Epic 26): create in dashboard → paste IDs. Empty = not configured.
-    const val REWARDED_AD_UNIT_ID = ""
-    const val INTERSTITIAL_AD_UNIT_ID = ""
+    /** Production app key — TradeLab (grow.unity.com). */
+    const val PROD_APP_KEY = "27b051bfd"
+    const val PROD_REWARDED_AD_UNIT_ID = ""      // TODO: dashboard → Rewarded
+    const val PROD_INTERSTITIAL_AD_UNIT_ID = ""  // TODO: dashboard → Interstitial
+
+    // Unity test app key + documented test ad units (test ads, zero revenue)
+    const val TEST_APP_KEY = "85460dcd"
+    const val TEST_REWARDED_AD_UNIT_ID = "qri951hgt95e1cab"
+    const val TEST_INTERSTITIAL_AD_UNIT_ID = "8iijoq7gtm5nci"
+
+    val LEVELPLAY_APP_KEY: String get() = if (USE_TEST_ADS) TEST_APP_KEY else PROD_APP_KEY
+    val REWARDED_AD_UNIT_ID: String get() = if (USE_TEST_ADS) TEST_REWARDED_AD_UNIT_ID else PROD_REWARDED_AD_UNIT_ID
+    val INTERSTITIAL_AD_UNIT_ID: String get() = if (USE_TEST_ADS) TEST_INTERSTITIAL_AD_UNIT_ID else PROD_INTERSTITIAL_AD_UNIT_ID
 
     // ── Placement names (analytics + pacing in LevelPlay dashboard) ──
     const val REWARDED_PLACEMENT = "reward"
