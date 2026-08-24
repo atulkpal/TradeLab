@@ -59,3 +59,11 @@ nlm/assets_old/
 nlm/tracking/
 nlm/batch_progress.json
 nlm/batch_results.json
+
+# Strays never to commit
+app.zip
+nlm/docs.zip
+nlm/unicode_chars.txt
+check_main.py
+academy_data_v2_pretty.json
+nlm/0[1-6]-*.md

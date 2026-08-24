@@ -1,4 +1,4 @@
-package com.ashwathai.tradelab.ui.academy
+﻿package com.ashwathai.tradelab.ui.academy
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -38,6 +38,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.input.pointer.pointerInput
@@ -78,7 +79,7 @@ fun AcademyScreen(
     nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null,
     onOpenQuiz: (Int) -> Unit
 ) {
-    var activeSubTab by remember { mutableStateOf("Lessons") }
+    var activeSubTab by rememberSaveable { mutableStateOf("Lessons") }
     val quizModules by viewModel.quizModules.collectAsStateWithLifecycle()
     val academyCourses by viewModel.academyCourses.collectAsStateWithLifecycle()
     val missionsList by viewModel.missionsList.collectAsStateWithLifecycle()
@@ -149,7 +150,7 @@ fun AcademyScreen(
                     modifier = Modifier.fillMaxWidth().testTag("academy_header_card"),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                    border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.3f))
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Row(
@@ -160,7 +161,7 @@ fun AcademyScreen(
                             Column {
                                 Text(
                                     text = "LEARNING ACADEMY",
-                                    color = BrandViolet,
+                                    color = DynamicPrimary,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 1.sp
@@ -176,7 +177,7 @@ fun AcademyScreen(
                             Icon(
                                 imageVector = Icons.Default.School,
                                 contentDescription = "Academy",
-                                tint = BrandViolet,
+                                tint = DynamicPrimary,
                                 modifier = Modifier.size(28.dp)
                             )
                         }
@@ -199,9 +200,47 @@ fun AcademyScreen(
                                 .padding(vertical = 6.dp)
                                 .height(8.dp)
                                 .clip(RoundedCornerShape(4.dp)),
-                            color = BrandViolet,
-                            trackColor = Color.White.copy(alpha = 0.05f)
+                            color = DynamicPrimary,
+                            trackColor = TextPrimary.copy(alpha = 0.08f)
                         )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        // Gamification surface (Epic 25.4): streak + XP, previously invisible in Academy
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            val streak = userProfile?.dailyStreak ?: 0
+                            val academyXp = completedSet.size * 1000 + 1500
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(TextPrimary.copy(alpha = 0.06f))
+                                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("🔥", fontSize = 12.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "$streak day${if (streak == 1) "" else "s"} streak",
+                                    color = AccentYellow,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(TextPrimary.copy(alpha = 0.06f))
+                                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("⚡", fontSize = 12.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "%,d XP".format(academyXp),
+                                    color = DynamicPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Complete bite-sized risk management lessons and pass quizzes to claim free virtual capital. Expand your portfolio safely!",
@@ -228,7 +267,7 @@ fun AcademyScreen(
                             id = 1,
                             title = "Stock Market Basics",
                             tagline = "Foundational lessons for the Indian markets.",
-                            iconEmoji = "📈",
+                            iconEmoji = "ðŸ“ˆ",
                             tier = "BEGINNER",
                             order = 1,
                             chapters = quizModules
@@ -268,13 +307,13 @@ fun AcademyScreen(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                    border = BorderStroke(1.dp, if (totalCount > 0 && completedSet.size >= totalCount) BrandViolet else DarkBorder)
+                    border = BorderStroke(1.dp, if (totalCount > 0 && completedSet.size >= totalCount) DynamicPrimary else DarkBorder)
                 ) {
                     Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Default.EmojiEvents,
                             contentDescription = "Certificate",
-                            tint = if (totalCount > 0 && completedSet.size >= totalCount) BrandViolet else TextSubtle,
+                            tint = if (totalCount > 0 && completedSet.size >= totalCount) DynamicPrimary else TextSubtle,
                             modifier = Modifier.size(48.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -296,8 +335,8 @@ fun AcademyScreen(
                             onClick = { showCertificateDialog = true },
                             enabled = totalCount > 0 && completedSet.size >= totalCount,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = BrandViolet,
-                                disabledContainerColor = Color.White.copy(alpha = 0.05f)
+                                containerColor = DynamicPrimary,
+                                disabledContainerColor = TextPrimary.copy(alpha = 0.08f)
                             ),
                             shape = RoundedCornerShape(12.dp)
                         ) {
@@ -313,7 +352,7 @@ fun AcademyScreen(
                                 }
                                 Text(
                                     text = if (unlockedCertificate) "View Certificate" else "Locked (${completedSet.size}/$totalCount)",
-                                    color = if (unlockedCertificate) Color.White else TextSubtle,
+                                    color = if (unlockedCertificate) TextOnAccent else TextSubtle,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -325,14 +364,14 @@ fun AcademyScreen(
                 // Missions Section
                 Text(
                     text = "ACTIVE MISSIONS",
-                    color = BrandViolet,
+                    color = DynamicPrimary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
                 Text(
-                    text = "Complete missions to grow your virtual wallet. Claim each reward once — it's yours forever.",
+                    text = "Complete missions to grow your virtual wallet. Claim each reward once â€” it's yours forever.",
                     color = TextSubtle,
                     fontSize = 11.sp,
                     lineHeight = 15.sp
@@ -371,13 +410,13 @@ fun AcademyScreen(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                         shape = RoundedCornerShape(28.dp),
                         colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
-                        border = BorderStroke(2.dp, BrandViolet)
+                        border = BorderStroke(2.dp, DynamicPrimary)
                     ) {
                         Column(
                             modifier = Modifier.padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("GRADUATION DIPLOMA", color = BrandViolet, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                            Text("GRADUATION DIPLOMA", color = DynamicPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = "This certifies that",
@@ -407,17 +446,17 @@ fun AcademyScreen(
                             )
                             Text(
                                 text = "TradeLab Academy Engine",
-                                color = BrandViolet,
+                                color = DynamicPrimary,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(20.dp))
                             Button(
                                 onClick = { showCertificateDialog = false },
-                                colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                                colors = ButtonDefaults.buttonColors(containerColor = DynamicPrimary),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
-                                Text("Great, Thank you!", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("Great, Thank you!", color = TextOnAccent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                             }
                         }
                     }
@@ -441,20 +480,20 @@ fun AcademyScreen(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                    border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.2f))
+                    border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.2f))
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Leaderboard,
                             contentDescription = "Leaderboard",
-                            tint = BrandViolet,
+                            tint = DynamicPrimary,
                             modifier = Modifier.size(36.dp)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
                                 text = "TRADING LEADERBOARD",
-                                color = BrandViolet,
+                                color = DynamicPrimary,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
@@ -491,14 +530,14 @@ fun AcademyScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) BrandViolet else Color.Transparent)
+                                .background(if (isSelected) DynamicPrimary else Color.Transparent)
                                 .clickable { viewModel.setLeaderboardSort(mode) }
                                 .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = if (mode == "XP") "Wealth (XP)" else "Maturity (Score)",
-                                color = if (isSelected) Color.White else TextSubtle,
+                                color = if (isSelected) TextOnAccent else TextSubtle,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -513,8 +552,8 @@ fun AcademyScreen(
                         .padding(bottom = 16.dp)
                         .clickable { viewModel.shareAppInvite() },
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = BrandViolet.copy(alpha = 0.1f)),
-                    border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))
+                    colors = CardDefaults.cardColors(containerColor = DynamicPrimary.copy(alpha = 0.1f)),
+                    border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -524,17 +563,17 @@ fun AcademyScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(BrandViolet),
+                                .background(DynamicPrimary),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.GroupAdd, contentDescription = "Invite", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.GroupAdd, contentDescription = "Invite", tint = TextOnAccent, modifier = Modifier.size(20.dp))
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Challenge a Friend", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             Text("Invite fellow traders to the arena.", color = TextSubtle, fontSize = 11.sp)
                         }
-                        Icon(Icons.Default.ChevronRight, contentDescription = "Go", tint = BrandViolet)
+                        Icon(Icons.Default.ChevronRight, contentDescription = "Go", tint = DynamicPrimary)
                     }
                 }
 
@@ -564,11 +603,11 @@ fun AcademyScreen(
                             .padding(vertical = 4.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isUser) BrandViolet.copy(alpha = 0.1f) else DarkSurface
+                            containerColor = if (isUser) DynamicPrimary.copy(alpha = 0.1f) else DarkSurface
                         ),
                         border = BorderStroke(
                             1.dp,
-                            if (isUser) BrandViolet else if (isKing) AccentYellow.copy(alpha = 0.4f) else DarkBorder
+                            if (isUser) DynamicPrimary else if (isKing) AccentYellow.copy(alpha = 0.4f) else DarkBorder
                         )
                     ) {
                         Row(
@@ -597,7 +636,7 @@ fun AcademyScreen(
                                         }
                                         Text(
                                             text = leader.userName,
-                                            color = if (isUser) BrandViolet else if (isKing) AccentYellow else Color.White,
+                                            color = if (isUser) DynamicPrimary else if (isKing) AccentYellow else TextOnAccent,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -640,6 +679,57 @@ fun AcademyScreen(
  * Single-open accordion course deck with progressive course unlocking.
  * Course N unlocks only after every chapter of course N-1 is completed.
  */
+// Semantic per-course identity hues — fixed by design (like tier colors),
+// NOT theme accents. Gradients blend them into the theme-aware surface base.
+@Composable
+private fun courseIdentityColor(courseId: Int): Color = when (courseId) {
+    1 -> BrandViolet      // Stock Market Basics
+    2 -> VibrantCyan      // Technical Analysis
+    3 -> AccentGreen      // Fundamental Analysis
+    4 -> AccentRose       // Futures & Options
+    5 -> SynthPurple      // Trading Psychology
+    6 -> AccentYellow     // Markets & Taxation
+    else -> DynamicPrimary
+}
+
+@Composable
+fun ProgressRing(
+    progress: Float,
+    color: Color,
+    modifier: Modifier = Modifier,
+    stroke: Dp = 5.dp,
+    label: String? = null
+) {
+    val animated by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(600),
+        label = "progressRing"
+    )
+    Box(modifier = modifier.size(44.dp), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokePx = stroke.toPx()
+            drawArc(
+                color = color.copy(alpha = 0.15f),
+                startAngle = -90f, sweepAngle = 360f, useCenter = false,
+                style = Stroke(strokePx)
+            )
+            if (animated > 0f) {
+                drawArc(
+                    color = color,
+                    startAngle = -90f, sweepAngle = 360f * animated, useCenter = false,
+                    style = Stroke(strokePx, cap = StrokeCap.Round)
+                )
+            }
+        }
+        Text(
+            text = label.orEmpty(),
+            color = TextPrimary,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
 @Composable
 fun CourseDeck(
     courses: List<AcademyCourse>,
@@ -653,8 +743,7 @@ fun CourseDeck(
     }
     var expandedCourseId by rememberSaveable { mutableStateOf<Int?>(null) }
 
-    ordered.forEachIndexed { index, course ->
-        val isUnlocked = course.id in unlockedIds
+    ordered.forEachIndexed { index, course ->        val isUnlocked = course.id in unlockedIds
         val isExpanded = expandedCourseId == course.id
         val chapters = course.chapters
         val completedCount = chapters.count { completedSet.contains(it.id.toString()) }
@@ -662,8 +751,9 @@ fun CourseDeck(
         val tierColor = when (course.tier.uppercase()) {
             "ADVANCED" -> AccentRose
             "INTERMEDIATE" -> AccentYellow
-            else -> BrandViolet
+            else -> BrandViolet // BEGINNER — semantic tier identity (not a theme accent)
         }
+        val identityColor = courseIdentityColor(course.id)
 
         val borderModifier = if (isExpanded && isUnlocked) {
             Modifier.neonGlowPulse(tierColor)
@@ -675,20 +765,26 @@ fun CourseDeck(
             )
         }
 
+        val heroBrush = Brush.verticalGradient(
+            listOf(
+                identityColor.copy(alpha = if (isUnlocked) 0.20f else 0.08f),
+                DarkSurface.copy(alpha = 0.6f),
+                DarkSurface
+            )
+        )
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)
                 .premiumEntrance(index)
+                .background(heroBrush, RoundedCornerShape(20.dp))
                 .testTag("academy_course_${course.id}")
                 .then(borderModifier)
                 .clickable {
                     if (isExpanded) expandedCourseId = null else expandedCourseId = course.id
                 },
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isUnlocked) DarkSurface else DarkSurface.copy(alpha = 0.55f)
-            )
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -728,7 +824,7 @@ fun CourseDeck(
                                     Text(
                                         text = course.tier.uppercase(),
                                         color = if (isUnlocked) tierColor else TextMuted,
-                                        fontSize = 8.sp,
+                                        fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 0.6.sp
                                     )
@@ -775,20 +871,33 @@ fun CourseDeck(
                     text = if (isUnlocked) {
                         "Progress: $completedCount of ${chapters.size} chapters"
                     } else {
-                        "Preview — complete the previous course to earn rewards"
+                        "Preview â€” complete the previous course to earn rewards"
                     },
                     color = TextMuted,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
-                ShimmerProgress(
-                    progress = if (chapters.isNotEmpty()) completedCount / chapters.size.toFloat() else 0f,
-                    color = if (isUnlocked) tierColor else tierColor.copy(alpha = 0.3f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp)
-                        .height(6.dp)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ProgressRing(
+                        progress = if (chapters.isNotEmpty()) completedCount / chapters.size.toFloat() else 0f,
+                        color = if (isUnlocked) tierColor else tierColor.copy(alpha = 0.3f),
+                        label = "$completedCount/${chapters.size}"
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = when {
+                            isCourseComplete -> "Course mastered — reward claimed!"
+                            !isUnlocked -> "Locked — finish the previous course"
+                            else -> "$completedCount of ${chapters.size} knowledge checks passed"
+                        },
+                        color = if (isCourseComplete) AccentGreen else TextMuted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
 
@@ -833,7 +942,7 @@ fun ChapterCard(
             .testTag("academy_module_${module.id}"),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = if (isLocked) DarkSurface.copy(alpha = 0.6f) else DarkSurface),
-        border = BorderStroke(1.dp, if (isCompleted) TextPrimary.copy(alpha = 0.05f) else if (isLocked) TextPrimary.copy(alpha = 0.06f) else BrandViolet.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, if (isCompleted) TextPrimary.copy(alpha = 0.05f) else if (isLocked) TextPrimary.copy(alpha = 0.06f) else DynamicPrimary.copy(alpha = 0.2f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -844,7 +953,7 @@ fun ChapterCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = module.topic.uppercase(),
-                        color = if (isLocked) TextMuted else BrandViolet,
+                        color = if (isLocked) TextMuted else DynamicPrimary,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
@@ -861,15 +970,16 @@ fun ChapterCard(
                 when {
                     isCompleted -> Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(BrandVioletDark)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .size(40.dp)
+                            .testTag("academy_chapter_complete"),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Earned!",
-                            color = BrandViolet,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
+                        SparkleBurst(trigger = isCompleted, color = DynamicPrimary)
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Chapter complete",
+                            tint = DynamicPrimary,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     isLocked -> Box(
@@ -897,12 +1007,12 @@ fun ChapterCard(
                     else -> Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(BrandViolet.copy(alpha = 0.15f))
+                            .background(DynamicPrimary.copy(alpha = 0.15f))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = "+${formatCurrencyNoDecimals(module.rewardAmt, currency)}",
-                            color = BrandViolet,
+                            color = DynamicPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -926,7 +1036,7 @@ fun ChapterCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Knowledge Check • ${module.quizzes.size} Questions",
+                        text = "Knowledge Check â€¢ ${module.quizzes.size} Questions",
                         color = TextMuted,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
@@ -955,21 +1065,21 @@ fun MissionRow(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        border = BorderStroke(1.dp, if (isCompleted) BrandViolet.copy(alpha = 0.3f) else DarkBorder)
+        border = BorderStroke(1.dp, if (isCompleted) DynamicPrimary.copy(alpha = 0.3f) else DarkBorder)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = if (isClaimed) Icons.Default.CheckCircle else if (isCompleted) Icons.Default.Verified else Icons.Default.RadioButtonUnchecked,
                     contentDescription = "Status",
-                    tint = if (isClaimed) AccentGreen else if (isCompleted) BrandViolet else TextSubtle,
+                    tint = if (isClaimed) AccentGreen else if (isCompleted) DynamicPrimary else TextSubtle,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
-                        color = if (isClaimed) TextMuted else Color.White,
+                        color = if (isClaimed) TextMuted else TextOnAccent,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -988,8 +1098,8 @@ fun MissionRow(
                                 .fillMaxWidth()
                                 .height(5.dp)
                                 .clip(RoundedCornerShape(4.dp)),
-                            color = if (isClaimed) AccentGreen else BrandViolet,
-                            trackColor = Color.White.copy(alpha = 0.05f)
+                            color = if (isClaimed) AccentGreen else DynamicPrimary,
+                            trackColor = TextPrimary.copy(alpha = 0.08f)
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
@@ -1003,7 +1113,7 @@ fun MissionRow(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Reward: $reward",
-                            color = BrandViolet,
+                            color = DynamicPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -1017,7 +1127,7 @@ fun MissionRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("mission_claim_${title}"),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
+                    colors = ButtonDefaults.buttonColors(containerColor = DynamicPrimary),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1029,7 +1139,7 @@ fun MissionRow(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Claim +${formatCurrencyNoDecimals(rewardAmt, currency)}",
-                            color = Color.White,
+                            color = TextOnAccent,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -1046,7 +1156,7 @@ fun MissionRow(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Claimed ✓",
+                        text = "Claimed âœ“",
                         color = AccentGreen,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
@@ -1092,7 +1202,7 @@ fun AiCoachScreen(
             modifier = Modifier.fillMaxWidth().testTag("ai_coach_header"),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = DarkSurface),
-            border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.3f))
+            border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.3f))
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
@@ -1102,10 +1212,10 @@ fun AiCoachScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(BrandViolet.copy(alpha = 0.1f)),
+                        .background(DynamicPrimary.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Psychology, contentDescription = "AI Coach", tint = BrandViolet, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Psychology, contentDescription = "AI Coach", tint = DynamicPrimary, modifier = Modifier.size(24.dp))
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
@@ -1116,7 +1226,7 @@ fun AiCoachScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Powered by Google Gemini • Offline Diagnostic Advisor",
+                        text = "Powered by Google Gemini â€¢ Offline Diagnostic Advisor",
                         color = TextMuted,
                         fontSize = 10.sp
                     )
@@ -1201,7 +1311,7 @@ fun AiCoachScreen(
                                 },
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+                            border = BorderStroke(1.dp, TextPrimary.copy(alpha = 0.08f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(12.dp),
@@ -1210,12 +1320,12 @@ fun AiCoachScreen(
                             ) {
                                 Text(
                                     text = preset,
-                                    color = BrandViolet,
+                                    color = DynamicPrimary,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
                                     modifier = Modifier.weight(1f)
                                 )
-                                Icon(Icons.Default.PlayArrow, contentDescription = "Send", tint = BrandViolet, modifier = Modifier.size(12.dp))
+                                Icon(Icons.Default.PlayArrow, contentDescription = "Send", tint = DynamicPrimary, modifier = Modifier.size(12.dp))
                             }
                         }
                     }
@@ -1238,11 +1348,11 @@ fun AiCoachScreen(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clip(CircleShape)
-                                        .background(BrandViolet.copy(alpha = 0.1f))
+                                        .background(DynamicPrimary.copy(alpha = 0.1f))
                                         .align(Alignment.Top),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.Psychology, contentDescription = "AI", tint = BrandViolet, modifier = Modifier.size(14.dp))
+                                    Icon(Icons.Default.Psychology, contentDescription = "AI", tint = DynamicPrimary, modifier = Modifier.size(14.dp))
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                             }
@@ -1282,7 +1392,7 @@ fun AiCoachScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
-                                    color = BrandViolet,
+                                    color = DynamicPrimary,
                                     strokeWidth = 2.dp
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -1321,7 +1431,7 @@ fun AiCoachScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (hasApiKey) "Pro Plan Active • Real Live Gemini API Enabled" else "Pro Plan Active • Unlimited Offline Simulation Mode",
+                        text = if (hasApiKey) "Pro Plan Active â€¢ Real Live Gemini API Enabled" else "Pro Plan Active â€¢ Unlimited Offline Simulation Mode",
                         color = AccentYellow,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -1334,8 +1444,8 @@ fun AiCoachScreen(
                     .fillMaxWidth()
                     .padding(bottom = 6.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = BrandViolet.copy(alpha = 0.05f)),
-                border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.2f))
+                colors = CardDefaults.cardColors(containerColor = DynamicPrimary.copy(alpha = 0.05f)),
+                border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.2f))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -1346,13 +1456,13 @@ fun AiCoachScreen(
                         Icon(
                             imageVector = Icons.Default.Psychology,
                             contentDescription = "Credits",
-                            tint = BrandViolet,
+                            tint = DynamicPrimary,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Credits Remaining: ${stats.aiAuditCredits} (1 / audit)",
-                            color = Color.White,
+                            color = TextOnAccent,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -1360,7 +1470,7 @@ fun AiCoachScreen(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(BrandViolet.copy(alpha = 0.15f))
+                            .background(DynamicPrimary.copy(alpha = 0.15f))
                             .clickable {
                                 showAdPlayer = true
                                 isAdLoadingLocal = true
@@ -1371,13 +1481,13 @@ fun AiCoachScreen(
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Watch Ad",
-                            tint = Color.White,
+                            tint = TextOnAccent,
                             modifier = Modifier.size(10.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Watch Ad (+3 Credits)",
-                            color = Color.White,
+                            color = TextOnAccent,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -1395,7 +1505,7 @@ fun AiCoachScreen(
                         .padding(16.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
-                    border = BorderStroke(1.dp, BrandViolet.copy(alpha = 0.5f))
+                    border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.5f))
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
@@ -1445,8 +1555,8 @@ fun AiCoachScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             LinearProgressIndicator(
                                 progress = (3 - adTimerSecLocal) / 3f,
-                                color = BrandViolet,
-                                trackColor = Color.White.copy(alpha = 0.05f),
+                                color = DynamicPrimary,
+                                trackColor = TextPrimary.copy(alpha = 0.08f),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
@@ -1488,13 +1598,13 @@ fun AiCoachScreen(
                 placeholder = { Text("Consult AI coach (e.g. Audit my trades)", color = TextSubtle, fontSize = 12.sp) },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = TextOnAccent,
+                    unfocusedTextColor = TextOnAccent,
                     focusedContainerColor = DarkSurface,
                     unfocusedContainerColor = DarkSurface,
-                    focusedBorderColor = BrandViolet,
+                    focusedBorderColor = DynamicPrimary,
                     unfocusedBorderColor = DarkBorder,
-                    cursorColor = BrandViolet
+                    cursorColor = DynamicPrimary
                 ),
                 shape = RoundedCornerShape(16.dp)
             )
@@ -1511,10 +1621,10 @@ fun AiCoachScreen(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(BrandViolet)
+                    .background(DynamicPrimary)
                     .testTag("ai_send_button")
             ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Send Message", tint = Color.White)
+                Icon(Icons.Default.PlayArrow, contentDescription = "Send Message", tint = TextOnAccent)
             }
         }
     }
