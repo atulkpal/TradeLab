@@ -169,6 +169,7 @@ object LevelPlayAdManager {
 
         override fun onAdRewarded(reward: LevelPlayReward, adInfo: LevelPlayAdInfo) {
             Log.d(TAG, "Reward earned: ${reward.name} x${reward.amount}")
+            rewardedRetryCount = 0 // genuine success — restore full retry budget
             rewardedCallbacks?.third?.invoke()
         }
 
@@ -179,6 +180,7 @@ object LevelPlayAdManager {
         }
 
         override fun onAdClosed(adInfo: LevelPlayAdInfo) {
+            rewardedRetryCount = 0 // full cycle completed — restore retry budget
             preloadRewarded()
         }
 
@@ -198,7 +200,9 @@ object LevelPlayAdManager {
 
     private fun preloadRewarded() {
         if (AdConfig.rewardedConfigured && _sdkReady.value) {
-            rewardedRetryCount = 0 // reset on explicit preload
+            // NOTE: do NOT reset rewardedRetryCount here — this is also the failure
+            // retry path; resetting here defeats MAX_REWARDED_RETRIES and loops forever.
+            // The counter resets only on genuine success (onAdRewarded / onAdClosed).
             val ad = rewardedAd ?: LevelPlayRewardedAd(AdConfig.REWARDED_AD_UNIT_ID).also {
                 rewardedAd = it
                 it.setListener(rewardedListener)

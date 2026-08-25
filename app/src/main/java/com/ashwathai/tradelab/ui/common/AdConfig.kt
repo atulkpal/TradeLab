@@ -14,7 +14,7 @@ object AdConfig {
      * test ad units serve real test ads immediately — no dashboard setup needed.
      * Flip to false + paste your production IDs (app 27b051bfd) to go live.
      */
-    const val USE_TEST_ADS = true
+    const val USE_TEST_ADS = false
 
     /** Production app key — TradeLab (grow.unity.com). */
     const val PROD_APP_KEY = "27b051bfd"
