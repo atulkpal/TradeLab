@@ -85,14 +85,30 @@ implementation(libs.play.services.ads)          // AdMob SDK
 1. Go to [grow.unity.com](https://app.unity.com)
 2. **Monetize → Setup → Apps** → Add your app (package name required)
 3. Note the **App Key** (e.g. `27b051bfd`)
-4. **Ad Units** tab → Create:
+4. **Setup → Ad units** (under the **LevelPlay** product — NOT the separate "Ads"
+   / ironSource Ads product in the sidebar!) → Create:
    - Rewarded Video (for all rewarded surfaces)
    - Interstitial (for foreground/app-transition)
    - Native (armed for future — needs mediated network to serve)
-5. **Networks** tab → ironSource Exchange is enabled by default
-6. **Test Devices** → add your device's GAID for test ads on real devices
+5. **⚠️ Setup → Networks → activate Unity Ads (REQUIRED for demand):**
+   - Click **Setup** on the Unity Ads row
+   - It asks for **Monetization API Key + Organization Core ID** — both live in
+     [cloud.unity.com](https://cloud.unity.com) → Monetization → **Settings → API
+     Management** (org-level; one org credential pair covers ALL your apps)
+   - Prerequisite: a Unity **Monetization app** for your package (Add app → Android →
+     package name; auto-links to Google Play) with placements created
+   - Bidder auto-setup then attaches Unity Ads demand to your ad units
+   - **Without an activated network you have ZERO configured demand** — ironSource
+     Ads direct-demand is being retired (Apr 30, 2026) and its approval is separate
+6. **Setup → Test devices** → add your device's **Advertising ID** (GAID) — also add
+   it on the Unity side (Monetization → Test devices) for full coverage.
+   Android 13+: the ID can be *deleted* by the user — reset it in Settings → "Ads"
+7. **app-ads.txt**: copy the authorized-sellers list from LevelPlay (Apps → your app
+   → app-ads.txt) to your developer domain root (we host at
+   `https://tradelab-4f858.web.app/app-ads.txt` via Firebase Hosting). Missing
+   entries = demand partners won't bid.
 
-### Account Approval (REQUIRED for live ads)
+### Account Approval (gates ALL serving — including test ads)
 
 Activating ad units triggers a **mandatory account review**. The dashboard shows
 *"Your ironSource Ads account is pending approval"* until it completes.
@@ -103,38 +119,23 @@ Activating ad units triggers a **mandatory account review**. The dashboard shows
 2. Submit both → account enters review
 3. Approval lands by email, typically **1-3 business days**
 
-**Key semantics (verified from Unity docs):**
+**Key semantics (verified from Unity docs + community, 2023→2025):**
 - Live ads **start serving immediately** on approval — no app update, no redeploy
-- Test mode is **unaffected** by approval; keep testing before and after
-- When approved mid-test, tests aren't interrupted — just turn off test mode to go live
+- ⚠️ **Approval gates ALL serving — INCLUDING test ads.** Marketing copy suggesting
+  "use LevelPlay while pending" is misleading: until approved, ad requests fail
+  (observed as `626 Invalid ad unit id` even with correct, active units — the
+  serving backend doesn't provision them for pending accounts)
+- Mediated third-party networks (Unity Ads bidder) *may* serve independently of the
+  ironSource Ads approval — worth testing, not guaranteed
 - If info requests never arrive: check Spam/Promotions, or 24h+ → contact support via dashboard
 
 ---
 
-## 4. SDK Initialization (CRITICAL)
+## 4. SDK Initialization
 
-### ⚠️ THE #1 GOTCHA: `legacyAdFormats`
-
-**The init request MUST include legacy ad formats.** Without them, the SDK does NOT
-configure the rewarded/interstitial pipelines → every `loadAd()` returns
-**1024 "no available ad to load"**.
+### ✅ Correct init (SDK 9.x — plain Builder)
 
 ```kotlin
-// ✅ CORRECT — specifies formats
-LevelPlay.init(
-    context,
-    LevelPlayInitRequest(
-        appKey = AdConfig.LEVELPLAY_APP_KEY,
-        legacyAdFormats = listOf(
-            LevelPlay.AdFormat.REWARDED,
-            LevelPlay.AdFormat.INTERSTITIAL,
-            LevelPlay.AdFormat.NATIVE_AD
-        )
-    ),
-    listener
-)
-
-// ❌ WRONG — formats empty → rewarded/interstitial pipelines NOT configured
 LevelPlay.init(
     context,
     LevelPlayInitRequest.Builder(AdConfig.LEVELPLAY_APP_KEY).build(),
@@ -142,12 +143,20 @@ LevelPlay.init(
 )
 ```
 
-**NOTE:** The `Builder` class does NOT expose `legacyAdFormats`. Use the Kotlin
-constructor directly (it accepts named parameters).
+**SDK 9.0.0 (Sept 2025) REMOVED ad-format parameters from Init entirely** ("Init
+simplified, removing ad format parameters" — official changelog). Plain Builder is
+the correct, complete modern init. Older 8.x-era guides mentioning ad-format/init
+config are obsolete — do NOT add format parameters back.
 
 ### Init retry on failure
 If init fails (network hiccup), reset the `initAttempted` flag so the next
 ad request retries init automatically.
+
+### ⚠️ Retry-loop trap (found the hard way)
+If your preload function is also your failure-retry path, NEVER reset the retry
+counter inside it — failure→retry→reset→failure loops forever, hammering the SDK
+dozens of times per second (looks like invalid traffic to the network's risk
+system). Reset the counter only on genuine success (onAdRewarded / onAdClosed).
 
 ---
 
@@ -177,7 +186,9 @@ if (ad.isAdReady) ad.showAd(activity, placementName)
 - **Create once, reuse** — the ad object handles multiple load/show cycles
 - **Preload** after each show/close for the next impression
 - **Check `isAdReady`** before showing
+- **Check `isPlacementCapped(placement)`** before `showAd(activity, placement)` — official recommendation, prevents show failures on capped placements
 - **Pass `Activity`** to `showAd()` — required, not optional
+- **Reward data via `getReward(placement)`** (SDK 9.3+) — read reward name/amount from the dashboard cache to build dynamic "Watch to earn X" UIs instead of hardcoding
 
 ---
 
@@ -207,15 +218,25 @@ in the LevelPlay dashboard → add the adapter dependency → natives activate.
 
 | Setting | Test Mode | Production |
 |---------|-----------|------------|
-| App Key | Unity test key `25b63cf85` OR your own test app | Your production key |
-| Ad Units | Unity demo units OR your dashboard units | Your production units |
-| Ads Serve? | ✅ Usually (test creatives) | ✅ Once account approved |
+| App Key | Unity demo key `25b63cf85` (their demo app) | Your production key |
+| Ad Units | Unity demo units | Your dashboard units |
+| Ads Serve? | ⚠️ Often NO — demo appkey has package mismatch with your app | ✅ Once account approved |
 | Revenue | Zero (test) | Real |
 
-### ⚠️ No Universal Test IDs (unlike AdMob)
-AdMob has universal test IDs (`ca-app-pub-3940256099942544/...`) that serve test
-ads for ANY app. **LevelPlay does NOT.** Each app needs its own ad units created
-in the dashboard. The dashboard serves test ads automatically for new/unreleased apps.
+### ⚠️ Hard-won lessons (TradeLab, Aug 2026)
+- **Test mode with the demo appkey usually serves NOTHING for your package** — the
+  demo units belong to Unity's demo app; package mismatch → permanent no-fill.
+  Don't burn time debugging test mode; go straight to production key + registered
+  test device.
+- **Approval gates ALL serving — including test ads.** Until the account is
+  approved, requests fail (observed: `626 Invalid ad unit id` with correct, active
+  units). Community reports confirm this consistently.
+- **No Universal Test IDs (unlike AdMob).** Each app needs its own dashboard units.
+  The replacement for "universal test ads" = register your device's Advertising ID
+  as a **Test Device** (both dashboards), then production units serve test
+  creatives to that device post-approval.
+- **Emulator limitation:** rewarded/interstitial demand frequently excludes
+  emulators entirely — always verify on a real device.
 
 ### Emulator limitation
 Unity Ads frequently **excludes emulators** from ad serving. Rewarded/interstitial
@@ -228,12 +249,28 @@ may return 1024 "no available ad" on emulators even with correct credentials.
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| **626 Invalid ad unit id** | Ad unit doesn't exist for this appkey | Check dashboard; create unit; wait 15-30 min for propagation |
-| **1024 No available ad** | Ad unit valid but no fill (emulator, region, demand) | Retry later; test on real device; check Unity Ads adapter loaded |
+| **626 Invalid ad unit id** | ① Units under wrong product section ("Ads" vs "LevelPlay") ② **Account pending approval — serving backend doesn't provision units** (verified: correct+active units still 626 until approved) ③ ID mismatch ④ propagation (15-30 min after creation) | ① Verify units under LevelPlay → Setup → Ad units ② Wait for approval email ③ Character-check IDs ④ Wait/retry |
+| **1024 No available ad** | Ad unit valid but no fill (emulator, region, zero demand configured) | Real device; **verify a network is ACTIVATED** (Unity Ads bidder); check Unity Ads adapter loaded |
 | **Adapter load error** | Network adapter dependency missing | Add adapter to gradle (e.g. `unityads-adapter`) |
 | **Init failed** | Network issue or invalid appkey | Retry; check appkey in dashboard |
 | **sdkReady stuck false** | Init failed silently, no retry | Reset `initAttempted` on failure; retry on next request |
+| **Infinite load/fail loop** | Retry counter reset inside the preload/failure path | Reset retry budget only on genuine success (onAdRewarded/onAdClosed) |
 | **Sessions revoked (2h-20h)** | Google risk system flags automation | L3 self-heal; re-auth via fresh login; space logins |
+
+### Platform Facts (verified Aug 2026)
+
+- **ironSource brand/APIs → deprecated**: SDK 9.0.0 (Sept 2025) refactored all
+  public APIs to LevelPlay; Init lost its ad-format parameters (plain Builder is
+  correct). Anything describing format-based init is 8.x-era — obsolete.
+- **"IronSource Ads" direct-demand network: retired April 30, 2026.** LevelPlay
+  mediation itself is unaffected and is Unity's core platform (Android SDK 9.6.0,
+  Aug 2026). **You MUST activate at least one network** (Unity Ads bidder is the
+  natural choice) — otherwise zero configured demand.
+- **app-ads.txt**: copy the LevelPlay-generated authorized-sellers to your developer
+  domain root (Play Console "website" field). Crawlers take **24-48h** to pick it
+  up — dashboard errors during that window are expected, not actionable.
+- **Consent**: `LevelPlay.setMetaData` consent APIs deprecated (hard removal ~Aug
+  2026) — use `LevelPlayPrivacySettings` (SDK 9.4+) when implementing consent.
 
 ### Session Revocation Waves
 Google's risk system may kill ALL sessions for accounts it flags. Symptoms:
@@ -245,17 +282,21 @@ healed account for real work.
 
 ## 10. Onboarding Checklist (Any New Product)
 
-- [ ] Create app in LevelPlay dashboard (package name + platform)
-- [ ] Create ad units: Rewarded + Interstitial + Native (free)
-- [ ] Copy app key + ad unit IDs into product's `AdConfig`
-- [ ] Add gradle dependencies (SDK + adapter + play-services)
-- [ ] Add ProGuard rules
-- [ ] Add `AD_ID` permission to manifest
+- [ ] Create app in LevelPlay dashboard (package name + platform) — note App Key
+- [ ] Create ad units under **LevelPlay → Setup → Ad units**: Rewarded + Interstitial + Native
+- [ ] **Activate Unity Ads network** (Setup → Networks → Setup → org API key + core ID from cloud.unity.com → Monetization → Settings → API Management)
+- [ ] Create the Unity Monetization app + placements (`reward` / `foreground`) in cloud.unity.com
+- [ ] Copy app key + ad unit IDs into product's `AdConfig` (`USE_TEST_ADS = false` — test mode is a dead end)
+- [ ] Register your device's Advertising ID as Test Device (LevelPlay + Unity dashboards)
+- [ ] Deploy **app-ads.txt** (LevelPlay-generated list) to your developer domain root; allow 24-48h for crawling
+- [ ] Add gradle dependencies (SDK + unityads-adapter + play-services) + ProGuard rules + `AD_ID` permission
 - [ ] Call `LevelPlayAdManager.init(context)` in `Application.onCreate`
-- [ ] Wire rewarded call sites through the manager
-- [ ] Test on real device (emulator may not serve)
+- [ ] Wire rewarded call sites through the manager (fail-closed: no ad → no reward)
+- [ ] Test on a real device (emulator may not serve)
 - [ ] Verify with LevelPlay Integration Test Suite
+- [ ] Reply to the two ironSource info-request emails (approval gates ALL serving)
 
 ---
 
-*Written from TradeLab Epic 26 hands-on integration (2026-08-24). SDK version: 9.5.0.*
+*Written from TradeLab Epic 26-28 hands-on integration, corrected after live
+dashboard + device verification (2026-08-25). SDK: 9.5.0 (9.6.0 available).*
