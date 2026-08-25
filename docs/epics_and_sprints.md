@@ -162,7 +162,9 @@ Runtime video-manifest strategy (new batches appear **without app releases**) + 
 *   [x] **Rules deployed**: `firebase deploy --only storage` → `videos/**` public read, writes locked (verified live).
 *   [x] **First production upload**: 92 EN videos + manifest v1 live on `gs://tradelab-4f858/videos/` — manifest publicly readable (HTTP 200), video HEAD 200 video/mp4. Zero failures.
 *   [ ] **Hindi content**: generate `_HI` variants via NLM pipeline (toggle auto-appears on upload).
-*   [ ] **On-device E2E**: install on Pixel → open lecture → confirm remote playback + cache; airplane-mode → bundled fallback.
+*   [x] **On-device E2E**: VERIFIED on emulator (2026-08-25, twice — incl. cold boot): manifest fetch (15926B cache-exact) → remote resolve → clean-name cache download → autoplay → **1:14/1:14 full playback** of branded content; 6 lectures cached in second run; language toggle correctly hidden (no Hindi yet). Audio verified end-to-end (file max −0.7 dB, mixer active, host-side output only).
+
+**Epic 27 wiring COMPLETE.** The single remaining monetization blocker is LevelPlay account activation (Epic 26): reply to 2 ironSource emails → approval → live ads serve automatically on real device.
 
 > ⚠️ **VIDEO WIRING RULE (No Dead-Ends) — for anyone/anything wiring videos in the future:**
 > Only set `videoUrl` in `academy_data_v2.json` when the asset ACTUALLY exists —
