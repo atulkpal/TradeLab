@@ -159,6 +159,20 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 
 ---
 
+## Unity LevelPlay Monetization (Epic 26)
+
+> **Status: ✅ Code Complete / ⏳ Awaiting LevelPlay Activation**
+> AdMob banned → migrated to Unity LevelPlay (ironSource). Full integration guide: [`docs/LEVELPLAY_GUIDE.md`](docs/LEVELPLAY_GUIDE.md)
+>
+> **Key facts:** appkey `27b051bfd` · SDK 9.5.0 · ironSource Exchange = default demand ·
+> rewarded + interstitial wired · natives removed (need adapter) · fallback leaks closed ·
+> graceful no-ad states · session revocation waves managed via L3 self-heal
+>
+> **Pending:** ad unit activation (LevelPlay platform) · test on real device ·
+> native ads (needs mediated network) · consent flow (ConsentView follow-up)
+
+---
+
 ## NLM Video Pipeline Documentation
 
 > **⚡ CURRENT SYSTEM: `nlm/pipeline.py` (Manager v2)** — a unified menu-driven manager

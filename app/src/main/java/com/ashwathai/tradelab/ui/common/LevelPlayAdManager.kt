@@ -47,6 +47,7 @@ object LevelPlayAdManager {
 
     private var appContext: Context? = null
     private var currentActivity: Activity? = null
+    private var initAttempted = false
 
     private var rewardedAd: LevelPlayRewardedAd? = null
     private var rewardedCallbacks: Triple<
@@ -54,6 +55,10 @@ object LevelPlayAdManager {
         (String) -> Unit,
         () -> Unit
         >? = null
+    private var rewardedRetryCount = 0
+    private val MAX_REWARDED_RETRIES = 3
+    private var lastRewardedTapAt = 0L
+    private val REWARDED_COOLDOWN_MS = 60_000L // 60s cooldown between test ad requests
 
     private var interstitialAd: LevelPlayInterstitialAd? = null
     private var lastForegroundInterstitialAt = 0L
@@ -68,6 +73,7 @@ object LevelPlayAdManager {
 
     fun init(context: Context) {
         if (_sdkReady.value) return
+        initAttempted = true
         appContext = context.applicationContext
 
         LevelPlay.init(
@@ -75,13 +81,14 @@ object LevelPlayAdManager {
             LevelPlayInitRequest.Builder(AdConfig.LEVELPLAY_APP_KEY).build(),
             object : LevelPlayInitListener {
                 override fun onInitSuccess(configuration: com.unity3d.mediation.LevelPlayConfiguration) {
-                    Log.d(TAG, "LevelPlay initialized")
+                    Log.i(TAG, "LevelPlay initialized")
                     _sdkReady.value = true
                     preloadRewarded()
                 }
 
                 override fun onInitFailed(error: LevelPlayInitError) {
-                    Log.e(TAG, "LevelPlay init failed: ${error.errorMessage}")
+                    initAttempted = false
+                    Log.e(TAG, "LevelPlay init failed: ${error.errorMessage} — will retry on next ad request")
                 }
             }
         )
@@ -107,6 +114,18 @@ object LevelPlayAdManager {
         if (!AdConfig.rewardedConfigured) {
             onAdFailed("Rewarded ads not configured yet (LevelPlay ad unit pending).")
             return
+        }
+        // Dev cooldown: prevent hammering the SDK during development
+        val now = System.currentTimeMillis()
+        if (now - lastRewardedTapAt < REWARDED_COOLDOWN_MS) {
+            val wait = (REWARDED_COOLDOWN_MS - (now - lastRewardedTapAt)) / 1000
+            onAdFailed("Cooldown active — try again in ${wait}s")
+            return
+        }
+        lastRewardedTapAt = now
+        // Retry init if a previous attempt failed
+        if (!_sdkReady.value && appContext != null && !initAttempted) {
+            init(appContext!!)
         }
         if (!_sdkReady.value) {
             onAdFailed("Ads SDK still initializing. Try again in a moment.")
@@ -170,11 +189,16 @@ object LevelPlayAdManager {
     private fun onAdFailedInternal(message: String? = null) {
         rewardedCallbacks?.second?.invoke(message ?: "Ad unavailable")
         rewardedCallbacks = null
-        preloadRewarded()
+        // Retry with limit — prevents infinite loop on persistent failures
+        if (rewardedRetryCount < MAX_REWARDED_RETRIES) {
+            rewardedRetryCount++
+            preloadRewarded()
+        }
     }
 
     private fun preloadRewarded() {
         if (AdConfig.rewardedConfigured && _sdkReady.value) {
+            rewardedRetryCount = 0 // reset on explicit preload
             val ad = rewardedAd ?: LevelPlayRewardedAd(AdConfig.REWARDED_AD_UNIT_ID).also {
                 rewardedAd = it
                 it.setListener(rewardedListener)

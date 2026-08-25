@@ -106,7 +106,7 @@ Transform the Academy from a flat, theme-broken card list into a visually distin
 
 ---
 
-## Epic 26: Unity LevelPlay Monetization Migration (Status: ✅ Complete)
+## Epic 26: Unity LevelPlay Monetization Migration (Status: ✅ Code Complete / ⏳ Awaiting LevelPlay Activation)
 Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b051bfd`). Zero AdMob SDK trace. Revenue-critical. Architecture: see `docs/architecture.md` § Multi-Format Monetization Infrastructure.
 
 ### Sprint 26.1: Foundation & Rewarded Core
@@ -126,6 +126,13 @@ Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b05
 *   [x] **Delete**: `AdMobManager.kt`, `BannerAdView.kt` (dead), `NativeAdView.kt` + `ad_unified_row.xml`, `MobileAds.initialize`, manifest `APPLICATION_ID` meta-data, gradle dep.
 *   [x] **Test**: source-scan guard — zero `com.google.android.gms.ads` imports in app module.
 *   [x] **Manual Verification Protocol**: ad placements matrix (screen × format × reward), consent first-launch flow, premium-bypass checks.
+
+**Known Pending Issues (resolve when testing on real device):**
+1. **Emulator excludes rewarded ads** — Unity Ads returns 1024 no-fill on emulators; test on real device
+2. **ironSource Ads account pending approval** — new LevelPlay accounts need platform approval before live ads
+3. **Ad unit propagation** — newly created dashboard ad units take 15-30 min to activate on serving side
+4. **Session revocation waves** — Google risk system kills sessions every 2-20h on flagged accounts; L3 self-heal + spaced re-auths manage this
+5. **Native ads removed** — need mediated network adapter; fast-follow when a network is onboarded
 
 **DoD:** zero AdMob imports · all 9 reward placements + 6 native spots + foreground interstitial on LevelPlay test ads · fallback leaks closed · consent flow live.
 **External dependency:** user creates LevelPlay app `27b051bfd` + ad units in dashboard (names provided by agent); dev runs on LevelPlay test units until then.

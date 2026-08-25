@@ -159,6 +159,7 @@ dependencies {
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)
   implementation(libs.levelplay.sdk)
+implementation(libs.unityads.adapter)
 implementation(libs.play.services.appset)
 implementation(libs.play.services.ads.identifier)
 implementation(libs.play.services.basement)

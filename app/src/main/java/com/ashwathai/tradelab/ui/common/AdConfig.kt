@@ -18,13 +18,14 @@ object AdConfig {
 
     /** Production app key — TradeLab (grow.unity.com). */
     const val PROD_APP_KEY = "27b051bfd"
-    const val PROD_REWARDED_AD_UNIT_ID = ""      // TODO: dashboard → Rewarded
-    const val PROD_INTERSTITIAL_AD_UNIT_ID = ""  // TODO: dashboard → Interstitial
+    const val PROD_REWARDED_AD_UNIT_ID = "b1o5nmpzepmzn76f"      // rewarded_main
+    const val PROD_INTERSTITIAL_AD_UNIT_ID = "0pv0ggz19gmfkp18"  // interstitial_main
+    const val PROD_NATIVE_AD_UNIT_ID = "2r6tdjjzxi0jq4hpd"       // native_main
 
     // Unity test app key + documented test ad units (test ads, zero revenue)
-    const val TEST_APP_KEY = "85460dcd"
-    const val TEST_REWARDED_AD_UNIT_ID = "qri951hgt95e1cab"
-    const val TEST_INTERSTITIAL_AD_UNIT_ID = "8iijoq7gtm5nci"
+    const val TEST_APP_KEY = "25b63cf85" // Unity official Android demo key
+    const val TEST_REWARDED_AD_UNIT_ID = "syz3d8ekts22q0or" // Unity demo rewarded
+    const val TEST_INTERSTITIAL_AD_UNIT_ID = "h3xw38h9214adgxo" // Unity demo interstitial
 
     val LEVELPLAY_APP_KEY: String get() = if (USE_TEST_ADS) TEST_APP_KEY else PROD_APP_KEY
     val REWARDED_AD_UNIT_ID: String get() = if (USE_TEST_ADS) TEST_REWARDED_AD_UNIT_ID else PROD_REWARDED_AD_UNIT_ID
@@ -37,4 +38,7 @@ object AdConfig {
     /** True when rewarded ads can actually load. */
     val rewardedConfigured: Boolean get() = REWARDED_AD_UNIT_ID.isNotBlank()
     val interstitialConfigured: Boolean get() = INTERSTITIAL_AD_UNIT_ID.isNotBlank()
+
+    /** Native ad unit (armed — renders once a mediated network is onboarded). */
+    const val NATIVE_AD_UNIT_ID = "2r6tdjjzxi0jq4hpd"
 }
