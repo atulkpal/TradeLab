@@ -68,6 +68,9 @@ class VideoManifestRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
+    // Test seam: override with an unreachable URL to keep network tests hermetic.
+    // (Not a constructor param — Dagger cannot bind a raw String default.)
+    var manifestUrl: String = MANIFEST_URL
     private val client = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
@@ -104,7 +107,7 @@ class VideoManifestRepository @Inject constructor(
         if (!forceRefresh && !isStale) return@withContext cached
 
         try {
-            val body = client.newCall(Request.Builder().url(MANIFEST_URL).build())
+            val body = client.newCall(Request.Builder().url(manifestUrl).build())
                 .execute().use { resp ->
                     if (!resp.isSuccessful) null else resp.body?.string()
                 }

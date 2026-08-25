@@ -39,6 +39,9 @@ class VideoManifestRepositoryTest {
         cacheFile = File(app.cacheDir, "academy_video_manifest.json")
         cacheFile.delete()
         repo = VideoManifestRepository(app, Dispatchers.Unconfined)
+        // Hermetic: unreachable port -> instant refusal, so the offline-survival
+        // path is genuinely exercised (the real manifest is LIVE in production now!)
+        repo.manifestUrl = "http://127.0.0.1:9/manifest.json"
     }
 
     /** Seeds manifest state through the cache-first fetch (no network touched). */

@@ -186,6 +186,28 @@ class MainActivity : ComponentActivity() {
             val hasDismissedAuthScreen by viewModel.hasDismissedAuthScreen.collectAsStateWithLifecycle()
             val isInitialized by viewModel.isInitialized.collectAsStateWithLifecycle()
 
+            // Notification permission (API 33+), requested once after entering the app
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                var notifPermRequested by androidx.compose.runtime.saveable.rememberSaveable {
+                    mutableStateOf(false)
+                }
+                val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+                ) { }
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    if (!notifPermRequested) {
+                        notifPermRequested = true
+                        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                                this@MainActivity,
+                                android.Manifest.permission.POST_NOTIFICATIONS
+                            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                        ) {
+                            notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                }
+            }
+
             MyApplicationTheme(
                 themeMode = themeMode,
                 isStealthMode = isStealthMode,

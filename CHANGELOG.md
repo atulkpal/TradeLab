@@ -3,6 +3,32 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [2.0.0] - Academy Video Platform & Monetization Migration - 2026-08-25
+
+### Added
+- **Remote Video Delivery (Epic 27, LIVE):** `VideoManifestRepository` fetches `videos/manifest.json` from Firebase Storage (24h TTL cache, offline-surviving); 92 polished lectures in production; new batches ship without app releases.
+- **Dynamic EN/हिंदी lecture toggle** — renders per-lecture only when a Hindi variant exists; Gujarati/Bengali armed via manifest.
+- **Notification framework (Epic 28 groundwork):** FCM data-payload routing (market_alerts / engagement channels), token registration with change-only Firestore sync, local market-open alert at 09:15 IST (weekend + holiday aware, self-rescheduling WorkManager chain).
+- **LevelPlay Integration Guide** (`docs/LEVELPLAY_GUIDE.md`) — internal playbook for all Ashwath AI products.
+- **Play Store listing 2.0:** ASO-optimized text, 200+ videos messaging, full course catalog.
+- **`MarketCalendar`:** single source of truth for NSE/BSE holidays + session hours (shared by trading engine and notifications).
+
+### Changed
+- **AdMob → Unity LevelPlay hard cut (Epic 26):** all rewarded surfaces (AI credits, F&O tokens, Commodities unlock, Academy double-reward) run LevelPlay; foreground interstitial; consent metadata v1.
+- **Academy UI:** full-screen lecture destination, video-first layout, Shorts-style fullscreen playback, course card v3, gamification chips (streak/XP).
+- **VideoCacheManager:** internal cacheDir (FUSE-proof) and clean cache filenames.
+
+### Removed
+- AdMob SDK, managers, views, manifest entries — zero gms.ads references remain.
+- All fake-ad fallback auto-grants (Portfolio credits, Profile free-unlocks, Academy streams, desk countdowns).
+
+### Fixed
+- `%2F` cache-filename bug that broke all remote video playback.
+- `legacyAdFormats` init gap causing LevelPlay 1024 no-fill.
+- Video pill-switch WebView reload; theme compliance across Academy surfaces.
+
+---
+
 ## [1.8.2] - NLM Video Pipeline & Academy Content Release - 2026-08-22
 
 ### Added

@@ -828,25 +828,8 @@ class TradingRepository @Inject constructor(
             upper !in setOf("NIFTY50", "BANKNIFTY", "NIFTYIT")
     }
 
-    // Indian Market Holidays for 2026 (NSE/BSE)
-    // Format: "YYYY-MM-DD"
-    private val INDIAN_MARKET_HOLIDAYS = setOf(
-        "2026-01-26", "2026-03-06", "2026-03-27", "2026-04-14", "2026-05-01", 
-        "2026-05-22", "2026-08-15", "2026-10-02", "2026-10-21", "2026-11-12", 
-        "2026-12-25",
-        "2027-01-26", "2027-03-22", "2027-03-26", "2027-04-01", "2027-04-14",
-        "2027-05-01", "2027-08-15", "2027-10-02", "2027-10-09", "2027-11-01",
-        "2027-12-25"
-    )
-
-    private fun isIndianMarketHoliday(calendar: Calendar): Boolean {
-        val dateStr = String.format("%04d-%02d-%02d", 
-            calendar.get(Calendar.YEAR), 
-            calendar.get(Calendar.MONTH) + 1, 
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-        return INDIAN_MARKET_HOLIDAYS.contains(dateStr)
-    }
+    private fun isIndianMarketHoliday(calendar: Calendar): Boolean =
+        com.ashwathai.tradelab.market.MarketCalendar.isHoliday(calendar)
 
     // Determine if the market for a symbol is open based on its actual exchange hours
     fun isMarketOpen(symbol: String): Boolean {

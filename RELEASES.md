@@ -4,6 +4,26 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [2.0.0] - Academy Video Platform & Monetization Migration
+**Release Date:** August 25, 2026  
+**Version Code:** `10`  
+**Status:** 🟡 CLOSED TESTING (beta track)
+
+### Summary of Changes
+The Academy becomes a video-first learning platform with remote content delivery (zero-release content updates), Unity LevelPlay replaces AdMob end-to-end, and the notification framework lands.
+
+### Core Features
+- **Epic 25 — Academy Experience Redesign:** full-screen LectureScreen, video-first lessons, Shorts-style fullscreen playback, course card v3 (identity gradients, icon chips, glow), full theme compliance.
+- **Epic 26 — Unity LevelPlay Monetization:** AdMob extirpated (zero gms.ads); rewarded + interstitial wired; all fallback auto-grant leaks closed; graceful no-ad states. Live ads pending LevelPlay account approval.
+- **Epic 27 — Remote Video Manifest (LIVE):** 92 branded lectures in production on Firebase Storage; manifest-driven delivery (24h cache, offline-surviving); dynamic per-lecture EN/हिंदी toggle; new batches ship without app releases.
+- **Epic 28 groundwork — Notifications:** FCM data-payload routing (market_alerts / engagement channels), token registration with change-only Firestore writes, local market-open alert at 09:15 IST (weekend + holiday aware, self-rescheduling WorkManager).
+- **Play Store listing 2.0:** ASO-optimized text live (200+ videos messaging, course catalog).
+
+### Build Artifacts
+- **Release AAB:** `release-aab-2.0.0-10.aab`
+
+---
+
 ## [1.8.1] - Personalization & Stability Release
 **Release Date:** August 4, 2026  
 **Version Code:** `8`  

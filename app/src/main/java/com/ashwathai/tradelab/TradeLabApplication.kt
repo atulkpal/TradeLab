@@ -33,6 +33,16 @@ class TradeLabApplication : Application() {
             android.util.Log.e("TradeLabApp", "Firebase initialization error: ${e.message}", e)
         }
 
+        // Notification framework (Epic 28 groundwork): channels + market-open scheduler.
+        // WorkManager chain survives process death; guarded for test environments.
+        try {
+            com.ashwathai.tradelab.notifications.NotificationHelper.ensureChannels(this)
+            com.ashwathai.tradelab.notifications.MarketOpenWorker.scheduleNext(this)
+            com.ashwathai.tradelab.service.TradeLabMessagingService.syncCachedToken(this)
+        } catch (e: Exception) {
+            android.util.Log.w("TradeLabApp", "Notification framework init skipped: ${e.message}")
+        }
+
         // Setup Global Crash Logger for "blind" debugging on user devices
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
