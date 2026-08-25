@@ -843,11 +843,17 @@ fun MainContent(
 
             if (quiz != null) {
                 val mainActivity = androidx.compose.ui.platform.LocalContext.current as? MainActivity
+                val academyLanguage by viewModel.academyLanguage.collectAsStateWithLifecycle()
+                val manifestReady by viewModel.videoManifestReady.collectAsStateWithLifecycle()
                 LectureScreen(
                     quiz = quiz,
                     isChapterLocked = isChapterLocked,
                     isAlreadyCompleted = completedSet.contains(quizId.toString()),
                     stats = stats,
+                    academyLanguage = academyLanguage,
+                    manifestReady = manifestReady,
+                    onToggleAcademyLanguage = { viewModel.toggleAcademyLanguage() },
+                    resolveLectureVideo = { viewModel.lectureMedia(it) },
                     onDismiss = { activeQuizLevelId = null },
                     onCompleteStandard = { viewModel.completeTutorial(quiz.id, quiz.rewardAmt) },
                     onCompleteDouble = { viewModel.completeTutorial(quiz.id, quiz.rewardAmt * 2.0) },

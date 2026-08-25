@@ -77,3 +77,7 @@ app/src/main/res/raw/lecture_*.mp4
 # Office lock files (CSV open in Excel/LibreOffice during runs)
 nlm/.~lock.*
 *.~lock.*
+# Firebase service account keys (NEVER commit)
+**/firebase-service-account*.json
+**/*firebase-adminsdk*.json
+**/play-account*.json

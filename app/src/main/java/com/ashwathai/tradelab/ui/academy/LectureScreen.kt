@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ashwathai.tradelab.R
+import com.ashwathai.tradelab.data.LectureMedia
+import com.ashwathai.tradelab.data.VideoManifestRepository
 import com.ashwathai.tradelab.ui.ChapterModule
 import com.ashwathai.tradelab.ui.AcademyScoring
 import com.ashwathai.tradelab.ui.PortfolioStats
@@ -62,6 +64,12 @@ fun LectureScreen(
     isChapterLocked: Boolean,
     isAlreadyCompleted: Boolean,
     stats: PortfolioStats,
+    academyLanguage: String = VideoManifestRepository.LANG_EN,
+    manifestReady: Boolean = false,
+    onToggleAcademyLanguage: () -> Unit = {},
+    resolveLectureVideo: (String) -> LectureMedia = {
+        LectureMedia(it, hasHindi = false)
+    },
     onDismiss: () -> Unit,
     onCompleteStandard: () -> Unit,
     onCompleteDouble: () -> Unit,
@@ -179,9 +187,20 @@ fun LectureScreen(
                     val selectedLecture = quiz.lectures.getOrNull(activeLectureIndex ?: 0)
                     if (selectedLecture != null) {
                         // ── VIDEO-FIRST: the video leads when present ──
-                        if (selectedLecture.videoUrl.isNotBlank()) {
+                        // Epic 27: manifest-aware resolution + dynamic EN/HI toggle
+                        val media = remember(
+                            selectedLecture.videoUrl, academyLanguage, manifestReady
+                        ) { resolveLectureVideo(selectedLecture.videoUrl) }
+                        if (media.resolvedUrl.isNotBlank()) {
+                            if (media.hasHindi) {
+                                LanguageToggleRow(
+                                    selected = academyLanguage,
+                                    onToggle = onToggleAcademyLanguage
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+                            }
                             VideoPlayerView(
-                                videoUrl = selectedLecture.videoUrl,
+                                videoUrl = media.resolvedUrl,
                                 videoHeight = 540.dp // portrait-immersive: NotebookLM videos are vertical
                             )
                             Spacer(modifier = Modifier.height(14.dp))
@@ -732,3 +751,65 @@ fun LectureScreen(
             }
         }
     }
+
+/**
+ * Epic 27: dynamic EN/HI language selector - rendered ONLY when a Hindi variant
+ * of the current lecture exists (remote manifest entry or bundled raw resource).
+ */
+@Composable
+private fun LanguageToggleRow(
+    selected: String,
+    onToggle: () -> Unit
+) {
+    val isHindi = selected == VideoManifestRepository.LANG_HI
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("language_toggle")
+            .clip(RoundedCornerShape(10.dp))
+            .background(TextPrimary.copy(alpha = 0.04f))
+            .border(1.dp, TextPrimary.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+            .clickable { onToggle() }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "LANGUAGE",
+            color = TextMuted,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = "EN",
+            color = if (!isHindi) DynamicPrimary else TextMuted,
+            fontSize = 11.sp,
+            fontWeight = if (!isHindi) FontWeight.ExtraBold else FontWeight.Normal
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Box(
+            modifier = Modifier
+                .size(width = 34.dp, height = 18.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(if (isHindi) DynamicPrimary else TextPrimary.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(start = if (isHindi) 18.dp else 2.dp)
+                    .size(14.dp)
+                    .clip(RoundedCornerShape(7.dp))
+                    .background(if (isHindi) TextOnAccent else TextSubtle)
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = "हिंदी",
+            color = if (isHindi) DynamicPrimary else TextMuted,
+            fontSize = 11.sp,
+            fontWeight = if (isHindi) FontWeight.ExtraBold else FontWeight.Normal
+        )
+    }
+}
+

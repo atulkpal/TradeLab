@@ -139,24 +139,30 @@ Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b05
 
 ---
 
-## Epic 27: Video Manifest & Multi-Language Wiring (Status: 🔜 Planned — Sprint 3)
-Runtime video-manifest strategy (new batches appear **without app releases**) + Hindi wiring (armed, hidden until content exists).
+## Epic 27: Video Manifest & Multi-Language Wiring (Status: ✅ Code Complete — pending SA key + Hindi content)
+Runtime video-manifest strategy (new batches appear **without app releases**) + dynamic Hindi toggle (renders per-lecture only when a Hindi variant exists).
 
 ### Sprint 27.1: Manifest Repository
-*   [ ] **`VideoManifestRepository`** (new, `data/`): fetch `videos/manifest.json` from Firebase Storage (`tradelab-4f858`), 24h DataStore cache, graceful fallback to bundled `academy_data_v2.json` `videoUrl` on failure.
-*   [ ] **Schema**: `{"version": N, "hindiEnabled": false, "lectures": {"1.1.1": {"en": "videos/course_1/lecture_1_1_1.mp4", "hi": null}}}`.
-*   [ ] **Resolution API**: `suspend resolveVideoUrl(lectureCode, lang): String?` consumed by the lecture destination.
+*   [x] **`VideoManifestRepository`** (new, `data/`): fetch `videos/manifest.json` from Firebase Storage (`tradelab-4f858`), cache-first with 24h TTL (`cacheDir` file — offline-first: cached manifest of ANY age beats nothing), graceful fallback to bundled `academy_data_v2.json` `videoUrl` on failure/miss. One-shot `fetchIfNeeded()` (no polling loops — Background Tasks Rule).
+*   [x] **Schema** (as-built): `{"version": N, "generatedAt": "...", "videos": {"lecture_1_10_1_final": {"en": "https://…", "hi": "https://…|null"}}}` — keys match bundled `videoUrl` values for direct map-hit lookup.
+*   [x] **Resolution API**: `lectureMedia(bundledVideoUrl, lang): LectureMedia(resolvedUrl, hasHindi, source)` — layered fallback: remote URL (selected language) → bundled raw (`_hi` suffix for Hindi) → bundled key → blank.
 
-### Sprint 27.2: Hindi Wiring (Armed, Hidden)
-*   [ ] **Model**: `Lecture` gains `videoUrlHi: String? = null` (Moshi, default-safe with old JSON).
-*   [ ] **UI**: EN/हिं toggle in `LectureScreen` — renders only when `hindiEnabled` is true in the manifest (No Dead-Ends rule: hidden entirely while false); cache keys `code_en`/`code_hi` in `VideoCacheManager`.
-*   [ ] **Test**: `VideoManifestRepositoryTest` (parse/fallback/cache), `VideoCacheManagerTest` (language keys).
+### Sprint 27.2: Dynamic Hindi Toggle (Per-Lecture)
+*   [x] **UI**: EN/हिंदी pill toggle in `LectureScreen` — renders ONLY when the current lecture has a Hindi variant (manifest `hi` entry OR bundled `_hi` raw). No global flag; fully dynamic per the No Dead-Ends rule.
+*   [x] **Persistence**: `academyLanguage` in `TradingViewModel` (SharedPreferences `academy_prefs.language`); `toggleAcademyLanguage()` EN↔HI.
+*   [x] **Cache keys**: no change needed — `VideoPlayerView` derives cache keys from the remote filename (`lecture_X.mp4` vs `lecture_X_HI.mp4` are naturally distinct).
 
 ### Sprint 27.3: Pipeline Side (nlm)
-*   [ ] **`upload_to_firebase.py`**: derive `course_N` from lecture code (fix hardcoded `course_1`); auto-generate + upload `manifest.json` after uploads.
-*   [ ] **Manual Verification Protocol**: end-to-end — drop `_final.mp4` → upload → manifest fetch → playback; airplane-mode fallback test.
+*   [x] **`upload_to_firebase.py`** rewritten (firebase-admin, no gcloud): derives `course_N` from lecture code, pairs `_HI_final` Hindi variants, auto-generates + uploads `manifest.json` (version = prev+1), `--dry-run`/`--list`/`--sa PATH`; SA search: arg → `nlm/firebase-service-account.json` → Downloads (warns on project mismatch).
+*   [x] **`storage.rules`** (new): `videos/**` public read, zero public writes (uploads via SA bypass rules); wired into `firebase.json`.
+*   [x] **Tests**: `VideoManifestRepositoryTest` — 11 cases (parse/malformed, bundled fallback, en/hi resolution, hi→en fallback, hi-only manifest, unknown-key miss, fresh-cache-no-network, stale-cache-offline-survival).
 
-**DoD:** dropping polished videos + running upload makes them play in-app with zero app releases; Hindi toggle armed behind manifest flag.
+### Pending (external)
+*   [ ] **Service account**: jump-droid SA has Play Console access but **zero IAM on tradelab-4f858** (probed: Storage 403). Fix: Firebase Console → tradelab-4f858 → Project Settings → Service Accounts → Generate New Private Key → `nlm/firebase-service-account.json` (gitignored).
+*   [ ] **Deploy rules**: `firebase deploy --only storage` after SA works.
+*   [ ] **Hindi content**: generate `_HI` variants via NLM pipeline (toggle auto-appears on upload).
+
+**DoD:** dropping polished videos + running upload makes them play in-app with zero app releases; Hindi toggle appears automatically per-lecture when content exists.
 
 ---
 ## Epic 24: Hyper-Personalization & Focus Suite (Status: ðŸŸ¢ Complete)

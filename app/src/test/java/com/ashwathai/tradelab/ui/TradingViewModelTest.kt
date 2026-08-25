@@ -24,6 +24,7 @@ class TradingViewModelTest {
     private val context = mockk<Context>(relaxed = true)
     private val repository = mockk<TradingRepository>(relaxed = true)
     private val leaderboardManager = mockk<LeaderboardManager>(relaxed = true)
+    private val videoManifestRepository = mockk<VideoManifestRepository>(relaxed = true)
 
     private lateinit var viewModel: TradingViewModel
 
@@ -45,11 +46,13 @@ class TradingViewModelTest {
         every { repository.stockPrices } returns flowOf(emptyList())
 
         every { leaderboardManager.getTopUsersFlow() } returns flowOf(emptyList())
+        every { videoManifestRepository.manifest } returns MutableStateFlow(null)
 
         viewModel = TradingViewModel(
             context,
             repository,
             leaderboardManager,
+            videoManifestRepository,
             testCoroutineRule.testDispatcher,
             testCoroutineRule.testDispatcher
         )
@@ -79,6 +82,7 @@ class TradingViewModelTest {
             context,
             repository,
             failingManager,
+            videoManifestRepository,
             testCoroutineRule.testDispatcher,
             testCoroutineRule.testDispatcher
         )
@@ -99,6 +103,7 @@ class TradingViewModelTest {
             context,
             repository,
             leaderboardManager,
+            videoManifestRepository,
             testCoroutineRule.testDispatcher,
             testCoroutineRule.testDispatcher
         )
@@ -122,6 +127,7 @@ class TradingViewModelTest {
             context,
             repository,
             leaderboardManager,
+            videoManifestRepository,
             testCoroutineRule.testDispatcher,
             testCoroutineRule.testDispatcher
         )

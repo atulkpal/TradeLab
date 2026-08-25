@@ -173,6 +173,22 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 
 ---
 
+## Academy Video Manifest & Hindi (Epic 27)
+
+> **Status: ✅ Code Complete — pending SA key + Hindi content**
+> Remote video delivery so new batches appear **without app releases**.
+>
+> **Flow:** `nlm/upload_to_firebase.py` (firebase-admin) → `gs://tradelab-4f858/videos/**`
+> + `videos/manifest.json` → app `VideoManifestRepository` (cache-first, 24h TTL,
+> offline-surviving) → `LectureScreen` resolves remote URL > bundled raw > blank.
+> Dynamic EN/हिंदी toggle renders per-lecture only when a Hindi variant exists.
+>
+> **Blocked on:** tradelab-4f858 service-account JSON → `nlm/firebase-service-account.json`
+> (jump-droid SA = Play Console only, no Firebase IAM — probed 403), then
+> `firebase deploy --only storage` (rules: videos/** public-read, writes locked).
+
+---
+
 ## NLM Video Pipeline Documentation
 
 > **⚡ CURRENT SYSTEM: `nlm/pipeline.py` (Manager v2)** — a unified menu-driven manager
