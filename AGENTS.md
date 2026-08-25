@@ -169,7 +169,11 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 > graceful no-ad states · session revocation waves managed via L3 self-heal
 >
 > **Pending:** ad unit activation (LevelPlay platform) · test on real device ·
-> native ads (needs mediated network) · consent flow (ConsentView follow-up)
+> native ads (needs mediated network) · consent flow (ConsentView follow-up) ·
+> ⚠️ **3 fail-open ad leaks deferred** (WATCHLIST_CREATE / PORTFOLIO_RESET /
+> PROFILE_LEVERAGE grant rewards without ads — see Epic 26 backlog in
+> `docs/epics_and_sprints.md` before any production rollout) ·
+> banners + paced interstitial backlog (Epic 26)
 
 ---
 

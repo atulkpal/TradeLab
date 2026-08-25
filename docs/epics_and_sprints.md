@@ -134,6 +134,19 @@ Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b05
 4. **Session revocation waves** — Google risk system kills sessions every 2-20h on flagged accounts; L3 self-heal + spaced re-auths manage this
 5. **Native ads removed** — need mediated network adapter; fast-follow when a network is onboarded
 
+**⚠️ BACKLOG (2026-08-25) — 3 fail-open ad leaks found, fix deferred by owner (do NOT ship to production before fixing):**
+While ads don't serve (LevelPlay pending), these grant rewards WITHOUT an ad:
+1. **`WATCHLIST_CREATE`** — `WatchlistScreen.kt` (~:527 onAdFailed + ~:540 null-branch): opens the create dialog anyway → free watchlist sheets 2-5 (sheet 1 is free by design; 2-5 are ad-gated)
+2. **`PORTFOLIO_RESET`** — `ProfileScreen.kt` (~:1595 onAdFailed): calls `viewModel.resetPortfolio(25000.0, …)` → **infinite free portfolio resets** (economy-breaking)
+3. **`PROFILE_LEVERAGE`** — `WatchlistScreen.kt` (~:1063 onAdFailed + ~:1074 null-branch): calls `viewModel.unlockIntradaySession()` → free intraday unlock
+
+**Fix plan (agreed, deferred):** fail-closed all three (feedback only, no grant) + source-scan regression test asserting no `onAdFailed` block calls `resetPortfolio` / `unlockIntradaySession` / `showCreateDialog = true` + ship as 2.0.1 (11) to open testing.
+
+**BACKLOG — additional ad surfaces (deferred):**
+- **Banners:** new `LevelPlayBannerView.kt` (Compose wrapper; verify 9.5.0 banner API from AAR), graceful no-fill collapse; spots: Portfolio + Watchlist bottoms. Requires `banner_main` ad unit in LevelPlay dashboard (not yet created).
+- **Paced interstitial:** after every 3rd completed knowledge-check (session-counted, ≥5-min gap, only-if-ready) — placement `post_quiz`.
+- **Natives:** still blocked on mediated network adapter (see issue 5).
+
 **DoD:** zero AdMob imports · all 9 reward placements + 6 native spots + foreground interstitial on LevelPlay test ads · fallback leaks closed · consent flow live.
 **External dependency:** user creates LevelPlay app `27b051bfd` + ad units in dashboard (names provided by agent); dev runs on LevelPlay test units until then.
 
