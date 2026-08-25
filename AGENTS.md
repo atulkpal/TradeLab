@@ -188,6 +188,12 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 > **Ops:** `python nlm/upload_to_firebase.py` (add `--dry-run`/`--list`/`--probe`).
 > If the CLI session token goes stale, run any `firebase` command to refresh.
 > Hindi: drop `lecture_X_Y_Z_HI_final.mp4` in `nlm/assets/out/` → re-run upload.
+>
+> ⚠️ **VIDEO WIRING RULE (No Dead-Ends):** Only set `videoUrl` in
+> `academy_data_v2.json` when the asset ACTUALLY exists — polished mp4 bundled
+> in `res/raw/` AND uploaded to Storage (manifest entry). A non-blank `videoUrl`
+> pointing to a missing asset renders a BLACK BROKEN PLAYER, not "coming soon".
+> Blank `videoUrl` = "Video lecture coming soon" card. Never pre-wire.
 
 ---
 

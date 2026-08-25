@@ -164,6 +164,13 @@ Runtime video-manifest strategy (new batches appear **without app releases**) + 
 *   [ ] **Hindi content**: generate `_HI` variants via NLM pipeline (toggle auto-appears on upload).
 *   [ ] **On-device E2E**: install on Pixel → open lecture → confirm remote playback + cache; airplane-mode → bundled fallback.
 
+> ⚠️ **VIDEO WIRING RULE (No Dead-Ends) — for anyone/anything wiring videos in the future:**
+> Only set `videoUrl` in `academy_data_v2.json` when the asset ACTUALLY exists —
+> polished mp4 bundled in `res/raw/` AND uploaded to Storage (manifest entry).
+> A non-blank `videoUrl` pointing to a missing asset renders a BLACK BROKEN PLAYER,
+> NOT the "coming soon" card. Blank `videoUrl` = "Video lecture coming soon".
+> **Never pre-wire.** (Verified E2E on emulator 2026-08-25: manifest → remote → cache → 1:14/1:14 playback.)
+
 **DoD:** dropping polished videos + running upload makes them play in-app with zero app releases; Hindi toggle appears automatically per-lecture when content exists.
 
 ---
