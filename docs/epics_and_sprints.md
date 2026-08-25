@@ -129,7 +129,7 @@ Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b05
 
 **Known Pending Issues (resolve when testing on real device):**
 1. **Emulator excludes rewarded ads** — Unity Ads returns 1024 no-fill on emulators; test on real device
-2. **ironSource Ads account pending approval** — new LevelPlay accounts need platform approval before live ads
+2. **Account approval in review** — payment + company info submitted (2026-08-25); awaiting Unity review (1-3 business days) → live ads serve automatically, no redeploy
 3. **Ad unit propagation** — newly created dashboard ad units take 15-30 min to activate on serving side
 4. **Session revocation waves** — Google risk system kills sessions every 2-20h on flagged accounts; L3 self-heal + spaced re-auths manage this
 5. **Native ads removed** — need mediated network adapter; fast-follow when a network is onboarded

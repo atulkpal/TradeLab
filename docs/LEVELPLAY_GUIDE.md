@@ -92,6 +92,23 @@ implementation(libs.play.services.ads)          // AdMob SDK
 5. **Networks** tab → ironSource Exchange is enabled by default
 6. **Test Devices** → add your device's GAID for test ads on real devices
 
+### Account Approval (REQUIRED for live ads)
+
+Activating ad units triggers a **mandatory account review**. The dashboard shows
+*"Your ironSource Ads account is pending approval"* until it completes.
+
+**Process:**
+1. After ad unit activation, Unity emails you **information requests** (payment info +
+   company info — completed via dashboard forms linked from the emails)
+2. Submit both → account enters review
+3. Approval lands by email, typically **1-3 business days**
+
+**Key semantics (verified from Unity docs):**
+- Live ads **start serving immediately** on approval — no app update, no redeploy
+- Test mode is **unaffected** by approval; keep testing before and after
+- When approved mid-test, tests aren't interrupted — just turn off test mode to go live
+- If info requests never arrive: check Spam/Promotions, or 24h+ → contact support via dashboard
+
 ---
 
 ## 4. SDK Initialization (CRITICAL)
