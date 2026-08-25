@@ -139,7 +139,7 @@ Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b05
 
 ---
 
-## Epic 27: Video Manifest & Multi-Language Wiring (Status: ✅ Code Complete — pending SA key + Hindi content)
+## Epic 27: Video Manifest & Multi-Language Wiring (Status: ✅ LIVE — 92 videos + manifest v1 in production)
 Runtime video-manifest strategy (new batches appear **without app releases**) + dynamic Hindi toggle (renders per-lecture only when a Hindi variant exists).
 
 ### Sprint 27.1: Manifest Repository
@@ -158,9 +158,11 @@ Runtime video-manifest strategy (new batches appear **without app releases**) + 
 *   [x] **Tests**: `VideoManifestRepositoryTest` — 11 cases (parse/malformed, bundled fallback, en/hi resolution, hi→en fallback, hi-only manifest, unknown-key miss, fresh-cache-no-network, stale-cache-offline-survival).
 
 ### Pending (external)
-*   [ ] **Service account**: jump-droid SA has Play Console access but **zero IAM on tradelab-4f858** (probed: Storage 403). Fix: Firebase Console → tradelab-4f858 → Project Settings → Service Accounts → Generate New Private Key → `nlm/firebase-service-account.json` (gitignored).
-*   [ ] **Deploy rules**: `firebase deploy --only storage` after SA works.
+*   [x] **Auth resolved**: firebase CLI login (`ashwathai.dev@gmail.com`) has project admin — script mints tokens from the CLI session (cached access_token + auto-refresh via any CLI command). jump-droid SA = Play Console only (no Firebase IAM, probed 403) — SA key now OPTIONAL.
+*   [x] **Rules deployed**: `firebase deploy --only storage` → `videos/**` public read, writes locked (verified live).
+*   [x] **First production upload**: 92 EN videos + manifest v1 live on `gs://tradelab-4f858/videos/` — manifest publicly readable (HTTP 200), video HEAD 200 video/mp4. Zero failures.
 *   [ ] **Hindi content**: generate `_HI` variants via NLM pipeline (toggle auto-appears on upload).
+*   [ ] **On-device E2E**: install on Pixel → open lecture → confirm remote playback + cache; airplane-mode → bundled fallback.
 
 **DoD:** dropping polished videos + running upload makes them play in-app with zero app releases; Hindi toggle appears automatically per-lecture when content exists.
 

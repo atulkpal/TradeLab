@@ -175,17 +175,19 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 
 ## Academy Video Manifest & Hindi (Epic 27)
 
-> **Status: ✅ Code Complete — pending SA key + Hindi content**
+> **Status: ✅ LIVE — 92 videos + manifest v1 in production**
 > Remote video delivery so new batches appear **without app releases**.
 >
-> **Flow:** `nlm/upload_to_firebase.py` (firebase-admin) → `gs://tradelab-4f858/videos/**`
-> + `videos/manifest.json` → app `VideoManifestRepository` (cache-first, 24h TTL,
-> offline-surviving) → `LectureScreen` resolves remote URL > bundled raw > blank.
-> Dynamic EN/हिंदी toggle renders per-lecture only when a Hindi variant exists.
+> **Flow:** `nlm/upload_to_firebase.py` (firebase CLI login auth — REST uploads;
+> SA optional) → `gs://tradelab-4f858/videos/**` + `videos/manifest.json`
+> (public read via deployed `storage.rules`) → app `VideoManifestRepository`
+> (cache-first, 24h TTL, offline-surviving) → `LectureScreen` resolves
+> remote URL > bundled raw > blank. Dynamic EN/हिंदी toggle renders
+> per-lecture only when a Hindi variant exists.
 >
-> **Blocked on:** tradelab-4f858 service-account JSON → `nlm/firebase-service-account.json`
-> (jump-droid SA = Play Console only, no Firebase IAM — probed 403), then
-> `firebase deploy --only storage` (rules: videos/** public-read, writes locked).
+> **Ops:** `python nlm/upload_to_firebase.py` (add `--dry-run`/`--list`/`--probe`).
+> If the CLI session token goes stale, run any `firebase` command to refresh.
+> Hindi: drop `lecture_X_Y_Z_HI_final.mp4` in `nlm/assets/out/` → re-run upload.
 
 ---
 
