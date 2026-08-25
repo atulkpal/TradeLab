@@ -158,8 +158,17 @@ fun VideoPlayerView(
     // Extract lecture code from Firebase URL for caching
     val lectureCode = remember(videoUrl) {
         if (isFirebaseStorage) {
-            // Extract filename from URL: .../videos/course_1/lecture_1_1_1.mp4 -> lecture_1_1_1
-            videoUrl.substringAfterLast("/").substringBefore(".mp4")
+            // Manifest URLs are percent-encoded (.../o/videos%2Fcourse_1%2Flecture_1_4_1.mp4).
+            // Decode BEFORE taking the basename, else '%' survives in the cache filename
+            // and the WebView re-decodes it into path separators on playback (broken file://).
+            runCatching {
+                java.net.URLDecoder.decode(
+                    videoUrl.substringBefore("?").substringAfterLast("/").substringBefore(".mp4"),
+                    "UTF-8"
+                ).substringAfterLast("/")
+            }.getOrDefault(
+                videoUrl.substringBefore("?").substringAfterLast("/").substringBefore(".mp4")
+            )
         } else null
     }
 
