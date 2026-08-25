@@ -1,12 +1,14 @@
 package com.ashwathai.tradelab.ui.common
 
 import android.annotation.SuppressLint
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -19,10 +21,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.ashwathai.tradelab.ui.theme.BrandViolet
 import kotlinx.coroutines.launch
 import java.io.File
@@ -41,16 +50,26 @@ private fun extractYouTubeVideoId(url: String): String? {
     return null
 }
 
+/**
+ * Video lecture player — YouTube embeds, Firebase-cached and raw-resource MP4s.
+ *
+ * Shorts-style fullscreen: the HTML5 fullscreen request is intercepted via
+ * [WebChromeClient.onShowCustomView] and rendered edge-to-edge in a dialog with
+ * system bars hidden (portrait-immersive — NotebookLM videos are vertical).
+ * Back gesture or the native control exits fullscreen.
+ */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun VideoPlayerView(
     videoUrl: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    videoHeight: Dp = 400.dp,
+    onFullscreenChanged: (Boolean) -> Unit = {}
 ) {
     if (videoUrl.isBlank()) return
 
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val decorView = LocalView.current
     val isYouTube = videoUrl.contains("youtube.com") || videoUrl.contains("youtu.be")
     val isFirebaseStorage = videoUrl.contains("firebasestorage.googleapis.com") ||
             videoUrl.startsWith("gs://")
@@ -62,6 +81,53 @@ fun VideoPlayerView(
     var isDownloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableFloatStateOf(0f) }
     var downloadError by remember { mutableStateOf<String?>(null) }
+
+    // ── Shorts-style fullscreen state ──
+    var fullscreenView by remember { mutableStateOf<View?>(null) }
+    var fullscreenCallback by remember { mutableStateOf<WebChromeClient.CustomViewCallback?>(null) }
+
+    fun enterFullscreen(view: View, callback: WebChromeClient.CustomViewCallback) {
+        fullscreenView = view
+        fullscreenCallback = callback
+        (decorView.context as? android.app.Activity)?.window?.let { window ->
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowInsetsControllerCompat(window, window.decorView).apply {
+                hide(WindowInsetsCompat.Type.systemBars())
+                systemBarsBehavior = WindowInsetsControllerCompat
+                    .BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        }
+        onFullscreenChanged(true)
+    }
+
+    fun exitFullscreen() {
+        fullscreenCallback?.onCustomViewHidden()
+        fullscreenView = null
+        fullscreenCallback = null
+        (decorView.context as? android.app.Activity)?.window?.let { window ->
+            WindowCompat.setDecorFitsSystemWindows(window, true)
+            WindowInsetsControllerCompat(window, window.decorView)
+                .show(WindowInsetsCompat.Type.systemBars())
+        }
+        onFullscreenChanged(false)
+    }
+
+    BackHandler(enabled = fullscreenView != null) { exitFullscreen() }
+
+    // Routes the HTML5 fullscreen request into our edge-to-edge overlay.
+    val fullscreenChromeClient = remember(onFullscreenChanged) {
+        object : WebChromeClient() {
+            override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                enterFullscreen(view, callback)
+            }
+
+            override fun onHideCustomView() {
+                fullscreenView = null
+                fullscreenCallback = null
+                onFullscreenChanged(false)
+            }
+        }
+    }
 
     // For local resource files (existing behavior)
     val localFile = remember(videoUrl) {
@@ -92,8 +158,17 @@ fun VideoPlayerView(
     // Extract lecture code from Firebase URL for caching
     val lectureCode = remember(videoUrl) {
         if (isFirebaseStorage) {
-            // Extract filename from URL: .../videos/course_1/lecture_1_1_1.mp4 -> lecture_1_1_1
-            videoUrl.substringAfterLast("/").substringBefore(".mp4")
+            // Manifest URLs are percent-encoded (.../o/videos%2Fcourse_1%2Flecture_1_4_1.mp4).
+            // Decode BEFORE taking the basename, else '%' survives in the cache filename
+            // and the WebView re-decodes it into path separators on playback (broken file://).
+            runCatching {
+                java.net.URLDecoder.decode(
+                    videoUrl.substringBefore("?").substringAfterLast("/").substringBefore(".mp4"),
+                    "UTF-8"
+                ).substringAfterLast("/")
+            }.getOrDefault(
+                videoUrl.substringBefore("?").substringAfterLast("/").substringBefore(".mp4")
+            )
         } else null
     }
 
@@ -141,7 +216,7 @@ fun VideoPlayerView(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(400.dp)
+                .height(videoHeight)
                 .clip(RoundedCornerShape(8.dp))
         ) {
             when {
@@ -195,22 +270,41 @@ fun VideoPlayerView(
                 isYouTube -> {
                     val videoId = extractYouTubeVideoId(videoUrl)
                     if (videoId != null) {
-                        YouTubeWebView(videoId)
+                        YouTubeWebView(videoId, fullscreenChromeClient)
                     }
                 }
 
                 // Play local video (Firebase cached or resource file)
                 else -> {
-                    LocalVideoWebView(playbackUrl)
+                    LocalVideoWebView(playbackUrl, fullscreenChromeClient)
                 }
             }
+        }
+    }
+
+    // ── Shorts-style fullscreen overlay: the native fullscreen view, edge-to-edge ──
+    fullscreenView?.let { fsView ->
+        Dialog(
+            onDismissRequest = { exitFullscreen() },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnClickOutside = false
+            )
+        ) {
+            AndroidView(
+                factory = { fsView },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            )
         }
     }
 }
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun YouTubeWebView(videoId: String) {
+private fun YouTubeWebView(videoId: String, chromeClient: WebChromeClient) {
+    val html = remember(videoId) { youTubeHtml(videoId) }
     AndroidView(
         factory = { ctx ->
             CookieManager.getInstance().setAcceptCookie(true)
@@ -236,30 +330,16 @@ private fun YouTubeWebView(videoId: String) {
                 CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
                 webViewClient = WebViewClient()
-                webChromeClient = WebChromeClient()
+                webChromeClient = chromeClient
 
-                val html = """
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>
-                            * { margin: 0; padding: 0; }
-                            body { background: #000; overflow: hidden; }
-                            iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-                        </style>
-                    </head>
-                    <body>
-                        <iframe 
-                            src="https://www.youtube.com/embed/$videoId?autoplay=1&rel=0&playsinline=1&enablejsapi=1" 
-                            referrerpolicy="strict-origin-when-cross-origin"
-                            allow="autoplay; encrypted-media; picture-in-picture"
-                            allowfullscreen>
-                        </iframe>
-                    </body>
-                    </html>
-                """.trimIndent()
                 loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "UTF-8", null)
+            }
+        },
+        update = { webView ->
+            // Pill switches change the lecture/video — reload only when the page differs
+            if (webView.tag != html) {
+                webView.tag = html
+                webView.loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "UTF-8", null)
             }
         },
         modifier = Modifier
@@ -270,9 +350,9 @@ private fun YouTubeWebView(videoId: String) {
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun LocalVideoWebView(videoUrl: String) {
+private fun LocalVideoWebView(videoUrl: String, chromeClient: WebChromeClient) {
     val actualUrl = if (videoUrl.startsWith("/")) "file://$videoUrl" else videoUrl
-
+    val html = remember(actualUrl) { localVideoHtml(actualUrl) }
     AndroidView(
         factory = { ctx ->
             CookieManager.getInstance().setAcceptCookie(true)
@@ -296,28 +376,16 @@ private fun LocalVideoWebView(videoUrl: String) {
                 settings.userAgentString = ua
 
                 webViewClient = WebViewClient()
-                webChromeClient = WebChromeClient()
+                webChromeClient = chromeClient
 
-                val html = """
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>
-                            * { margin: 0; padding: 0; box-sizing: border-box; }
-                            body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-                            video { width: 100%; height: auto; }
-                        </style>
-                    </head>
-                    <body>
-                        <video controls autoplay playsinline preload="auto">
-                            <source src="$actualUrl" type="video/mp4">
-                            Your browser does not support video.
-                        </video>
-                    </body>
-                    </html>
-                """.trimIndent()
                 loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+            }
+        },
+        update = { webView ->
+            // Lecture pill switches change the source — reload only when it differs
+            if (webView.tag != html) {
+                webView.tag = html
+                webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
             }
         },
         modifier = Modifier
@@ -325,3 +393,45 @@ private fun LocalVideoWebView(videoUrl: String) {
             .clip(RoundedCornerShape(8.dp))
     )
 }
+
+private fun youTubeHtml(videoId: String): String = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            * { margin: 0; padding: 0; }
+            body { background: #000; overflow: hidden; }
+            iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        </style>
+    </head>
+    <body>
+        <iframe
+            src="https://www.youtube.com/embed/$videoId?autoplay=1&rel=0&playsinline=1&enablejsapi=1"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowfullscreen>
+        </iframe>
+    </body>
+    </html>
+""".trimIndent()
+
+private fun localVideoHtml(videoUrl: String): String = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+            video { width: 100%; height: 100%; object-fit: contain; }
+        </style>
+    </head>
+    <body>
+        <video controls autoplay playsinline preload="auto">
+            <source src="$videoUrl" type="video/mp4">
+            Your browser does not support video.
+        </video>
+    </body>
+    </html>
+""".trimIndent()

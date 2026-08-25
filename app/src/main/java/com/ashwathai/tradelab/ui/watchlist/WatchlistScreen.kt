@@ -46,7 +46,6 @@ fun WatchlistScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
     latestNews: List<MarketNews>,
-    nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null,
     onTickerClick: (String, Boolean, Boolean) -> Unit
 ) {
     val watchlistItems by viewModel.selectedWatchlistItems.collectAsStateWithLifecycle()
@@ -358,12 +357,6 @@ fun WatchlistScreen(
                     }
                 }
 
-                if (watchlistItems.size >= 5 && nativeAd != null && !stats.isPremium) {
-                    item {
-                        NativeAdRow(nativeAd = nativeAd)
-                        Spacer(modifier = Modifier.height(if (isCompactMode) 4.dp else 8.dp))
-                    }
-                }
 
                 items(watchlistItems.drop(5)) { item ->
                     val stock = stockPrices.find { it.symbol == item.symbol }
@@ -380,11 +373,6 @@ fun WatchlistScreen(
                     }
                 }
                 
-                if (watchlistItems.size < 5 && nativeAd != null && !stats.isPremium) {
-                    item {
-                        NativeAdRow(nativeAd = nativeAd)
-                    }
-                }
             }
         }
 

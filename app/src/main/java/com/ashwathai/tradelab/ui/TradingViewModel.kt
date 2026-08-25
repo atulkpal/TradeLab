@@ -40,6 +40,7 @@ class TradingViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: TradingRepository,
     private val leaderboardManager: LeaderboardManager,
+    private val videoManifestRepository: com.ashwathai.tradelab.data.VideoManifestRepository,
     @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -56,6 +57,42 @@ class TradingViewModel @Inject constructor(
 
     private val _academyCourses = MutableStateFlow<List<AcademyCourse>>(emptyList())
     val academyCourses: StateFlow<List<AcademyCourse>> = _academyCourses.asStateFlow()
+
+    // Epic 27: remote video manifest + dynamic lecture language
+    val videoManifest = videoManifestRepository.manifest
+    val videoManifestReady: StateFlow<Boolean> = videoManifest
+        .map { it != null }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val _academyLanguage = MutableStateFlow(loadAcademyLanguagePref())
+    val academyLanguage: StateFlow<String> = _academyLanguage.asStateFlow()
+
+    /** Toggle EN ↔ HI for lecture videos (persisted; availability enforced in UI). */
+    fun toggleAcademyLanguage() {
+        val next = if (_academyLanguage.value == com.ashwathai.tradelab.data.VideoManifestRepository.LANG_HI) {
+            com.ashwathai.tradelab.data.VideoManifestRepository.LANG_EN
+        } else {
+            com.ashwathai.tradelab.data.VideoManifestRepository.LANG_HI
+        }
+        _academyLanguage.value = next
+        try {
+            context.getSharedPreferences(ACADEMY_PREFS, Context.MODE_PRIVATE)
+                .edit().putString(ACADEMY_LANG_KEY, next).apply()
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Resolved playback info for a bundled lecture key in the current language. */
+    fun lectureMedia(bundledVideoUrl: String): com.ashwathai.tradelab.data.LectureMedia =
+        videoManifestRepository.lectureMedia(bundledVideoUrl, _academyLanguage.value)
+
+    private fun loadAcademyLanguagePref(): String = try {
+        context.getSharedPreferences(ACADEMY_PREFS, Context.MODE_PRIVATE)
+            .getString(ACADEMY_LANG_KEY, com.ashwathai.tradelab.data.VideoManifestRepository.LANG_EN)
+            ?: com.ashwathai.tradelab.data.VideoManifestRepository.LANG_EN
+    } catch (_: Exception) {
+        com.ashwathai.tradelab.data.VideoManifestRepository.LANG_EN
+    }
 
     private val _missionsList = MutableStateFlow<List<Mission>>(emptyList())
     val missionsList: StateFlow<List<Mission>> = _missionsList.asStateFlow()
@@ -184,6 +221,11 @@ class TradingViewModel @Inject constructor(
     val commoditiesUnlocked: StateFlow<Boolean> = _commoditiesUnlocked.asStateFlow()
     @Volatile private var commoditiesUnlockTime: Long? = null
     @Volatile private var backgroundTasksStarted = false
+
+    private companion object {
+        const val ACADEMY_PREFS = "academy_prefs"
+        const val ACADEMY_LANG_KEY = "language"
+    }
 
     private val _hasDismissedAuthScreen = MutableStateFlow(false)
     val hasDismissedAuthScreen: StateFlow<Boolean> = _hasDismissedAuthScreen.asStateFlow()
@@ -452,6 +494,9 @@ class TradingViewModel @Inject constructor(
         }
 
         loadAcademyAndMissionsData()
+
+        // Epic 27: one-shot remote video manifest fetch (cache-first, no polling)
+        videoManifestRepository.fetchIfNeeded()
 
         // Load theme from profile
         viewModelScope.launch {

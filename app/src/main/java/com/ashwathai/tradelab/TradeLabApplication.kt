@@ -1,4 +1,4 @@
-package com.ashwathai.tradelab
+﻿package com.ashwathai.tradelab
 
 import android.app.Application
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -11,6 +11,9 @@ class TradeLabApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
+        // Initialize Unity LevelPlay (Epic 26) - replaces AdMob
+        com.ashwathai.tradelab.ui.common.LevelPlayAdManager.init(this)
+
         // Initialize Firebase Components
         try {
             // Ensure App Check is initialized for Play Integrity in production

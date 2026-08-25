@@ -20,7 +20,9 @@ class VideoCacheManager(private val context: Context) {
     private val storage = FirebaseStorage.getInstance()
 
     private fun getVideoDir(): File {
-        val dir = File(context.externalCacheDir, VIDEO_DIR)
+        // Internal cache: app-owned, FUSE-proof, correct semantics for evictable
+        // cached content. (externalCacheDir hit FUSE permission denials on emulators.)
+        val dir = File(context.cacheDir, VIDEO_DIR)
         if (!dir.exists()) dir.mkdirs()
         return dir
     }

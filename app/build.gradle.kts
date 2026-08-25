@@ -32,7 +32,6 @@ android {
     versionName = "1.8.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3038055603735419~3347511713"
   }
 
   signingConfigs {
@@ -80,11 +79,9 @@ android {
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
-      manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3038055603735419~8287049082"
     }
     debug {
       signingConfig = signingConfigs.getByName("debugConfig")
-manifestPlaceholders["admobApplicationId"] = "ca-app-pub-3038055603735419~8287049082"
     }
   }
   compileOptions {
@@ -161,7 +158,11 @@ dependencies {
   implementation(libs.okhttp)
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)
-  implementation(libs.play.services.ads)
+  implementation(libs.levelplay.sdk)
+implementation(libs.unityads.adapter)
+implementation(libs.play.services.appset)
+implementation(libs.play.services.ads.identifier)
+implementation(libs.play.services.basement)
   implementation(libs.billing.ktx)
 
   implementation(libs.hilt.android)

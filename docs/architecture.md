@@ -99,13 +99,21 @@ To facilitate troubleshooting on unconnected user devices (where `adb logcat` is
 *   **Secret Diagnostic Viewer:** A developer-focused gesture integrated into the **Profile** screen. **Long-pressing** the version number footer (`v1.8.1 (8)`) retrieves the last captured crash trace and displays it in a scrollable dialog. This allows for immediate root-cause identification in the field.
 
 ### G. Multi-Format Monetization Infrastructure
-*   **AppOpenAdManager (`com.ashwathai.tradelab.ui.common`):** A lifecycle-aware component that monitors app-wide background/foreground transitions using `ProcessLifecycleOwner`.
-    *   Automatically fetches and displays an **App Open Ad** when the user resumes the app after a background period (warm start).
-    *   Maintains a time-boxed cache (4 hours) to prevent showing stale ads.
-*   **Native Ad Blending:**
-    *   **NativeAdLoader:** Logic integrated into the `AppOpenAdManager` to pre-fetch and cache high-performance native ads.
-    *   **NativeAdRow / NativeAdView:** A Compose-XML hybrid wrapper that renders native ad assets (headline, icon, CTA) using Trade Lab's premium dark aesthetic. Ads are injected dynamically into the **Watchlist**, **Portfolio**, and **Academy** dashboards.
-    *   **Premium Logic:** All ad formats (Rewarded, App Open, Native) are globally gated; the UI reactively hides all ad containers if `isPremium == true`.
+
+> **⚠️ MIGRATING (Epic 26) — AdMob → Unity LevelPlay hard cut.** The AdMob account is
+> banned; the design below is replaced by the LevelPlay subsystem. The GMA types
+> (`NativeAd`, `MobileAds`, `AppOpenAdManager`) are extirpated in Sprint 26.3.
+
+*   **LevelPlayAdManager (`com.ashwathai.tradelab.ui.common`):** The single ad facade.
+    *   **Init:** `LevelPlay.init(context, LevelPlayInitRequest("27b051bfd"), listener)` in `Application.onCreate()`; exposes `sdkReady: StateFlow<Boolean>` — every format manager and UI slot gates on this before loading.
+    *   **Rewarded:** `LevelPlayRewardedAd` with **preloading** (next ad loads on show). Public contract is byte-compatible with the legacy AdMob entry point: `loadAndShowRewardedAd(adType, onAdLoaded, onAdFailed, onUserEarnedReward)` — the 10+ reward call sites across Academy/Watchlist/Portfolio/Profile are unchanged. One dashboard ad unit serves all rewards; `adType` maps to the LevelPlay placement name for analytics.
+    *   **Native:** `LevelPlayNativeAd` loaded **per screen** (no shared stale instance) and rendered by a new Compose-native `NativeAdRow` — GMA `NativeAd` types are removed from all screen signatures.
+    *   **Foreground Interstitial:** replaces the App Open format (LevelPlay has none) — interstitial shown on lifecycle warm-start with the legacy 4-hour freshness window.
+    *   **Consent:** LevelPlay ConsentView GDPR/CCPA flow on first launch (replaces the missing UMP integration).
+*   **AdConfig (`com.ashwathai.tradelab.ui.common`):** Single source of truth — appKey, ad unit IDs, placement names. Replaces the 3 scattered hardcoded ID sources.
+*   **Fallback Policy (revenue protection):** Legacy fake-ad fallbacks (countdown timers that granted rewards — sometimes larger than the real reward — on ad failure) are **removed**. No-fill renders a graceful "No ad available — try again later" state. Premium users bypass all ads with instant grants (unchanged).
+*   **Premium Logic:** Unchanged — all ad containers reactively hidden when `isPremium == true`.
+*   **Extirpation:** `AdMobManager.kt`, `BannerAdView.kt` (dead code), `NativeAdView.kt` + `ad_unified_row.xml`, `MobileAds.initialize`, manifest `APPLICATION_ID` meta-data, and the `play-services-ads` dependency are deleted. Guard test asserts zero `com.google.android.gms.ads` imports.
 
 ---
 

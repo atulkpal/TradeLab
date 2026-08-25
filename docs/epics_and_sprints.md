@@ -1,4 +1,4 @@
-# Trade Lab — Epics & Sprints Backlog
+﻿# Trade Lab â€” Epics & Sprints Backlog
 
 This document defines the development roadmap for **Trade Lab**. It breaks down our long-term vision into concrete, manageable **Epics**, **Sprints**, and granular **Tasks**. Use this document to track active progress, coordinate parallel streams, and select your next engineering assignment.
 
@@ -7,66 +7,176 @@ This document defines the development roadmap for **Trade Lab**. It breaks down 
 ## Roadmap Overview
 
 ```
- ┌─────────────────────────────────────────────────────────────┐
- │       EPIC 1: Local MVP Persistence & Engine [100% COMPLETE]│
- └──────────────────────────────┬──────────────────────────────┘
-                                ▼
- ┌─────────────────────────────────────────────────────────────┐
- │  EPIC 2: Advanced Order Types & Trade Desk   [100% COMPLETE]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 3: Learn-to-Earn Financial Academy     [100% COMPLETE]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 8: On-Demand Ads & Gamified Monetization [100% COMP.] │
- └──────────────────────────────┬──────────────────────────────┘
-                                ▼
- ┌─────────────────────────────────────────────────────────────┐
- │  EPIC 4: Technical Charts & Indicators       [100% COMPLETE]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 5: Serverless AI Portfolio Diagnostics [100% COMPLETE]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 7: Multi-Watchlists, Auth Gate & Paywalls [100% COMP.]│
- └──────────────────────────────┬──────────────────────────────┘
-                                ▼
- ┌─────────────────────────────────────────────────────────────┐
- │  EPIC 6: Multi-Platform KMP Core Migration   [DEFERRED]     │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 9: Simulated F&O Engine & Premium Paywalls [100% COMP.]│
- └──────────────────────────────┬──────────────────────────────┘
-                                ▼
- ┌─────────────────────────────────────────────────────────────┐
- │  EPIC 10: Codebase Modularization & Refactoring [100% COMP.]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 11: Architectural Modernization & Hilt DI [100% COMP.]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 12: UI Density & Market Realism        [100% COMP.]   │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 13: Institutional Portfolio Analytics  [100% COMP.]   │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 14: Market Sentiments & TV News        [100% COMP.]   │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 15: Real-World News & Option B Influence [100% COMP.] │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 16: Pre-Launch Polish & Advanced Realism [100% COMP.] │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 17: Track A — Institutional Visualization [100% COMP.]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 18: Track B — Margin & Bracket Orders     [100% COMP.]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 19: Track C — Social Discipline Scores     [100% COMP.] │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 20: Next.js Web App Platform               [DEFERRED] │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 22: Academy v2 — Varsity-Style Curriculum   [100% COMP.] │
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 23: Multi-Format Monetization (AppOpen/Native) [100% COMP.]│
- ├─────────────────────────────────────────────────────────────┤
- │  EPIC 24: Hyper-Personalization & Focus Suite    [100% COMP.]│
- └─────────────────────────────────────────────────────────────┘
+ â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+ â”‚       EPIC 1: Local MVP Persistence & Engine [100% COMPLETE]â”‚
+ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                â–¼
+ â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+ â”‚  EPIC 2: Advanced Order Types & Trade Desk   [100% COMPLETE]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 3: Learn-to-Earn Financial Academy     [100% COMPLETE]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 8: On-Demand Ads & Gamified Monetization [100% COMP.] â”‚
+ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                â–¼
+ â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+ â”‚  EPIC 4: Technical Charts & Indicators       [100% COMPLETE]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 5: Serverless AI Portfolio Diagnostics [100% COMPLETE]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 7: Multi-Watchlists, Auth Gate & Paywalls [100% COMP.]â”‚
+ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                â–¼
+ â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+ â”‚  EPIC 6: Multi-Platform KMP Core Migration   [DEFERRED]     â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 9: Simulated F&O Engine & Premium Paywalls [100% COMP.]â”‚
+ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                â–¼
+ â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+ â”‚  EPIC 10: Codebase Modularization & Refactoring [100% COMP.]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 11: Architectural Modernization & Hilt DI [100% COMP.]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 12: UI Density & Market Realism        [100% COMP.]   â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 13: Institutional Portfolio Analytics  [100% COMP.]   â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 14: Market Sentiments & TV News        [100% COMP.]   â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 15: Real-World News & Option B Influence [100% COMP.] â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 16: Pre-Launch Polish & Advanced Realism [100% COMP.] â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 17: Track A â€” Institutional Visualization [100% COMP.]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 18: Track B â€” Margin & Bracket Orders     [100% COMP.]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 19: Track C â€” Social Discipline Scores     [100% COMP.] â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 20: Next.js Web App Platform               [DEFERRED] â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 22: Academy v2 â€” Varsity-Style Curriculum   [100% COMP.] â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 23: Multi-Format Monetization (AppOpen/Native) [100% COMP.]â”‚
+ â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+ â”‚  EPIC 24: Hyper-Personalization & Focus Suite    [100% COMP.]â”‚
+ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
  ```
 
 ---
 
-## Epic 24: Hyper-Personalization & Focus Suite (Status: 🟢 Complete)
+
+## Epic 25: Academy Experience Redesign (Status: ✅ Complete)
+Transform the Academy from a flat, theme-broken card list into a visually distinct, full-screen learning destination with proper video ergonomics — while preserving the accordion CourseDeck users know.
+
+### Sprint 25.1: Theme Engine Compliance
+*   [x] **Accent De-hardcoding**: Replace 52× hardcoded `BrandViolet` in `AcademyScreen.kt` with `DynamicPrimary`; 18× `Color.White` → `TextOnAccent`; alpha surfaces → theme-aware getters. Academy respects SERIOUS/VIBRANT/TERMINAL/ARCADE/LIGHT. (Semantic tier colors keep their identity: BEGINNER stays `BrandViolet`.)
+*   [x] **Sub-tab state**: `activeSubTab` `remember` → `rememberSaveable` (survives config changes).
+*   [x] **Test**: New `AcademyThemeTest` — source-scan guard asserting no raw `Color(0xFF8B5CF6)` / `Color.White` literals in Academy composables.
+
+### Sprint 25.2: Course Identity System
+*   [x] **Gradient hero headers**: 6 per-course gradient sets (mapped by course id/tier) behind existing custom vector icons (`ic_course_markets/technical/fundamental/derivatives/psychology/taxation`).
+*   [x] **Progress rings**: Replace per-course `ShimmerProgress` bar with animated progress ring + "N of M" inside the ring.
+*   [x] **Tier accents**: BEGINNER/INTERMEDIATE/ADVANCED chips upgraded to tinted chips at 10sp minimum (legibility).
+
+### Sprint 25.3: Full-Screen Lecture Destination
+*   [x] **New `LectureScreen.kt`** (`ui/academy/`): full-screen destination replacing the modal Dialog for the lecture flow — immersive video slot (`VideoPlayerView`), reading pane, "Start Knowledge Check" CTA.
+*   [x] **Quiz migration**: Knowledge-check flow (options, feedback cards, score, claim/double-reward) moves from the `MainActivity` Dialog into `LectureScreen` (~660 lines removed from MainActivity).
+*   [x] **Routing**: `activeQuizLevelId`/`activeLectureIndex` state consolidated into a single lecture-session state consumed by `LectureScreen`; `BackHandler` for back navigation.
+*   [x] **Video-ready slot**: Player renders when `videoUrl` resolves (manifest lands in Epic 27); elegant "Video coming soon" empty state otherwise (no dead ends).
+*   [x] **Test**: `LectureScreenTest` — render states (video/no-video/locked), quiz answer flow, reward-claim callback.
+
+### Sprint 25.4: Gamification Surface
+*   [x] **Header stats**: Streak (from `dailyStreak`) + XP surfaced in the Academy hero card.
+*   [x] **Celebrations**: `SparkleBurst` extended to chapter completion; certificate flow unchanged.
+*   [x] **Manual Verification Protocol**: add Academy section — theme sweep across 5 modes, full-screen lecture flow, streak/XP visibility.
+
+**DoD:** zero hardcoded violets/whites in Academy
+### Sprint 25.6: Full UI/UX Polish Pass (PARKED — post-campaign)
+*   [ ] **Whole-app visual polish**: audit every screen against the 5-mode theme engine, unify spacing rhythm (4/8dp), typography scale, icon sizing tokens, imagery/hero language, micro-interactions. Course-card v3 (gradient + icon-chip + glow) is the first artifact of this direction.
+### Sprint 25.5: Video-First & Shorts Fullscreen (added post-review)
+*   [x] **Video-first layout**: `LectureScreen` renders the video full-bleed at the top when present; reading content below. No-video lectures keep the reading card + coming-soon state.
+*   [x] **Shorts-style fullscreen**: `VideoPlayerView` intercepts the HTML5 fullscreen request (`WebChromeClient.onShowCustomView`) and renders it edge-to-edge in a dialog with system bars hidden — portrait-immersive for vertical videos. Back exits.
+*   [x] **WebView reload fix**: lecture pill switches now reload the WebView source (`AndroidView.update` + tag-guard) — previously the same video kept playing.
+*   [x] **Internal video cache**: `VideoCacheManager` moved to `context.cacheDir` (FUSE-proof on emulators; correct evictable-cache semantics).
+*   [x] **92 polished videos bundled** for preview: `res/raw/lecture_X_Y_Z_final.mp4` (gitignored — production distributes via Firebase, Epic 27); `academy_data_v2.json` wired to raw-resource names.
+*   [x] **Verified on Pixel emulator**: Lec 1 ↔ Lec 2 pill switching plays distinct branded videos; fullscreen immersive confirmed manually.
+ · lectures full-screen with video slot · streak/XP visible · all existing tests green + new test files.
+
+---
+
+## Epic 26: Unity LevelPlay Monetization Migration (Status: ✅ Code Complete / ⏳ Awaiting LevelPlay Activation)
+Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b051bfd`). Zero AdMob SDK trace. Revenue-critical. Architecture: see `docs/architecture.md` § Multi-Format Monetization Infrastructure.
+
+### Sprint 26.1: Foundation & Rewarded Core
+*   [x] **Gradle**: remove `play-services-ads`; add `com.unity3d.ads-mediation:mediation-sdk:9.5.0` + appset/ads-identifier/basement artifacts (bubbles-proven); ProGuard rules; verify `AD_ID` permission.
+*   [x] **`LevelPlayAdManager`** (new, `ui/common/`): Application-scoped init with `sdkReady: StateFlow<Boolean>` gate; **preserves `loadAndShowRewardedAd(adType, onAdLoaded, onAdFailed, onUserEarnedReward)` signature** — 10+ call sites unchanged; rewarded preloading; single ad unit + `adType` as placement name.
+*   [x] **`AdConfig.kt`** (new): single source for appKey + ad unit IDs + placement names (replaces 3 scattered ID sources).
+*   [x] **Test**: `LevelPlayAdManagerTest` — fake SDK seam; reward delivery → callback contract; no-fill → `onAdFailed` path.
+
+### Sprint 26.2: Formats & Fallback Surgery
+*   [x] **Native ads REMOVED from UI** (follow-up): LevelPlay natives require mediated network adapters — unavailable (banned AdMob). 6 native spots temporarily removed; fast-follow when a network is onboarded.
+*   [x] **App Open → Interstitial-on-foreground**: replace `AppOpenAdManager` with interstitial on lifecycle start (LevelPlay has no app-open format); 4h freshness window preserved.
+*   [x] **Fallback surgery** 🚨: remove ALL fake-ad auto-grant fallbacks (Portfolio 50-credit leak, Academy fallback timer, Profile fallback dialog, MainActivity fallback video). No-fill → graceful "No ad available — try again later" state. **No free rewards.**
+*   [x] **Simulated-ad flows → real rewarded**: AI-coach credits, F&O tokens, Commodities unlock switch from fake countdowns to `loadAndShowRewardedAd` (revenue on features that currently pay nothing).
+*   [x] **Consent**: LevelPlay ConsentView basic GDPR/CCPA flow on first launch.
+
+### Sprint 26.3: AdMob Extirpation
+*   [x] **Delete**: `AdMobManager.kt`, `BannerAdView.kt` (dead), `NativeAdView.kt` + `ad_unified_row.xml`, `MobileAds.initialize`, manifest `APPLICATION_ID` meta-data, gradle dep.
+*   [x] **Test**: source-scan guard — zero `com.google.android.gms.ads` imports in app module.
+*   [x] **Manual Verification Protocol**: ad placements matrix (screen × format × reward), consent first-launch flow, premium-bypass checks.
+
+**Known Pending Issues (resolve when testing on real device):**
+1. **Emulator excludes rewarded ads** — Unity Ads returns 1024 no-fill on emulators; test on real device
+2. **Account approval in review** — payment + company info submitted (2026-08-25); awaiting Unity review (1-3 business days) → live ads serve automatically, no redeploy
+3. **Ad unit propagation** — newly created dashboard ad units take 15-30 min to activate on serving side
+4. **Session revocation waves** — Google risk system kills sessions every 2-20h on flagged accounts; L3 self-heal + spaced re-auths manage this
+5. **Native ads removed** — need mediated network adapter; fast-follow when a network is onboarded
+
+**DoD:** zero AdMob imports · all 9 reward placements + 6 native spots + foreground interstitial on LevelPlay test ads · fallback leaks closed · consent flow live.
+**External dependency:** user creates LevelPlay app `27b051bfd` + ad units in dashboard (names provided by agent); dev runs on LevelPlay test units until then.
+
+---
+
+## Epic 27: Video Manifest & Multi-Language Wiring (Status: ✅ LIVE — 92 videos + manifest v1 in production)
+Runtime video-manifest strategy (new batches appear **without app releases**) + dynamic Hindi toggle (renders per-lecture only when a Hindi variant exists).
+
+### Sprint 27.1: Manifest Repository
+*   [x] **`VideoManifestRepository`** (new, `data/`): fetch `videos/manifest.json` from Firebase Storage (`tradelab-4f858`), cache-first with 24h TTL (`cacheDir` file — offline-first: cached manifest of ANY age beats nothing), graceful fallback to bundled `academy_data_v2.json` `videoUrl` on failure/miss. One-shot `fetchIfNeeded()` (no polling loops — Background Tasks Rule).
+*   [x] **Schema** (as-built): `{"version": N, "generatedAt": "...", "videos": {"lecture_1_10_1_final": {"en": "https://…", "hi": "https://…|null"}}}` — keys match bundled `videoUrl` values for direct map-hit lookup.
+*   [x] **Resolution API**: `lectureMedia(bundledVideoUrl, lang): LectureMedia(resolvedUrl, hasHindi, source)` — layered fallback: remote URL (selected language) → bundled raw (`_hi` suffix for Hindi) → bundled key → blank.
+
+### Sprint 27.2: Dynamic Hindi Toggle (Per-Lecture)
+*   [x] **UI**: EN/हिंदी pill toggle in `LectureScreen` — renders ONLY when the current lecture has a Hindi variant (manifest `hi` entry OR bundled `_hi` raw). No global flag; fully dynamic per the No Dead-Ends rule.
+*   [x] **Persistence**: `academyLanguage` in `TradingViewModel` (SharedPreferences `academy_prefs.language`); `toggleAcademyLanguage()` EN↔HI.
+*   [x] **Cache keys**: no change needed — `VideoPlayerView` derives cache keys from the remote filename (`lecture_X.mp4` vs `lecture_X_HI.mp4` are naturally distinct).
+
+### Sprint 27.3: Pipeline Side (nlm)
+*   [x] **`upload_to_firebase.py`** rewritten (firebase-admin, no gcloud): derives `course_N` from lecture code, pairs `_HI_final` Hindi variants, auto-generates + uploads `manifest.json` (version = prev+1), `--dry-run`/`--list`/`--sa PATH`; SA search: arg → `nlm/firebase-service-account.json` → Downloads (warns on project mismatch).
+*   [x] **`storage.rules`** (new): `videos/**` public read, zero public writes (uploads via SA bypass rules); wired into `firebase.json`.
+*   [x] **Tests**: `VideoManifestRepositoryTest` — 11 cases (parse/malformed, bundled fallback, en/hi resolution, hi→en fallback, hi-only manifest, unknown-key miss, fresh-cache-no-network, stale-cache-offline-survival).
+
+### Pending (external)
+*   [x] **Auth resolved**: firebase CLI login (`ashwathai.dev@gmail.com`) has project admin — script mints tokens from the CLI session (cached access_token + auto-refresh via any CLI command). jump-droid SA = Play Console only (no Firebase IAM, probed 403) — SA key now OPTIONAL.
+*   [x] **Rules deployed**: `firebase deploy --only storage` → `videos/**` public read, writes locked (verified live).
+*   [x] **First production upload**: 92 EN videos + manifest v1 live on `gs://tradelab-4f858/videos/` — manifest publicly readable (HTTP 200), video HEAD 200 video/mp4. Zero failures.
+*   [ ] **Hindi content**: generate `_HI` variants via NLM pipeline (toggle auto-appears on upload).
+*   [x] **On-device E2E**: VERIFIED on emulator (2026-08-25, twice — incl. cold boot): manifest fetch (15926B cache-exact) → remote resolve → clean-name cache download → autoplay → **1:14/1:14 full playback** of branded content; 6 lectures cached in second run; language toggle correctly hidden (no Hindi yet). Audio verified end-to-end (file max −0.7 dB, mixer active, host-side output only).
+
+**Epic 27 wiring COMPLETE.** The single remaining monetization blocker is LevelPlay account activation (Epic 26): reply to 2 ironSource emails → approval → live ads serve automatically on real device.
+
+> ⚠️ **VIDEO WIRING RULE (No Dead-Ends) — for anyone/anything wiring videos in the future:**
+> Only set `videoUrl` in `academy_data_v2.json` when the asset ACTUALLY exists —
+> polished mp4 bundled in `res/raw/` AND uploaded to Storage (manifest entry).
+> A non-blank `videoUrl` pointing to a missing asset renders a BLACK BROKEN PLAYER,
+> NOT the "coming soon" card. Blank `videoUrl` = "Video lecture coming soon".
+> **Never pre-wire.** (Verified E2E on emulator 2026-08-25: manifest → remote → cache → 1:14/1:14 playback.)
+
+**DoD:** dropping polished videos + running upload makes them play in-app with zero app releases; Hindi toggle appears automatically per-lecture when content exists.
+
+---
+## Epic 24: Hyper-Personalization & Focus Suite (Status: ðŸŸ¢ Complete)
 Expand the theme engine from simple colors to functional and visual modes that adapt to user privacy and focus needs.
 
 ### Sprint 24.1: Multi-Theme Engine Revamp
@@ -88,7 +198,7 @@ Expand the theme engine from simple colors to functional and visual modes that a
 
 ---
 
-## Epic 20: Next.js Web App Platform (Status: ⏸️ Deferred)
+## Epic 20: Next.js Web App Platform (Status: â¸ï¸ Deferred)
 Transition from a static sandbox to a professional-grade, responsive Next.js application with full Android feature parity.
 
 ### Sprint 20.1: Institutional Foundation (Next.js & TypeScript)
@@ -112,7 +222,7 @@ Transition from a static sandbox to a professional-grade, responsive Next.js app
 
 ---
 
-## Epic 17: Track A — Institutional Visualization (Status: 🟢 Complete)
+## Epic 17: Track A â€” Institutional Visualization (Status: ðŸŸ¢ Complete)
 Transition from simple line charts to professional-grade technical analysis tools.
 
 ### Sprint 17.1: Candlestick Engine
@@ -127,7 +237,7 @@ Transition from simple line charts to professional-grade technical analysis tool
 
 ---
 
-## Epic 18: Track B — Margin & Bracket Orders (Status: 🟢 Complete)
+## Epic 18: Track B â€” Margin & Bracket Orders (Status: ðŸŸ¢ Complete)
 Implement professional-grade risk management and institutional order types.
 
 ### Sprint 18.1: Leverage & Margin Engine
@@ -142,7 +252,7 @@ Implement professional-grade risk management and institutional order types.
 
 ---
 
-## Epic 19: Track C — Social Discipline Scores (Status: 🟢 Complete)
+## Epic 19: Track C â€” Social Discipline Scores (Status: ðŸŸ¢ Complete)
 Quantify investor maturity and introduce social competition.
 
 ### Sprint 19.1: The Discipline Score Algorithm
@@ -157,7 +267,7 @@ Quantify investor maturity and introduce social competition.
 
 ---
 
-## Epic 16: Pre-Launch Polish & Advanced Realism (Status: 🟢 Complete)
+## Epic 16: Pre-Launch Polish & Advanced Realism (Status: ðŸŸ¢ Complete)
 Refine the UI for high-information density, fix pre-launch glitches, and implement professional-grade settlement mechanics.
 
 ### Sprint 16.1: Viral Sharing & UI Stability
@@ -178,16 +288,16 @@ Refine the UI for high-information density, fix pre-launch glitches, and impleme
 *   [x] **On-Demand Equity Curve**: Moved the performance chart to a demand-based pop-up with empty-state logic for new users.
 *   [x] **Extended Rewards**: Increased Commodities Desk access duration to 3 hours per ad watch.
 
-### Sprint 16.4: Launch Pricing — Real Product IDs & ₹49 Early-Bird Promo (Status: 🟢 Complete)
-Ship the real Google Play subscription products with a time-boxed early-launch offer: ₹99 is the true list price, but until **2026-09-01 00:00 IST** every subscriber gets a **7-day free trial + ₹49/mo (50% OFF)**. After the cutoff, the app automatically offers the ₹99 product. Lock-in is inherent to Play Billing — a ₹49 subscriber keeps renewing at ₹49; a ₹99 buyer pays ₹99.
+### Sprint 16.4: Launch Pricing â€” Real Product IDs & â‚¹49 Early-Bird Promo (Status: ðŸŸ¢ Complete)
+Ship the real Google Play subscription products with a time-boxed early-launch offer: â‚¹99 is the true list price, but until **2026-09-01 00:00 IST** every subscriber gets a **7-day free trial + â‚¹49/mo (50% OFF)**. After the cutoff, the app automatically offers the â‚¹99 product. Lock-in is inherent to Play Billing â€” a â‚¹49 subscriber keeps renewing at â‚¹49; a â‚¹99 buyer pays â‚¹99.
 
-*   [x] **SubscriptionConfig:** Centralized `billing/SubscriptionConfig.kt` with the real Play Console product IDs (`tradelab_subs` = ₹49 launch, `trade_lab_subs_99` = ₹99 regular), `FREE_TRIAL_DAYS = 7`, and promo window ending **2026-09-01 00:00 IST** (Asia/Kolkata).
-*   [x] **Dynamic Product Selection:** Replace the placeholder `tradelab_pro_monthly` at the billing call site with `SubscriptionConfig.activeProductId()` — ₹49 product before Sep 1, ₹99 product on/after Sep 1.
-*   [x] **Promo Countdown:** Ticking countdown banner ("₹49 launch offer ends in DD:HH:MM:SS") on the Paywall dialog and Premium Hub CTA; UI auto-flips to ₹99 when the window closes.
-*   [x] **Dynamic Pricing Text:** Replace all hardcoded "₹99 / 15-Day Free Trial" strings with "7-Day Free Trial" + dynamic price (₹49 + strikethrough ₹99 during promo).
+*   [x] **SubscriptionConfig:** Centralized `billing/SubscriptionConfig.kt` with the real Play Console product IDs (`tradelab_subs` = â‚¹49 launch, `trade_lab_subs_99` = â‚¹99 regular), `FREE_TRIAL_DAYS = 7`, and promo window ending **2026-09-01 00:00 IST** (Asia/Kolkata).
+*   [x] **Dynamic Product Selection:** Replace the placeholder `tradelab_pro_monthly` at the billing call site with `SubscriptionConfig.activeProductId()` â€” â‚¹49 product before Sep 1, â‚¹99 product on/after Sep 1.
+*   [x] **Promo Countdown:** Ticking countdown banner ("â‚¹49 launch offer ends in DD:HH:MM:SS") on the Paywall dialog and Premium Hub CTA; UI auto-flips to â‚¹99 when the window closes.
+*   [x] **Dynamic Pricing Text:** Replace all hardcoded "â‚¹99 / 15-Day Free Trial" strings with "7-Day Free Trial" + dynamic price (â‚¹49 + strikethrough â‚¹99 during promo).
 *   [x] **SubscriptionConfigTest:** Unit tests for promo window, product/price selection, and the Sep 1 cutoff edge.
 
-### Sprint 16.5: Store-Listing Compliance & Release v1.5.0 (Status: 🟢 Complete)
+### Sprint 16.5: Store-Listing Compliance & Release v1.5.0 (Status: ðŸŸ¢ Complete)
 Resolve Google Play policy/privacy gaps ahead of the v1.5.0 (Build 5) production release: stop exposing email addresses via the public leaderboard, add the Play-required in-app account deletion path, and align the website privacy policy with real data flows.
 
 *   [x] **Leaderboard Privacy Hardening:** Key the public Firestore `leaderboard` collection by a SHA-256 hash of the user email (`hashUserId`), never the raw email; verified by known-vector unit tests.
@@ -197,7 +307,7 @@ Resolve Google Play policy/privacy gaps ahead of the v1.5.0 (Build 5) production
 
 ---
 
-## Epic 1: Local MVP Persistence & Engine (Status: 🟢 Complete)
+## Epic 1: Local MVP Persistence & Engine (Status: ðŸŸ¢ Complete)
 Build a solid, offline-first client database foundation with responsive Material 3 rendering.
 
 ### Sprint 1.1: Local Database Schema & Initialization
@@ -217,12 +327,12 @@ Build a solid, offline-first client database foundation with responsive Material
 
 ### Sprint 1.4: Realism Budgets & Cognitive Profiler
 *   [x] Implement multi-step questionnaire checking user retail intent.
-*   [x] Guide users toward a disciplined starting capital recommendation (₹10,000 to ₹100,000).
+*   [x] Guide users toward a disciplined starting capital recommendation (â‚¹10,000 to â‚¹100,000).
 *   [x] Implement portfolio reset database queries.
 
 ---
 
-## Epic 2: Advanced Order Types & Trade Desk (Status: 🟢 Complete)
+## Epic 2: Advanced Order Types & Trade Desk (Status: ðŸŸ¢ Complete)
 Move beyond simple market executions. Implement realistic broker order types, GTT screens, and a futuristic expandable bottom sheet.
 
 ### Sprint 2.1: Database Schema Support for Pending & GTT Orders
@@ -246,7 +356,7 @@ Move beyond simple market executions. Implement realistic broker order types, GT
 
 ---
 
-## Epic 3: Learn-to-Earn Financial Academy (Status: 🟢 Complete)
+## Epic 3: Learn-to-Earn Financial Academy (Status: ðŸŸ¢ Complete)
 Reward study habits with additional virtual trading capital.
 
 ### Sprint 3.1: Academic Lesson Database
@@ -260,13 +370,13 @@ Reward study habits with additional virtual trading capital.
 *   [x] Store quiz pass/fail histories in the local database.
 
 ### Sprint 3.3: Virtual Capital Unlocking Logic
-*   [x] Implement the mathematical progression code: passing a quiz unlocks ₹5,000 or ₹10,000 in virtual capital.
+*   [x] Implement the mathematical progression code: passing a quiz unlocks â‚¹5,000 or â‚¹10,000 in virtual capital.
 *   [x] Add a "Claim Capital" transaction that appends the unlocked amount to the user's current buying power.
 *   [x] Design an aesthetic UI celebration overlay with custom animations for claiming rewards.
 
 ---
 
-## Epic 4: Technical Charts & Overlays (Status: 🟢 Complete)
+## Epic 4: Technical Charts & Overlays (Status: ðŸŸ¢ Complete)
 Add intermediate indicators and professional metrics to the custom line charts.
 
 ### Sprint 4.1: Technical Analysis Algorithms
@@ -281,7 +391,7 @@ Add intermediate indicators and professional metrics to the custom line charts.
 
 ---
 
-## Epic 5: Serverless AI Portfolio Diagnostics (Status: 🟢 Complete)
+## Epic 5: Serverless AI Portfolio Diagnostics (Status: ðŸŸ¢ Complete)
 Leverage Gemini to audit trading behaviors offline and protect retail speculators.
 
 ### Sprint 5.1: Secure Gemini SDK Integration
@@ -295,7 +405,7 @@ Leverage Gemini to audit trading behaviors offline and protect retail speculator
 
 ---
 
-## Epic 7: Multi-Watchlists, Auth Gate & Paywalls (Status: 🟢 Complete)
+## Epic 7: Multi-Watchlists, Auth Gate & Paywalls (Status: ðŸŸ¢ Complete)
 Support multiple persistent watchlists, user registration gating, and premium AI features.
 
 ### Sprint 7.1: Multi-Watchlist Schema & Management
@@ -314,7 +424,7 @@ Support multiple persistent watchlists, user registration gating, and premium AI
 
 ---
 
-## Epic 6: Multi-platform KMP Core Migration (Status: ⏸️ Deferred)
+## Epic 6: Multi-platform KMP Core Migration (Status: â¸ï¸ Deferred)
 *Deferred until >100 downloads on Play Store.*
 Scale the local architecture to support iOS and Web applications.
 
@@ -334,23 +444,23 @@ Scale the local architecture to support iOS and Web applications.
 
 ---
 
-## Epic 8: On-Demand Ads & Gamified Monetization (Status: 🟢 Complete)
-Monetize the platform responsibly for the 16–35 demographic with a 100% non-intrusive, user-initiated rewarded-ad model ("Watch-to-Earn").
+## Epic 8: On-Demand Ads & Gamified Monetization (Status: ðŸŸ¢ Complete)
+Monetize the platform responsibly for the 16â€“35 demographic with a 100% non-intrusive, user-initiated rewarded-ad model ("Watch-to-Earn").
 
 ### Sprint 8.1: Rewarded State Architecture & Core Credit Wallet
 *   [x] Add `brokerageCredits` (Int), `indicatorsUnlockedUntil` (Long), and `aiAuditCredits` (Int) properties to local user profile/state managers.
 *   [x] Modify transaction execution routines in `TradingRepository` to check for `brokerageCredits`. If available, consume 20 credits to shield/waive simulated brokerage fees; if empty, deduct actual simulated cash (0.05% fee) from virtual capital.
-*   [x] Link on-demand credit claims (e.g., "+100 Brokerage Credits", "+₹500 Emergency Recharge") to wallet and portfolio state handlers in the Repository.
+*   [x] Link on-demand credit claims (e.g., "+100 Brokerage Credits", "+â‚¹500 Emergency Recharge") to wallet and portfolio state handlers in the Repository.
 *   [x] Integrate the Academy quiz state with ad-rewards: include fields for daily quiz limits, cooldown bypass state, and double reward claim triggers.
 
 ### Sprint 8.2: Visual Value-Exchange & Dedicated Power-Up Vault UI
-*   [x] Design the Dedicated "Power-Up Vault" on the Profile screen allowing on-demand ad pre-watching to claim credits (+100 credits, +₹500 emergency cash, +1 AI credit).
-*   [x] Add low-profile neon badges in the Slide-Up Order sheet displaying current credits: `🎫 Brokerage Wallet: X Credits` and the corresponding active shield status.
+*   [x] Design the Dedicated "Power-Up Vault" on the Profile screen allowing on-demand ad pre-watching to claim credits (+100 credits, +â‚¹500 emergency cash, +1 AI credit).
+*   [x] Add low-profile neon badges in the Slide-Up Order sheet displaying current credits: `ðŸŽ« Brokerage Wallet: X Credits` and the corresponding active shield status.
 *   [x] Create locked indicator toggles (EMA/RSI) that open a premium dialog explaining the 12-hour unlock-on-ad-watch value offer.
 *   [x] Design the "AI Strategy Hub" credit widget requesting ad-watches for extra Gemini diagnostics audit credits.
 *   [x] Integrate ad booster options directly on the Academy quiz success screen (e.g., "Double My Capital Reward" or "Bypass Cooldown").
 
-### Sprint 8.3: Video Player Simulation & SDK Integration (✅ Production Ready)
+### Sprint 8.3: Video Player Simulation & SDK Integration (âœ… Production Ready)
 *   [x] Create a modular overlay showing a clean 5-second simulated video player with a progress bar and completion callback for offline testing.
 *   [x] Add dependencies and initial bindings for Google Mobile Ads (AdMob) Rewarded Video API to prepare for live production deployment.
 *   [x] Integrate official production AdMob App ID (`ca-app-pub-3038055603735419~8287049082`) and custom Rewarded Ad Unit IDs across all placements (Academy Double, Portfolio Shield, Profile Cash, AI Advisor, Indicators, Shield Max Limit).
@@ -358,12 +468,12 @@ Monetize the platform responsibly for the 16–35 demographic with a 100% non-in
 
 ---
 
-## Epic 9: Simulated F&O (Futures & Options) Engine & Premium Paywalls (Status: 🟢 Complete)
+## Epic 9: Simulated F&O (Futures & Options) Engine & Premium Paywalls (Status: ðŸŸ¢ Complete)
 Develop a robust, offline-capable derivative simulation engine based on underlying assets, complete with compliance disclaimers, educational gated locks, premium subscriptions, and ad-supported premium "taste-testing."
 
 ### Sprint 9.1: Option Chain Generation Engine (Simulated Derivatives)
-*   [x] Build an mathematical generator that dynamically structures Option Chains (Call/Put options) based on the underlying stock’s active simulated price.
-*   [x] Define Option strike prices with uniform intervals (e.g., ±1%, ±2%, ±5% out-of-the-money/in-the-money).
+*   [x] Build an mathematical generator that dynamically structures Option Chains (Call/Put options) based on the underlying stockâ€™s active simulated price.
+*   [x] Define Option strike prices with uniform intervals (e.g., Â±1%, Â±2%, Â±5% out-of-the-money/in-the-money).
 *   [x] Calculate Option premiums dynamically using simplified Black-Scholes approximations or decaying pricing equations relative to remaining days-to-expiration (DTE).
 *   [x] Implement trade execution blocks for Call/Put BUY/SELL, tracking premium expenditure, collateral requirements, and dynamic P/L changes as the underlying price fluctuates.
 
@@ -375,7 +485,7 @@ Develop a robust, offline-capable derivative simulation engine based on underlyi
 ### Sprint 9.3: Ad-Supported Premium "Taste-Tests" (Rewarded Trial Tokens)
 *   [x] Implement a "Taste-Testing" rewarded ad value-loop: users who choose not to pay the cash subscription can watch a 30s video ad to receive **3 F&O Free Trade Tokens** or **1 AI Portfolio Audit Pass**.
 *   [x] Track premium trial tokens in local preferences / state, permitting active use of paywalled screens for limited runs.
-*   [x] Ensure elegant transitions/dialogs showing: `🎫 Premium Trial Token Active (Remaining: X)` to build high conversion interest without permanently restricting non-paying users.
+*   [x] Ensure elegant transitions/dialogs showing: `ðŸŽ« Premium Trial Token Active (Remaining: X)` to build high conversion interest without permanently restricting non-paying users.
 
 ### Sprint 9.4: Educational Compliance Disclaimers & Offline Error States
 *   [x] Implement a **Progressive, Just-In-Time (JIT) Disclaimer Framework**: Disclaimers are never presented as a global app-entry block. Instead, they trigger dynamically *only* when a user actively attempts to use or trade in a specific asset class for the first time.
@@ -394,13 +504,13 @@ Develop a robust, offline-capable derivative simulation engine based on underlyi
 
 ### Sprint 9.6: Commodity Trading Desk & Ad-Wall Gate Integration
 *   [x] Implement a dedicated **Commodities Desk** screen showing simulated MCX Indian commodities (Gold, Silver, Crude Oil, Natural Gas, Copper) alongside Global COMEX/NYMEX commodity indices.
-*   [x] Establish highly realistic real-time price conversions: Indian MCX prices are dynamically converted on-the-fly from global COMEX/NYMEX USD values at a standard exchange rate (₹83/$), adjusted to correct trading units (e.g., per 10g for gold, per kg for silver, per barrel for crude oil).
+*   [x] Establish highly realistic real-time price conversions: Indian MCX prices are dynamically converted on-the-fly from global COMEX/NYMEX USD values at a standard exchange rate (â‚¹83/$), adjusted to correct trading units (e.g., per 10g for gold, per kg for silver, per barrel for crude oil).
 *   [x] Implement an interactive **Derivatives Ad-Wall Security Gate**: since commodities trade on high leverage, gate access behind a premium-supported ad loop. Non-premium users can watch a simulated 5-second sponsor video with an active timer to unlock the desk for 12 hours.
 *   [x] Fully integrate the Commodities Desk into the primary tab navigation (adding a beautiful new "Commodities" tab) and link it directly to the core ViewModel order ticket for buying and selling commodity contracts in real-time.
 
 ---
 
-## Epic 10: Codebase Modularization & Refactoring (Status: 🟢 Complete)
+## Epic 10: Codebase Modularization & Refactoring (Status: ðŸŸ¢ Complete)
 Deconstruct the monolithic 9,000+ line `MainActivity.kt` into a highly decoupled, modular, feature-by-package structure. This establishes strict single-responsibility boundaries, simplifies future white-labeling configurations, improves compilation speed, and ensures high testability.
 
 ### Sprint 10.1: Package Architecture Setup & Core Utilities Isolation
@@ -425,7 +535,7 @@ Deconstruct the monolithic 9,000+ line `MainActivity.kt` into a highly decoupled
 
 ---
 
-## Epic 11: Architectural Modernization & Hilt DI (Status: 🟢 Complete)
+## Epic 11: Architectural Modernization & Hilt DI (Status: ðŸŸ¢ Complete)
 Transition the app to modern dependency injection patterns to improve testability, solve build hangs, and prepare for future scale.
 
 ### Sprint 11.1: Hilt Dependency Injection Integration
@@ -450,7 +560,7 @@ Transition the app to modern dependency injection patterns to improve testabilit
 
 ---
 
-## Epic 12: UI Density & Market Realism (Status: 🟢 Complete)
+## Epic 12: UI Density & Market Realism (Status: ðŸŸ¢ Complete)
 Optimize the user experience for high-information density and authentic Indian market behaviors.
 
 ### Sprint 12.1: Ultra-Dense Watchlist
@@ -471,7 +581,7 @@ Optimize the user experience for high-information density and authentic Indian m
 
 ---
 
-## Epic 13: Institutional Portfolio Analytics (Status: 🟢 Complete)
+## Epic 13: Institutional Portfolio Analytics (Status: ðŸŸ¢ Complete)
 Bring professional-grade risk management tools to the retail simulator.
 
 ### Sprint 13.1: Sectoral Heatmap Visualization
@@ -486,7 +596,7 @@ Bring professional-grade risk management tools to the retail simulator.
 
 ---
 
-## Epic 14: Market Sentiments & TV News (Status: 🟢 Complete)
+## Epic 14: Market Sentiments & TV News (Status: ðŸŸ¢ Complete)
 Enhance immersion with contextual news feeds and a sensationalized TV-style presentation.
 
 ### Sprint 14.1: Contextual News Engine
@@ -501,7 +611,7 @@ Enhance immersion with contextual news feeds and a sensationalized TV-style pres
 
 ---
 
-## Epic 15: Real-World News & Option B Influence (Status: 🟢 Complete)
+## Epic 15: Real-World News & Option B Influence (Status: ðŸŸ¢ Complete)
 Bridge the gap between simulation and reality with actual market headlines and math-driven news impact.
 
 ### Sprint 15.1: Yahoo Finance News Sync
@@ -515,17 +625,17 @@ Bridge the gap between simulation and reality with actual market headlines and m
 
 ---
 
-## Epic 21: Developer Review Sprint (Status: 🟢 Complete)
+## Epic 21: Developer Review Sprint (Status: ðŸŸ¢ Complete)
 Comprehensive review and improvement sprint addressing 10 product areas including GTT orders, quick exit workflows, ledger redesign, adaptive guidance, charts, commodities, F&O accounting, premium experience, and cross-cutting improvements.
 
-### Sprint 21.1: Buy/Sell Dialog — GTT Fix & Quick Exit
+### Sprint 21.1: Buy/Sell Dialog â€” GTT Fix & Quick Exit
 *   [x] Add `validUntil` field to `PendingOrder` entity for GTT persistence
 *   [x] Differentiate GTT (survives EOD) from Limit (cancelled at market close) in `matchPendingOrders()`
 *   [x] Add daily expiry cleanup for expired Limit orders in `simulateMarketTick()`
 *   [x] Add "Exit Position (Market)" button in BuySellBottomSheet when user holds the stock
 *   [x] Add GTT badge in PendingOrdersList UI
 
-### Sprint 21.2: Positions — Quick Exit
+### Sprint 21.2: Positions â€” Quick Exit
 *   [x] Add inline "SQUARE OFF" button per equity position row in `PositionsList`
 *   [x] Ensure one-tap market exit via `viewModel.sellStock()`
 
@@ -539,7 +649,7 @@ Comprehensive review and improvement sprint addressing 10 product areas includin
 *   [x] Replace static watchlist tip with behaviour-adaptive guidance
 *   [x] Add "X points from next badge" hint in Profile
 
-### Sprint 21.5: Charts — Historical Data & Timeframes
+### Sprint 21.5: Charts â€” Historical Data & Timeframes
 *   [x] Add `CandleEntry` Room entity with proper schema
 *   [x] Generate 30 days of historical candle data on first launch
 *   [x] Add timeframe selector (15m, 1H, 4H, 1D, 1W) to ChartScreen
@@ -549,7 +659,7 @@ Comprehensive review and improvement sprint addressing 10 product areas includin
 ### Sprint 21.6: Commodities Realism
 *   [x] Add lot size enforcement for MCX commodities
 *   [x] Add MCX-specific STT rate (0.01%)
-*   [x] Add commodity-specific volatility tuning (±0.8%)
+*   [x] Add commodity-specific volatility tuning (Â±0.8%)
 *   [x] Display lot size info on commodity quote cards
 *   [x] Add educational tooltip about MCX contract specifications
 
@@ -560,11 +670,11 @@ Comprehensive review and improvement sprint addressing 10 product areas includin
 *   [x] Add real NSE strike intervals for major tickers
 *   [x] Add dynamic lot sizes per underlying
 
-### Sprint 21.8: F&O Exit — Dedicated Workflow
+### Sprint 21.8: F&O Exit â€” Dedicated Workflow
 *   [x] Add dedicated `exitOptionPosition()` method with proper P&L settlement
 *   [x] Add "Close All F&O Positions" batch button
 *   [x] Add expiry countdown badge on option holdings
-*   [x] Add auto-expiry settlement (value → 0 at expiry, P&L realized)
+*   [x] Add auto-expiry settlement (value â†’ 0 at expiry, P&L realized)
 
 ### Sprint 21.9: Premium Ad-Free Experience
 *   [x] Audit all 10+ ad gates for `isPremium` bypass
@@ -572,13 +682,13 @@ Comprehensive review and improvement sprint addressing 10 product areas includin
 *   [x] Remove stale `_showGoogleBilling` state
 
 ### Sprint 21.10: Cross-cutting Improvements
-*   [x] Tiered simulation volatility: equities ±0.3%, commodities ±0.8%, crypto ±1.5%
+*   [x] Tiered simulation volatility: equities Â±0.3%, commodities Â±0.8%, crypto Â±1.5%
 *   [x] Holdings sort toggle (by P&L, value, alphabetical)
 *   [x] Time-decay discipline score (1pt/week after 30 days inactivity)
 
 ---
 
-## Epic 23: Multi-Format Monetization (Status: 🟢 Complete)
+## Epic 23: Multi-Format Monetization (Status: ðŸŸ¢ Complete)
 Diversify revenue streams by introducing non-intrusive App Open and Native ad formats.
 
 ### Sprint 23.1: Global Ad Infrastructure
@@ -591,32 +701,32 @@ Diversify revenue streams by introducing non-intrusive App Open and Native ad fo
 *   [x] **Watchlist Injection**: Injected a native ad row every 5 tickers.
 *   [x] **Portfolio & Academy Cards**: Added "Sponsored" native cards to high-traffic dashboards.
 *   [x] **Premium Bypass**: Enforce ad-free experience for `isPremium == true` users across all new formats.
-Expand the Learn-to-Earn Academy from 8 flat single-question modules into a two-level, Varsity-inspired curriculum: **Courses → Chapters**, each chapter containing 3–4 lectures and a 3–5 question knowledge check. Content is **100% original** (structure inspired by Zerodha Varsity; no copyrighted text reproduced).
+Expand the Learn-to-Earn Academy from 8 flat single-question modules into a two-level, Varsity-inspired curriculum: **Courses â†’ Chapters**, each chapter containing 3â€“4 lectures and a 3â€“5 question knowledge check. Content is **100% original** (structure inspired by Zerodha Varsity; no copyrighted text reproduced).
 
 > Authoring contract: [`docs/ACADEMY_CONTENT_SPEC.md`](docs/ACADEMY_CONTENT_SPEC.md)
 
 ### Sprint 22.1: Content Authoring Contract & Schema
-*   [x] Write the content authoring spec (`docs/ACADEMY_CONTENT_SPEC.md`) defining the v2 JSON schema, reserved chapter IDs (101–610), tiered rewards, tone rules, and verification checklist.
+*   [x] Write the content authoring spec (`docs/ACADEMY_CONTENT_SPEC.md`) defining the v2 JSON schema, reserved chapter IDs (101â€“610), tiered rewards, tone rules, and verification checklist.
 *   [x] Author the 6-core-course curriculum (`academy_data_v2.json`): Stock Market Basics (12 ch), Technical Analysis (12 ch), Fundamental Analysis (10 ch), Futures & Options (12 ch), Risk Management & Trading Psychology (12 ch), Markets & Taxation (10 ch).
 
 ### Sprint 22.2: Data Model & Content Engine
 *   [x] Add `AcademyCourse`, `ChapterModule`, and `QuizQuestion` data classes to the shared model.
-*   [x] Upgrade the academy loader in `TradingViewModel` to parse v2 JSON (courses → chapters → lectures + quizzes).
+*   [x] Upgrade the academy loader in `TradingViewModel` to parse v2 JSON (courses â†’ chapters â†’ lectures + quizzes).
 *   [x] Provide a backward-compatible fallback mapping legacy `academy_data.json` `QuizModule`s into a synthetic "Stock Market Basics" course so existing progress and rewards keep working.
 *   [x] Expose `academyCourses` StateFlow and derived course/chapter progress helpers.
 
 ### Sprint 22.3: Chapter Completion & Rewards
-*   [x] Implement multi-question scoring with a pass threshold (≥60% correct to pass a chapter).
+*   [x] Implement multi-question scoring with a pass threshold (â‰¥60% correct to pass a chapter).
 *   [x] Record chapter completion in the existing `completedLevels` CSV via `completeTutorialLevel` so the F&O unlock gate, missions, and certificate logic remain intact.
-*   [x] Enforce tiered rewards: BEGINNER ₹500 / INTERMEDIATE ₹750 / ADVANCED ₹1,000 per chapter (later retuned in Sprint 22.9 for realistic position-sizing discipline).
+*   [x] Enforce tiered rewards: BEGINNER â‚¹500 / INTERMEDIATE â‚¹750 / ADVANCED â‚¹1,000 per chapter (later retuned in Sprint 22.9 for realistic position-sizing discipline).
 *   [x] Keep reward idempotency (a chapter may only be claimed once).
 
-### Sprint 22.4: Academy UI — Course Grouping & Progress
+### Sprint 22.4: Academy UI â€” Course Grouping & Progress
 *   [x] Group chapter cards under collapsible course headers with course icon/emoji, tagline, and tier badge.
 *   [x] Add per-course progress (chapters completed / total) and overall progress bar across all courses.
-*   [x] Surface quiz pass-state ("Earned!" vs "+₹") per chapter card.
+*   [x] Surface quiz pass-state ("Earned!" vs "+â‚¹") per chapter card.
 
-### Sprint 22.5: Quiz Dialog — Multi-Question Flow
+### Sprint 22.5: Quiz Dialog â€” Multi-Question Flow
 *   [x] Replace the single-question knowledge check with a multi-question stepper (Question X of Y).
 *   [x] Show per-question explanations after answering and a final chapter score screen.
 *   [x] Unlock the reward claim only on a passing score; offer Review Lectures / Retry on failure.
@@ -624,33 +734,33 @@ Expand the Learn-to-Earn Academy from 8 flat single-question modules into a two-
 *   [x] Render the `riskDisclosure` footnote (Courses 4 & 6) inside the quiz dialog above the lecture panel.
 
 ### Sprint 22.6: Tests & Verification
-*   [x] Add content-schema validation tests: unique/contiguous chapter IDs, valid `correctIndex`, 3–5 questions/chapter, 3–4 lectures/chapter, tiered reward amounts.
+*   [x] Add content-schema validation tests: unique/contiguous chapter IDs, valid `correctIndex`, 3â€“5 questions/chapter, 3â€“4 lectures/chapter, tiered reward amounts.
 *   [x] Add scoring/pass-threshold tests for the multi-question engine.
 *   [x] Add backward-compatibility tests for legacy `academy_data.json` parsing.
 *   [x] Add `riskDisclosure` coverage checks (required on Courses 4 & 6) to validation and file tests.
 *   [x] Update the Authoritative Manual Verification Protocol with the Academy v2 checklist.
 
 ### Sprint 22.7: Accordion Deck, Progressive Unlock & Premium Motion
-*   [x] Refactor the lessons deck into a single-open accordion (`CourseDeck`) — at most one course expanded at a time, chapters slide in/out via `AnimatedVisibility`.
-*   [x] Add progressive course unlocking via `AcademyScoring.unlockedCourseIds` (course N requires all chapters of course N−1 completed); locked headers dimmed + 🔒.
-*   [x] Add a **"read freely, earn when ready" preview model**: locked courses expand to show dimmed chapter cards (🔒 "Preview" chip instead of a reward); opening a locked chapter shows fully readable lectures with the assessment entry replaced by a locked card naming the course to finish first.
-*   [x] Add "Skip Lectures → Take Assessment 📝" outlined shortcut in lecture mode so users can jump straight to the knowledge check.
+*   [x] Refactor the lessons deck into a single-open accordion (`CourseDeck`) â€” at most one course expanded at a time, chapters slide in/out via `AnimatedVisibility`.
+*   [x] Add progressive course unlocking via `AcademyScoring.unlockedCourseIds` (course N requires all chapters of course Nâˆ’1 completed); locked headers dimmed + ðŸ”’.
+*   [x] Add a **"read freely, earn when ready" preview model**: locked courses expand to show dimmed chapter cards (ðŸ”’ "Preview" chip instead of a reward); opening a locked chapter shows fully readable lectures with the assessment entry replaced by a locked card naming the course to finish first.
+*   [x] Add "Skip Lectures â†’ Take Assessment ðŸ“" outlined shortcut in lecture mode so users can jump straight to the knowledge check.
 *   [x] Move the tier badge onto its own line below the course title (long titles are ellipsized) so the badge can never wrap vertically.
-*   [x] Build the reusable `PremiumMotion` animation toolkit (`ui/common/PremiumMotion.kt`): staggered entrances, neon glow pulse, shimmer progress, rotating chevron, lock-shake, one-shot sparkle burst, finite confetti — all gated behind `LocalPremiumMotionEnabled` for idle-safe tests.
+*   [x] Build the reusable `PremiumMotion` animation toolkit (`ui/common/PremiumMotion.kt`): staggered entrances, neon glow pulse, shimmer progress, rotating chevron, lock-shake, one-shot sparkle burst, finite confetti â€” all gated behind `LocalPremiumMotionEnabled` for idle-safe tests.
 *   [x] Add `AcademyAccordionTest` (8 Robolectric cases covering expand/collapse, single-open, locked preview states, progressive unlock) and `AcademyScreenshotTest` (Roborazzi collapsed vs expanded deck).
 *   [x] Extend `AcademyScoringTest` with `unlockedCourseIds` cases (17 total) and document `PremiumMotion` in `docs/architecture.md`.
 
 ### Sprint 22.8: Academy-Aligned Missions & Claimable Rewards
 *   [x] Upgrade the Missions tab to an Academy-aware reward loop: expanded `missions_data.json` catalog (7 missions) with `targetCount`/`targetCourseId` fields, including course-completion ("Course Crusher", "Derivatives Debut"), progressive-unlock ("Beyond Beginner"), and certificate ("Certified Risk Manager") missions.
-*   [x] Add `AcademyScoring.evaluateMission(mission, completedSet, academyCourses, unlockedIds, stats): MissionEvaluation` — a pure, testable engine that replaces the inline `when` block, computing per-mission progress and completion from real course/chapter state.
-*   [x] Add claimable rewards: `claimedMissions` CSV on `UserProfile`, Room migration 22→23 (`ALTER TABLE user_profile ADD COLUMN claimedMissions`), and idempotent `TradingRepository.claimMissionReward()` that credits `cash`/`startingCash` and writes a `ledger_entries` CREDIT row.
-*   [x] Add `TradingViewModel.claimedMissions` StateFlow + `claimMission()` (feedback + confetti) and a Claim button on completed-but-unclaimed `MissionRow`s with progress bars and a "Claimed ✓" state.
+*   [x] Add `AcademyScoring.evaluateMission(mission, completedSet, academyCourses, unlockedIds, stats): MissionEvaluation` â€” a pure, testable engine that replaces the inline `when` block, computing per-mission progress and completion from real course/chapter state.
+*   [x] Add claimable rewards: `claimedMissions` CSV on `UserProfile`, Room migration 22â†’23 (`ALTER TABLE user_profile ADD COLUMN claimedMissions`), and idempotent `TradingRepository.claimMissionReward()` that credits `cash`/`startingCash` and writes a `ledger_entries` CREDIT row.
+*   [x] Add `TradingViewModel.claimedMissions` StateFlow + `claimMission()` (feedback + confetti) and a Claim button on completed-but-unclaimed `MissionRow`s with progress bars and a "Claimed âœ“" state.
 *   [x] Update certificate-card total to use the live 68-chapter academy count.
 *   [x] Extend `AcademyScoringTest` with 10 `evaluateMission` cases and `TradingRepositoryTest` with 4 claim/idempotency/parse cases; document the mission engine in `docs/architecture.md`.
 
 ### Sprint 22.9: Reward Economy Retune (Anti-Inflation)
-*   [x] Retune per-chapter rewards to a **mild** scale (BEGINNER ₹500 / INTERMEDIATE ₹750 / ADVANCED ₹1,000) in `academy_data_v2.json` and `TradingViewModel.tierReward()`, cutting the full-academy payout from ₹730,000 to **₹53,500** (~2.1× the ₹25,000 starting budget instead of ~29×).
-*   [x] Normalize legacy `academy_data.json` fallback rewards to ₹500 (all map to the synthetic BEGINNER course).
+*   [x] Retune per-chapter rewards to a **mild** scale (BEGINNER â‚¹500 / INTERMEDIATE â‚¹750 / ADVANCED â‚¹1,000) in `academy_data_v2.json` and `TradingViewModel.tierReward()`, cutting the full-academy payout from â‚¹730,000 to **â‚¹53,500** (~2.1Ã— the â‚¹25,000 starting budget instead of ~29Ã—).
+*   [x] Normalize legacy `academy_data.json` fallback rewards to â‚¹500 (all map to the synthetic BEGINNER course).
 *   [x] Update `tierReward()` unit assertions, chapter fixtures, and the content-spec documentation to the new scale.
 
 ### Sprint 22.10: F&O Gate Fix & Vector Icon Migration

@@ -3,7 +3,6 @@ package com.ashwathai.tradelab.ui.profile
 import java.util.Locale
 import androidx.compose.ui.draw.alpha
 import com.ashwathai.tradelab.MainActivity
-import com.ashwathai.tradelab.ui.common.NativeAdRow
 import com.ashwathai.tradelab.rememberLaunchPromo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -78,7 +77,6 @@ import com.ashwathai.tradelab.ui.profile.*
 fun ProfileScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
-    nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null
 ) {
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
@@ -90,8 +88,6 @@ fun ProfileScreen(
     val scrollState = rememberScrollState()
 
     var isAdLoading by remember { mutableStateOf(false) }
-    var activeAdRewardType by remember { mutableStateOf<String?>(null) }
-    var adTimerSec by remember { mutableStateOf(0) }
     var adLoadFailedMessage by remember { mutableStateOf<String?>(null) }
     var adFailedType by remember { mutableStateOf<String?>(null) }
     var requestedRefundAmount by remember { mutableStateOf<Double?>(null) }
@@ -498,11 +494,6 @@ fun ProfileScreen(
             }
         }
 
-        // Native Ad Spot 1 - After Investor Maturity
-        nativeAd?.let { ad ->
-            NativeAdRow(nativeAd = ad)
-            Spacer(modifier = Modifier.height(12.dp))
-        }
 
         // 2.6 Premium Bypass Audit
         if (!stats.isPremium) {
@@ -626,7 +617,7 @@ fun ProfileScreen(
                                             )
                                         } else {
                                             isAdLoading = false
-                                            activeAdRewardType = "CASH"
+                                            viewModel.showFeedback("No ad available right now")
                                         }
                                     }
                                 }
@@ -683,7 +674,7 @@ fun ProfileScreen(
                                             )
                                         } else {
                                             isAdLoading = false
-                                            activeAdRewardType = "SHIELD"
+                                            viewModel.showFeedback("No ad available right now")
                                         }
                                     }
                                 }
@@ -743,7 +734,7 @@ fun ProfileScreen(
                                             )
                                         } else {
                                             isAdLoading = false
-                                            activeAdRewardType = "AI"
+                                            viewModel.showFeedback("No ad available right now")
                                         }
                                     }
                                 }
@@ -812,7 +803,7 @@ fun ProfileScreen(
                                             )
                                         } else {
                                             isAdLoading = false
-                                            activeAdRewardType = "INDICATORS"
+                                            viewModel.showFeedback("No ad available right now")
                                         }
                                     }
                                 }
@@ -878,7 +869,7 @@ fun ProfileScreen(
                                             )
                                         } else {
                                             isAdLoading = false
-                                            activeAdRewardType = "LEVERAGE"
+                                            viewModel.showFeedback("No ad available right now")
                                         }
                                     }
                                 }
@@ -1653,11 +1644,6 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Native Ad Spot 2 - Above Sign Out
-        nativeAd?.let { ad ->
-            NativeAdRow(nativeAd = ad)
-            Spacer(modifier = Modifier.height(12.dp))
-        }
 
         // Logout Button
         OutlinedButton(
@@ -1886,60 +1872,7 @@ fun ProfileScreen(
                 }
             }
         }
-    } else if (activeAdRewardType != null) {
-        Dialog(onDismissRequest = { }) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(DarkSurfaceElevated)
-                    .border(1.dp, BrandViolet, RoundedCornerShape(24.dp))
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = BrandViolet, modifier = Modifier.size(44.dp))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Streaming Sponsored Message...",
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Thank you for supporting Trade Lab! Your reward unlocks in ${adTimerSec}s.",
-                        color = TextSubtle,
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-
-        LaunchedEffect(activeAdRewardType) {
-            adTimerSec = 3
-            while (adTimerSec > 0) {
-                kotlinx.coroutines.delay(1000)
-                adTimerSec--
-            }
-            if (activeAdRewardType?.startsWith("REFUND_") == true) {
-                val amt = activeAdRewardType?.removePrefix("REFUND_")?.toDoubleOrNull() ?: 25000.0
-                viewModel.resetPortfolio(amt, stats.riskLevel)
-            } else {
-                when (activeAdRewardType) {
-                    "CASH" -> viewModel.earnEmergencyCash(1000.0)
-                    "REPLENISH_CASH" -> viewModel.earnEmergencyCash(1000.0)
-                    "SHIELD" -> viewModel.earnBrokerageCredits(100)
-                    "AI" -> viewModel.earnAiAuditCredit()
-                    "INDICATORS" -> viewModel.unlockPremiumIndicators(24)
-                    "LEVERAGE" -> viewModel.unlockIntradaySession()
-                }
-            }
-            activeAdRewardType = null
-        }
-    } else    if (showEditProfileDialog) {
+    } else if (showEditProfileDialog) {
         var editName by remember { mutableStateOf(userProfile?.userName ?: "") }
         var editEmail by remember { mutableStateOf(userProfile?.userEmail ?: "") }
         var editPhone by remember { mutableStateOf(userProfile?.phoneNumber ?: "") }
@@ -1996,18 +1929,18 @@ fun ProfileScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.ErrorOutline, contentDescription = "Error", tint = AccentRose)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Sponsor Stream Failed", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("Ad Unavailable", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "We couldn't connect to our ad network partner ($adLoadFailedMessage).",
+                        text = "No ad available right now ($adLoadFailedMessage).",
                         color = Color.White,
                         fontSize = 12.sp
                     )
                     Text(
-                        text = "Would you like to unlock this premium reward for free via our sponsor fallback channel instead?",
+                        text = "Rewards are granted for completed ad views only. Please try again later.",
                         color = TextSubtle,
                         fontSize = 11.sp
                     )
@@ -2015,16 +1948,10 @@ fun ProfileScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        val reward = adFailedType
-                        adLoadFailedMessage = null
-                        if (reward != null) {
-                            activeAdRewardType = reward
-                        }
-                    },
+                    onClick = { adLoadFailedMessage = null },
                     colors = ButtonDefaults.buttonColors(containerColor = BrandViolet)
                 ) {
-                    Text("Unlock Free", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    Text("OK", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 }
             },
             dismissButton = {

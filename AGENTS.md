@@ -159,6 +159,44 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 
 ---
 
+## Unity LevelPlay Monetization (Epic 26)
+
+> **Status: ✅ Code Complete / ⏳ Awaiting LevelPlay Activation**
+> AdMob banned → migrated to Unity LevelPlay (ironSource). Full integration guide: [`docs/LEVELPLAY_GUIDE.md`](docs/LEVELPLAY_GUIDE.md)
+>
+> **Key facts:** appkey `27b051bfd` · SDK 9.5.0 · ironSource Exchange = default demand ·
+> rewarded + interstitial wired · natives removed (need adapter) · fallback leaks closed ·
+> graceful no-ad states · session revocation waves managed via L3 self-heal
+>
+> **Pending:** ad unit activation (LevelPlay platform) · test on real device ·
+> native ads (needs mediated network) · consent flow (ConsentView follow-up)
+
+---
+
+## Academy Video Manifest & Hindi (Epic 27)
+
+> **Status: ✅ LIVE — 92 videos + manifest v1 in production**
+> Remote video delivery so new batches appear **without app releases**.
+>
+> **Flow:** `nlm/upload_to_firebase.py` (firebase CLI login auth — REST uploads;
+> SA optional) → `gs://tradelab-4f858/videos/**` + `videos/manifest.json`
+> (public read via deployed `storage.rules`) → app `VideoManifestRepository`
+> (cache-first, 24h TTL, offline-surviving) → `LectureScreen` resolves
+> remote URL > bundled raw > blank. Dynamic EN/हिंदी toggle renders
+> per-lecture only when a Hindi variant exists.
+>
+> **Ops:** `python nlm/upload_to_firebase.py` (add `--dry-run`/`--list`/`--probe`).
+> If the CLI session token goes stale, run any `firebase` command to refresh.
+> Hindi: drop `lecture_X_Y_Z_HI_final.mp4` in `nlm/assets/out/` → re-run upload.
+>
+> ⚠️ **VIDEO WIRING RULE (No Dead-Ends):** Only set `videoUrl` in
+> `academy_data_v2.json` when the asset ACTUALLY exists — polished mp4 bundled
+> in `res/raw/` AND uploaded to Storage (manifest entry). A non-blank `videoUrl`
+> pointing to a missing asset renders a BLACK BROKEN PLAYER, not "coming soon".
+> Blank `videoUrl` = "Video lecture coming soon" card. Never pre-wire.
+
+---
+
 ## NLM Video Pipeline Documentation
 
 > **⚡ CURRENT SYSTEM: `nlm/pipeline.py` (Manager v2)** — a unified menu-driven manager

@@ -60,7 +60,6 @@ fun PortfolioScreen(
     viewModel: TradingViewModel,
     stats: PortfolioStats,
     latestNews: List<MarketNews>,
-    nativeAd: com.google.android.gms.ads.nativead.NativeAd? = null,
     onTickerClick: (String) -> Unit
 ) {
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -276,12 +275,6 @@ fun PortfolioScreen(
                 EquityCurveWidget(accountSnapshots, stats.currency)
             }
 
-            if (nativeAd != null && !stats.isPremium) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                    NativeAdRow(nativeAd = nativeAd)
-                }
-            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -296,22 +289,13 @@ fun PortfolioScreen(
                 border = BorderStroke(1.dp, if (stats.isPremium) DynamicPrimary.copy(alpha = 0.4f) else if (shieldActive) AccentGreen.copy(alpha = 0.3f) else AccentRose.copy(alpha = 0.3f))
             ) {
                 val mainActivity = context as? MainActivity
-                var isWatchingAd by remember { mutableStateOf(false) }
                 var isAdLoading by remember { mutableStateOf(false) }
-                var adTimer by remember { mutableIntStateOf(0) }
                 
-                if (isAdLoading || isWatchingAd) {
+                if (isAdLoading) {
                     Row(modifier = Modifier.padding(10.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = BrandViolet)
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = DynamicPrimary)
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text(if (isAdLoading) "Connecting..." else "Watching... ${adTimer}s", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-                    if (isWatchingAd) {
-                        LaunchedEffect(Unit) {
-                            adTimer = 2
-                            while (adTimer > 0) { kotlinx.coroutines.delay(1000); adTimer-- }
-                            viewModel.earnBrokerageCredits(50); isWatchingAd = false
-                        }
+                        Text("Connecting...", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 } else {
                     Row(modifier = Modifier.padding(10.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -327,7 +311,7 @@ fun PortfolioScreen(
                             if (stats.isPremium) viewModel.showFeedback("Pro Active!")
                             else {
                                 if (stats.shouldShowShieldDialog) showShieldDialog = true
-                                else { isAdLoading = true; mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(20) }) ?: run { isAdLoading = false; isWatchingAd = true } }
+                                else { isAdLoading = true; mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; viewModel.showFeedback("No ad available right now") }, { viewModel.earnBrokerageCredits(20) }) ?: run { isAdLoading = false; viewModel.showFeedback("No ad available right now") } }
                             }
                         }.padding(horizontal = 8.dp, vertical = 5.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -350,7 +334,7 @@ fun PortfolioScreen(
                         onWatchAd = { 
                             showShieldDialog = false
                             isAdLoading = true
-                            mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; isWatchingAd = true }, { viewModel.earnBrokerageCredits(20) }) ?: run { isAdLoading = false; isWatchingAd = true }
+                            mainActivity?.loadAndShowRewardedAd(MainActivity.AdType.PORTFOLIO_SHIELD, { isAdLoading = false }, { isAdLoading = false; viewModel.showFeedback("No ad available right now") }, { viewModel.earnBrokerageCredits(20) }) ?: run { isAdLoading = false; viewModel.showFeedback("No ad available right now") }
                         },
                         onDoNotShowAgain = { viewModel.setShouldShowShieldDialog(false) }
                     )

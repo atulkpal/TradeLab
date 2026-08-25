@@ -59,3 +59,25 @@ nlm/assets_old/
 nlm/tracking/
 nlm/batch_progress.json
 nlm/batch_results.json
+
+# Strays never to commit
+app.zip
+nlm/docs.zip
+nlm/unicode_chars.txt
+check_main.py
+academy_data_v2_pretty.json
+nlm/0[1-6]-*.md
+
+# Preview-only bundled videos (regenerable from nlm/assets/out; production = Firebase)
+app/src/main/res/raw/lecture_*.mp4
+
+# adb screenshots (temp)
+/_*.png
+
+# Office lock files (CSV open in Excel/LibreOffice during runs)
+nlm/.~lock.*
+*.~lock.*
+# Firebase service account keys (NEVER commit)
+**/firebase-service-account*.json
+**/*firebase-adminsdk*.json
+**/play-account*.json
