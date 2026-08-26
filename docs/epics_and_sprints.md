@@ -106,7 +106,7 @@ Transform the Academy from a flat, theme-broken card list into a visually distin
 
 ---
 
-## Epic 26: Unity LevelPlay Monetization Migration (Status: ✅ Code Complete / ⏳ Awaiting LevelPlay Activation)
+## Epic 26: Unity LevelPlay Monetization Migration (Status: ✅ **ADS LIVE** — serving verified on device)
 Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b051bfd`). Zero AdMob SDK trace. Revenue-critical. Architecture: see `docs/architecture.md` § Multi-Format Monetization Infrastructure.
 
 ### Sprint 26.1: Foundation & Rewarded Core
@@ -128,11 +128,24 @@ Hard-cut migration from AdMob (account banned) to Unity LevelPlay (`appKey 27b05
 *   [x] **Manual Verification Protocol**: ad placements matrix (screen × format × reward), consent first-launch flow, premium-bypass checks.
 
 **Known Pending Issues (resolve when testing on real device):**
-1. **Emulator excludes rewarded ads** — Unity Ads returns 1024 no-fill on emulators; test on real device
-2. **Account approval in review** — payment + company info submitted (2026-08-25); awaiting Unity review (1-3 business days) → live ads serve automatically, no redeploy
-3. **Ad unit propagation** — newly created dashboard ad units take 15-30 min to activate on serving side
+1. ~~Emulator excludes rewarded ads~~ — documented; real device required (verified)
+2. ~~Account approval~~ → **SERVING CONFIRMED 2026-08-26**: ironSource Exchange test creatives serve to the registered test device pre-approval; live demand unlocks on approval. Unity Ads bidder initialized + generating valid tokens (hasn't won a test-device impression yet — normal)
+3. ~~Ad unit propagation~~ → **LESSON: new units/app can take HOURS to provision server-side** — `626 Invalid ad unit id` during that window even with perfect config; patience, not code
 4. **Session revocation waves** — Google risk system kills sessions every 2-20h on flagged accounts; L3 self-heal + spaced re-auths manage this
-5. **Native ads removed** — need mediated network adapter; fast-follow when a network is onboarded
+5. **Native ads removed** — need mediated network adapter (Meta); fast-follow
+6. **Post-click display timeout (SDK quirk)** — clicking inside an ad can break the next show ("Screen visible timeout"); force-stop clears it. Documented; watch with real creatives
+
+**⚠️ RESOLVED 2026-08-26 — the 3 fail-open ad leaks (fail-closed now, guarded by `AdFailClosedGuardTest`):**
+1. ✅ WATCHLIST_CREATE — no more free sheets on ad failure
+2. ✅ PORTFOLIO_RESET — no more free resets on ad failure
+3. ✅ PROFILE_LEVERAGE — no more free intraday unlock on ad failure
+
+**💥 ROOT-CAUSE LESSON (cost ~1 day): the Unity Ads adapter does NOT bundle the Unity Ads SDK.**
+`unityads-adapter` (any version) has a zero-dependency POM. You MUST also add
+`com.unity3d.ads:unity-ads:<version>` explicitly (current pairing: adapter 5.12.0 ↔ SDK 4.20.0).
+Without it: compiles fine, runs fine, but the adapter crashes with
+`NoClassDefFoundError: com.unity3d.ads.IUnityAdsInitializationListener` → zero Unity Ads
+demand, forever. Verified via APK inspection (no `com.unity3d.ads` classes) + logcat.
 
 **⚠️ BACKLOG (2026-08-25) — 3 fail-open ad leaks found, fix deferred by owner (do NOT ship to production before fixing):**
 While ads don't serve (LevelPlay pending), these grant rewards WITHOUT an ad:
