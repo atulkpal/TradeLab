@@ -3,6 +3,27 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [2.1.1] - Video Learning Update - 2026-08-26
+
+### Added
+- **Academy Redesign (Epic 25):** Full-screen LectureScreen, video-first lessons, Shorts-style fullscreen playback, course card v3, gamification (streak/XP).
+- **Remote Video Manifest (Epic 27):** 92 branded lectures on Firebase Storage; manifest-driven delivery (24h cache, offline-surviving); dynamic EN/हिंदी toggle; new batches ship without app releases.
+- **Banner ads across 10 screens:** `LevelPlayBanner` composable with adaptive size, `sdkReady` guard, try-catch, zero-height collapse, destroy-on-dispose. All gated `!isPremium`.
+- **Paced chapter-complete interstitial:** fires after every 3rd chapter reward completion, 3-min minimum gap, Pro users skip.
+- **Post-video bonus reward card:** `LectureScreen` bonus card with `onLaunchBonusAd` wired through `MainActivity`.
+- **In-App Update API:** `app-update-ktx:2.1.0`, flexible update prompt on launch, auto-install on resume.
+
+### Changed
+- **Debug = test ads only:** `AdConfig.USE_TEST_ADS = BuildConfig.DEBUG`.
+
+### Fixed
+- **BuySellBottomSheet MIS dialog:** `LocalContext.current` moved to function top scope.
+- **Watchlist drag-to-dismiss:** moved to handle bar only, freeing inner clickables.
+- **AdConfig test key correction:** `85460dcd` → `25b63cf85`.
+- **Guest session persistence:** survives process death (SharedPreferences).
+
+---
+
 ## [2.0.2] - Banner Ads, Interstitial Pacing & Watchlist Fixes - 2026-08-26
 
 ### Added

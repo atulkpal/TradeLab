@@ -4,6 +4,25 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [2.1.1] - Video Learning Update (Open Testing)
+**Release Date:** August 26, 2026  
+**Version Code:** 12  
+**Status:** 🟡 OPEN TESTING
+
+### Summary of Changes
+Academy video-first redesign with remote content delivery, banner ads across 10 screens, paced interstitials, and critical Watchlist fixes.
+
+### Core Changes
+- **Academy Redesign (Epic 25):** Full-screen LectureScreen, video-first lessons, Shorts-style fullscreen playback, course card v3, gamification (streak/XP).
+- **Remote Video Manifest (Epic 27):** 92 branded lectures on Firebase Storage; manifest-driven delivery (24h cache, offline-surviving); dynamic EN/हिंदी toggle; new batches ship without app releases.
+- **Banner ads (10 screens):** `LevelPlayBanner` composable wired to Portfolio, Watchlist, Academy, Commodities, F&O, Charts, Profile — all gated `!isPremium`.
+- **Paced chapter-complete interstitial:** fires after every 3rd chapter reward, 3-min minimum gap, Pro users skip.
+- **In-App Update API:** flexible update prompt on launch, auto-install on resume.
+- **WatchlistScreen fixes:** drag-to-dismiss on handle bar only, LocalContext resolved at function scope, test key corrected.
+- **Guest session persistence:** survives process death (SharedPreferences).
+
+---
+
 ## [2.0.2] - Banner Ads, Interstitial Pacing & Watchlist Fixes
 **Release Date:** August 26, 2026  
 **Version Code:** 12  
