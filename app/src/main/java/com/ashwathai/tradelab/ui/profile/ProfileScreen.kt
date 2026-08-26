@@ -1593,10 +1593,9 @@ fun ProfileScreen(
                                     adType = MainActivity.AdType.PORTFOLIO_RESET,
                                     onAdLoaded = { isAdLoading = false },
                                     onAdFailed = { err ->
+                                        // Fail-closed (Epic 26 backlog): no ad → no free reset
                                         isAdLoading = false
                                         adLoadFailedMessage = err
-                                        // Offline fallback
-                                        viewModel.resetPortfolio(25000.0, stats.riskLevel)
                                     },
                                     onUserEarnedReward = {
                                         viewModel.resetPortfolio(25000.0, stats.riskLevel)
@@ -1604,7 +1603,7 @@ fun ProfileScreen(
                                 )
                             } else {
                                 isAdLoading = false
-                                viewModel.resetPortfolio(25000.0, stats.riskLevel)
+                                adLoadFailedMessage = "Ad host unavailable"
                             }
                         }
                     },

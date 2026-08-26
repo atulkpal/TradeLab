@@ -525,10 +525,10 @@ fun WatchlistScreen(
                                 adType = com.ashwathai.tradelab.MainActivity.AdType.WATCHLIST_CREATE,
                                 onAdLoaded = { isAdLoading = false },
                                 onAdFailed = { err ->
+                                    // Fail-closed (Epic 26 backlog): no ad → no free sheet
                                     isAdLoading = false
-                                    createInput = "Sheet ${watchlistNames.size + 1}"
-                                    showCreateDialog = true
                                     showAdConfirmationDialog = false
+                                    viewModel.showFeedback("No ad available right now — try again shortly")
                                 },
                                 onUserEarnedReward = {
                                     isAdLoading = false
@@ -540,8 +540,7 @@ fun WatchlistScreen(
                         } else {
                             isAdLoading = false
                             showAdConfirmationDialog = false
-                            createInput = "Sheet ${watchlistNames.size + 1}"
-                            showCreateDialog = true
+                            viewModel.showFeedback("No ad available right now — try again shortly")
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = BrandViolet),
@@ -1061,9 +1060,9 @@ fun BuySellBottomSheet(
                                     adType = com.ashwathai.tradelab.MainActivity.AdType.PROFILE_LEVERAGE,
                                     onAdLoaded = { isAdLoadingInsideSheet = false },
                                     onAdFailed = { err: String ->
+                                        // Fail-closed (Epic 26 backlog): no ad → no free unlock
                                         isAdLoadingInsideSheet = false
-                                        viewModel.showFeedback("Ad Failed: $err. Unlocking via offline fallback.")
-                                        viewModel.unlockIntradaySession()
+                                        viewModel.showFeedback("No ad available right now — try again shortly")
                                         showIntradayUnlockDialog = false
                                     },
                                     onUserEarnedReward = {
@@ -1073,7 +1072,7 @@ fun BuySellBottomSheet(
                                 )
                             } else {
                                 isAdLoadingInsideSheet = false
-                                viewModel.unlockIntradaySession()
+                                viewModel.showFeedback("No ad available right now — try again shortly")
                                 showIntradayUnlockDialog = false
                             }
                         },

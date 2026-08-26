@@ -167,6 +167,13 @@ object LevelPlayAdManager {
         }
 
         override fun onAdLoadFailed(error: LevelPlayAdError) {
+            // "Load is already called" = our load raced the SDK's parallelLoad —
+            // the in-flight load will still deliver onAdLoaded. Benign: don't burn
+            // retry budget or surface an error.
+            if (error.errorMessage.contains("already called", ignoreCase = true)) {
+                Log.d(TAG, "Rewarded load skipped (load already in flight)")
+                return
+            }
             Log.e(TAG, "Rewarded load failed: ${error.errorMessage}")
             onAdFailedInternal(error.errorMessage)
         }
@@ -188,6 +195,10 @@ object LevelPlayAdManager {
 
         override fun onAdClosed(adInfo: LevelPlayAdInfo) {
             Log.d(TAG, "Rewarded closed | ${adInfoTag(adInfo)}")
+            // Cycle complete: displayed → (rewarded) → closed. Stale callbacks MUST
+            // be dropped — otherwise the preloaded ad's onAdLoaded re-fires them,
+            // spontaneously re-showing an ad and risking double reward grants.
+            rewardedCallbacks = null
             rewardedRetryCount = 0 // full cycle completed — restore retry budget
             preloadRewarded()
         }
