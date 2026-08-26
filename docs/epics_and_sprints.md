@@ -155,6 +155,9 @@ While ads don't serve (LevelPlay pending), these grant rewards WITHOUT an ad:
 
 **Fix plan (agreed, deferred):** fail-closed all three (feedback only, no grant) + source-scan regression test asserting no `onAdFailed` block calls `resetPortfolio` / `unlockIntradaySession` / `showCreateDialog = true` + ship as 2.0.1 (11) to open testing.
 
+**BACKLOG — Guest auth upgrade path (deferred, planned post-2.0.1):**
+- **Firebase Anonymous Auth** (signInAnonymously): replace the SharedPreferences guest flag with a real anonymous Firebase session. Benefits: guest sessions survive reinstalls, guest->registered upgrade preserves data (conversion path), FCM tokens get a uid for notification targeting. Requires enabling Anonymous sign-in in Firebase console. Current SharedPreferences guest flag (2.0.1) is the interim fix for the minimize->login regression.
+
 **BACKLOG — additional ad surfaces (deferred):**
 - **Banners:** new `LevelPlayBannerView.kt` (Compose wrapper; verify 9.5.0 banner API from AAR), graceful no-fill collapse; spots: Portfolio + Watchlist bottoms. Requires `banner_main` ad unit in LevelPlay dashboard (not yet created).
 - **Paced interstitial:** after every 3rd completed knowledge-check (session-counted, ≥5-min gap, only-if-ready) — placement `post_quiz`.

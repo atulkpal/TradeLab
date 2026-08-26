@@ -4,6 +4,27 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [2.0.1] - Ad Serving Live + Guest Session Fix
+**Release Date:** August 26, 2026  
+**Version Code:** 	\  
+**Status:** 🟡 OPEN TESTING
+
+### Summary of Changes
+First build with LIVE ad serving (production LevelPlay config). Root-caused and fixed the missing Unity Ads SDK dependency, closed the three fail-open reward leaks, and fixed the guest-session login regression.
+
+### Core Changes
+- **Ad serving LIVE (verified on device):** production appkey 27b051bfd; rewarded displayed + reward earned end-to-end (network=ironsourceads test creative); Unity Ads bidder initialized with valid tokens.
+- **ROOT CAUSE FIX — Unity Ads SDK was missing from every prior build:** unityads-adapter POM has zero dependencies and does NOT bundle the SDK; added explicit com.unity3d.ads:unity-ads:4.20.0 + adapter 4.3.55 -> 5.12.0 (official LevelPlay 9.x pairing).
+- **Fail-closed reward surfaces (3 leaks):** WATCHLIST_CREATE, PORTFOLIO_RESET, PROFILE_LEVERAGE no longer grant rewards when ads fail; guarded by AdFailClosedGuardTest (source-scan).
+- **Callback hygiene:** rewardedCallbacks cleared on cycle end (prevented spontaneous re-shows + double-grant risk); benign parallelLoad race no longer burns retry budget; retry counter resets only on genuine success.
+- **Guest session persistence:** guest flag now survives process death (SharedPreferences), fixing the minimize->login-screen regression. Logout clears it.
+- **Release log hygiene:** ProGuard strips Log.v/Log.d from release builds (Log.w/e kept for diagnostics).
+- Self-attributing ad logs (adUnitName/adUnitId/adNetwork/revenue) in every callback.
+
+### Build Artifacts
+- **Release AAB:** elease-aab-2.0.1-11.aab
+---
+
 ## [2.0.0] - Academy Video Platform & Monetization Migration
 **Release Date:** August 25, 2026  
 **Version Code:** `10`  

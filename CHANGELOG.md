@@ -3,6 +3,22 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [2.0.1] - Ad Serving Live + Guest Session Fix - 2026-08-26
+
+### Fixed
+- **Unity Ads SDK missing from all prior builds (root cause):** unityads-adapter POM declares zero dependencies and does not bundle the SDK; added explicit com.unity3d.ads:unity-ads:4.20.0 and upgraded adapter 4.3.55 -> 5.12.0 (official LevelPlay 9.x pairing). Symptom was NoClassDefFoundError: com.unity3d.ads.IUnityAdsInitializationListener -> zero Unity Ads demand.
+- **Guest login regression:** guest sessions now persist across process death (SharedPreferences flag; cleared on logout). Minimize/reopen no longer bounces to the login screen.
+- **Rewarded callback hygiene:** stale callbacks cleared at cycle end (prevented spontaneous re-show attempts and double-grant risk); parallelLoad race no longer counted as load failure.
+
+### Changed
+- **Fail-closed reward surfaces:** WATCHLIST_CREATE / PORTFOLIO_RESET / PROFILE_LEVERAGE no longer grant rewards when ads fail (guarded by AdFailClosedGuardTest source-scan).
+- Release builds strip Log.v/Log.d (ProGuard assumenosideeffects); Log.w/e retained.
+- Rewarded unit migrated to rewarded_v2 (349kle4725uh1kfa) after rewarded_main stuck un-provisioned server-side.
+
+### Verified
+- Live serving on device (registered test device): rewarded displayed -> reward earned -> closed -> preload (network=ironsourceads test creative, revenue 0.0).
+- Unity Ads SDK 4.20.0 initialized with game id 800362159; valid bidding tokens generated per load.
+
 ## [2.0.0] - Academy Video Platform & Monetization Migration - 2026-08-25
 
 ### Added

@@ -225,6 +225,8 @@ class TradingViewModel @Inject constructor(
     private companion object {
         const val ACADEMY_PREFS = "academy_prefs"
         const val ACADEMY_LANG_KEY = "language"
+        const val GUEST_PREFS = "guest_prefs"
+        const val GUEST_MODE_KEY = "guest_mode"
     }
 
     private val _hasDismissedAuthScreen = MutableStateFlow(false)
@@ -497,6 +499,12 @@ class TradingViewModel @Inject constructor(
 
         // Epic 27: one-shot remote video manifest fetch (cache-first, no polling)
         videoManifestRepository.fetchIfNeeded()
+
+        // Guest session persistence: survive process death (login-regression fix).
+        // Guests skip AuthScreen again after the OS reclaims the process.
+        if (loadGuestModePref()) {
+            _hasDismissedAuthScreen.value = true
+        }
 
         // Load theme from profile
         viewModelScope.launch {
@@ -1281,7 +1289,23 @@ class TradingViewModel @Inject constructor(
 
     fun continueAsGuest() {
         _hasDismissedAuthScreen.value = true
+        setGuestModePref(true) // persist across process death (login-regression fix)
         showFeedback("Exploring TradeLab as Guest.")
+    }
+
+    private fun loadGuestModePref(): Boolean = try {
+        context.getSharedPreferences(GUEST_PREFS, Context.MODE_PRIVATE)
+            .getBoolean(GUEST_MODE_KEY, false)
+    } catch (_: Exception) {
+        false
+    }
+
+    private fun setGuestModePref(enabled: Boolean) {
+        try {
+            context.getSharedPreferences(GUEST_PREFS, Context.MODE_PRIVATE)
+                .edit().putBoolean(GUEST_MODE_KEY, enabled).apply()
+        } catch (_: Exception) {
+        }
     }
 
     fun openProBenefits() {
@@ -1379,6 +1403,7 @@ class TradingViewModel @Inject constructor(
         viewModelScope.launch {
             repository.logout()
             _hasDismissedAuthScreen.value = false
+            setGuestModePref(false) // logout clears the persisted guest session
             showFeedback("Logged out successfully.")
         }
     }

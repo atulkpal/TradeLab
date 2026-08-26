@@ -49,3 +49,9 @@
 -keep class com.unity3d.** { *; }
 -dontwarn com.ironsource.**
 -dontwarn com.unity3d.**
+
+# Strip verbose/debug logging from release builds (keep warn/error for diagnostics)
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+}
