@@ -3,6 +3,26 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [2.0.2] - Banner Ads, Interstitial Pacing & Watchlist Fixes - 2026-08-26
+
+### Added
+- **Banner ads across 10 screens:** `LevelPlayBanner` composable with adaptive size, `sdkReady` guard, try-catch, zero-height collapse, destroy-on-dispose. Wired to Portfolio, Watchlist, Academy, Commodities, F&O, Charts, Profile — all gated `!isPremium`.
+- **Paced chapter-complete interstitial:** fires after every 3rd chapter reward completion, 3-min minimum gap, Pro users skip.
+- **Post-video bonus reward card:** `LectureScreen` bonus card with `onLaunchBonusAd` wired through `MainActivity`.
+- **In-App Update API:** `app-update-ktx:2.1.0`, flexible update prompt on launch, auto-install on resume.
+- **Watchlist adaptive tip auto-dismiss:** `CircularProgressIndicator` countdown (5s) with `AnimatedVisibility` fade+slide exit.
+
+### Changed
+- **Debug = test ads only:** `AdConfig.USE_TEST_ADS = BuildConfig.DEBUG`; debug builds use LevelPlay test key `25b63cf85` with test ad units. Release builds use production config.
+- **AdConfig test key correction:** `TEST_APP_KEY` from `85460dcd` → `25b63cf85` (the old key was paired with different ad units that didn't match the test rewarded/interstitial units).
+
+### Fixed
+- **BuySellBottomSheet MIS dialog not appearing:** moved `LocalContext.current` from inside `AlertDialog`'s `confirmButton` composable (resolving to `ContextThemeWrapper`) to `BuySellBottomSheet` function top scope (resolving to `MainActivity`).
+- **Watchlist drag-to-dismiss swallowing MIS tab clicks:** moved `pointerInput` drag gesture from Card root modifier to the sliding handle bar only — freed inner clickable modifiers.
+- **"Invalid ad unit id" (626) on debug builds:** corrected test ad unit IDs to match LevelPlay test app key `25b63cf85`.
+
+---
+
 ## [2.0.1] - Ad Serving Live + Guest Session Fix - 2026-08-26
 
 ### Fixed

@@ -4,6 +4,33 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [2.0.2] - Banner Ads, Interstitial Pacing & Watchlist Fixes
+**Release Date:** August 26, 2026  
+**Version Code:** 12  
+**Status:** 🟡 IN PROGRESS (emulator verified)
+
+### Summary of Changes
+Production banner ads across 10 screens, paced chapter-complete interstitials, bonus reward card, In-App Update API, and critical Watchlist BuySellBottomSheet fixes (drag-to-dismiss, LocalContext resolution, test key correction).
+
+### Core Changes
+- **Banner ads LIVE (10 screens):** `LevelPlayBanner` composable (adaptive size, `sdkReady` guard, try-catch, zero-height collapse, destroy-on-dispose) wired to Portfolio, Watchlist, Academy, Commodities, F&O, Charts, Profile — all gated `!isPremium`.
+- **Debug = test ads only:** `AdConfig.USE_TEST_ADS = BuildConfig.DEBUG`; debug builds use LevelPlay test key `25b63cf85` with test ad units (`syz3d8ekts22q0or` rewarded, `h3xw38h9214adgxo` interstitial, `4fpetq4lhe5lsw3e` banner). Release builds use production config.
+- **Paced chapter-complete interstitial:** fires after every 3rd chapter reward completion, 3-minute minimum gap between shows, Pro users skip.
+- **Post-video bonus reward card:** `LectureScreen` displays bonus card after video completion; `onLaunchBonusAd` wired through `MainActivity`.
+- **In-App Update API:** `app-update-ktx:2.1.0`, flexible update prompt on launch, auto-install on resume.
+- **WatchlistScreen drag-to-dismiss fix:** moved `pointerInput` drag gesture from Card root modifier to the sliding handle bar only — freed inner clickable modifiers (MIS tab) from consuming touch events.
+- **WatchlistScreen LocalContext fix:** moved `val currentContext = LocalContext.current` from inside `AlertDialog`'s `confirmButton` composable (where it resolved to `ContextThemeWrapper`) to `BuySellBottomSheet` function top scope (where it resolves to `MainActivity`).
+- **AdConfig test key fix:** corrected `TEST_APP_KEY` from `85460dcd` → `25b63cf85` and `TEST_BANNER_AD_UNIT_ID` from `thnfvcsog13bhn08` → `4fpetq4lhe5lsw3e` — fixed "Invalid ad unit id" (626) error blocking all rewarded ads on debug builds.
+- **Watchlist adaptive tip auto-dismiss:** `CircularProgressIndicator` countdown (5s), `AnimatedVisibility` fade+slide exit.
+
+### Verified
+- Rewarded ad chain from BuySellBottomSheet MIS tab: dialog → WATCH AD → onAdDisplayed → onAdRewarded → onAdClosed → MIS unlocked.
+- Banner ads loading and displaying across all 10 screens.
+- Chapter-complete interstitial firing on 3rd reward with 3-min pacing.
+- In-App Update prompt appearing on app launch.
+
+---
+
 ## [2.0.1] - Ad Serving Live + Guest Session Fix
 **Release Date:** August 26, 2026  
 **Version Code:** 	\  

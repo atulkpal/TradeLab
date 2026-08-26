@@ -941,12 +941,19 @@ class TradingViewModel @Inject constructor(
     }
 
     // Complete tutorial level and earn capital
+    // Paced chapter-complete interstitial (2.0.2) — emitted AFTER reward grant; Pro users never emit
+    private val _chapterInterstitialEvent = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val chapterInterstitialEvent: kotlinx.coroutines.flow.SharedFlow<Unit> = _chapterInterstitialEvent
+
     fun completeTutorial(levelId: Int, reward: Double) {
         viewModelScope.launch {
             repository.completeTutorialLevel(levelId, reward)
             val sym = if (portfolioStats.value.currency == "INR") "₹" else "$"
             showFeedback("Mission Completed! Earned $sym${String.format("%.0f", reward)}!")
             triggerConfetti()
+            if (!portfolioStats.value.isPremium) {
+                _chapterInterstitialEvent.emit(Unit)
+            }
         }
     }
 

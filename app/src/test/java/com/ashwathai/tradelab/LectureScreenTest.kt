@@ -85,12 +85,13 @@ class LectureScreenTest {
         setContent()
         composeRule.onNodeWithText("Lecture 1.1.1: Fractional Ownership Explained").assertIsDisplayed()
         composeRule.onNodeWithText("Video lecture coming soon for this lesson.").assertIsDisplayed()
-        composeRule.onNodeWithTag("start_knowledge_check").assertIsDisplayed()
+        composeRule.onNodeWithTag("start_knowledge_check").performScrollTo().assertIsDisplayed()
     }
 
     @Test
     fun `locked chapter shows locked assessment`() {
         setContent(locked = true)
+        composeRule.onNodeWithTag("locked_assessment").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Assessment Locked").assertIsDisplayed()
     }
 

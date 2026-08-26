@@ -36,6 +36,7 @@ import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.TradingViewModel
 import com.ashwathai.tradelab.ui.theme.*
 import com.ashwathai.tradelab.ui.common.*
+import kotlinx.coroutines.delay
 import com.ashwathai.tradelab.ui.charts.*
 import java.util.Locale
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -376,24 +377,48 @@ fun WatchlistScreen(
             }
         }
 
-        // Educational Context Tip - Adaptive
+        // 2.0.2: banner footer (Pro users skip)
+        if (!stats.isPremium) {
+            LevelPlayBanner(modifier = Modifier.padding(vertical = 6.dp))
+        }
+
+        // Educational Context Tip - Adaptive (auto-dismiss after 5s)
         var isTipDismissed by remember { mutableStateOf(false) }
         val adaptiveTip by viewModel.adaptiveGuidanceText.collectAsStateWithLifecycle()
-        if (!isTipDismissed && adaptiveTip.isNotEmpty()) {
+        var tipProgress by remember { mutableStateOf(1f) }
+        LaunchedEffect(adaptiveTip) {
+            isTipDismissed = false
+            tipProgress = 1f
+            for (i in 100 downTo 0) {
+                tipProgress = i / 100f
+                delay(50L)
+            }
+            isTipDismissed = true
+        }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = !isTipDismissed && adaptiveTip.isNotEmpty(),
+            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.slideOutVertically { it / 2 }
+        ) {
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DynamicPrimary.copy(alpha = 0.05f)),
                 border = BorderStroke(1.dp, DynamicPrimary.copy(alpha = 0.2f))
             ) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.School, null, tint = BrandViolet, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text("RISK • ACTION • DISCIPLINE", color = BrandViolet, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                         Text(adaptiveTip, color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp, lineHeight = 14.sp)
                     }
-                    IconButton(onClick = { isTipDismissed = true }, modifier = Modifier.size(20.dp)) { Icon(Icons.Default.Close, null, tint = TextMuted, modifier = Modifier.size(12.dp)) }
+                    CircularProgressIndicator(
+                        progress = { tipProgress },
+                        modifier = Modifier.size(20.dp),
+                        color = BrandViolet,
+                        trackColor = BrandViolet.copy(alpha = 0.1f),
+                        strokeWidth = 2.dp
+                    )
                 }
             }
         }
@@ -680,6 +705,7 @@ fun BuySellBottomSheet(
     initialIsExpanded: Boolean = false,
     onDismiss: () -> Unit
 ) {
+    val currentContext = androidx.compose.ui.platform.LocalContext.current
     val focusManager = LocalFocusManager.current
     var isBuy by remember(stock.symbol) { mutableStateOf(initialIsBuy) }
     var sharesInput by remember(stock.symbol) { mutableStateOf("") }
@@ -714,12 +740,6 @@ fun BuySellBottomSheet(
             .fillMaxWidth()
             .fillMaxHeight(if (isExpanded) 0.95f else 0.65f)
             .navigationBarsPadding()
-            .pointerInput(Unit) {
-                detectVerticalDragGestures { _, dragAmount ->
-                    if (dragAmount > 20f) { if (isExpanded) isExpanded = false else onDismiss() }
-                    else if (dragAmount < -20f) isExpanded = true
-                }
-            }
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focusManager.clearFocus() }
             .animateContentSize()
             .testTag("buy_sell_bottom_sheet"),
@@ -729,7 +749,16 @@ fun BuySellBottomSheet(
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp).fillMaxSize()) {
             // Sliding Handle
-            Box(modifier = Modifier.width(36.dp).height(4.dp).background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(2.dp)).align(Alignment.CenterHorizontally))
+            Box(modifier = Modifier
+                .width(36.dp).height(4.dp)
+                .background(Color.White.copy(alpha = 0.15f), RoundedCornerShape(2.dp))
+                .align(Alignment.CenterHorizontally)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { _, dragAmount ->
+                        if (dragAmount > 20f) { if (isExpanded) isExpanded = false else onDismiss() }
+                        else if (dragAmount < -20f) isExpanded = true
+                    }
+                })
             
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -1050,7 +1079,6 @@ fun BuySellBottomSheet(
                     }
                 },
                 confirmButton = {
-                    val currentContext = androidx.compose.ui.platform.LocalContext.current
                     Button(
                         onClick = {
                             isAdLoadingInsideSheet = true

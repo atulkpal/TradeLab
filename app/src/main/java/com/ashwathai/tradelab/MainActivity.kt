@@ -82,11 +82,19 @@ import com.ashwathai.tradelab.ui.commodities.*
 import com.ashwathai.tradelab.ui.profile.*
 
 import dagger.hilt.android.AndroidEntryPoint
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: TradingViewModel by viewModels()
     private lateinit var billingManager: BillingManager
+    private lateinit var appUpdateManager: AppUpdateManager
 
     enum class AdType {
         ACADEMY_DOUBLE,
@@ -98,6 +106,7 @@ class MainActivity : ComponentActivity() {
         WATCHLIST_CREATE,
         PORTFOLIO_RESET,
         PROFILE_LEVERAGE,
+        BONUS_CAPITAL,
         APP_OPEN,
         NATIVE_WATCHLIST,
         PROFILE_BANNER
@@ -154,6 +163,26 @@ class MainActivity : ComponentActivity() {
         notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
     }
 
+    // ── In-App Update (2.0.2): flexible, non-blocking ──
+    private fun checkForInAppUpdate() {
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+                val options = AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build()
+                appUpdateManager.startUpdateFlow(info, this, options)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.installStatus() == InstallStatus.DOWNLOADED) {
+                android.widget.Toast.makeText(this, "Update ready — installing...", android.widget.Toast.LENGTH_LONG).show()
+                appUpdateManager.completeUpdate()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -164,6 +193,10 @@ class MainActivity : ComponentActivity() {
         // Initialize Unity LevelPlay (Epic 26) - replaces AdMob
         LevelPlayAdManager.init(application)
         LevelPlayAdManager.trackActivity(this)
+
+        // In-App Update check (2.0.2) — flexible, non-blocking
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        checkForInAppUpdate()
         
         createNotificationChannel()
 
@@ -186,9 +219,16 @@ class MainActivity : ComponentActivity() {
             val hasDismissedAuthScreen by viewModel.hasDismissedAuthScreen.collectAsStateWithLifecycle()
             val isInitialized by viewModel.isInitialized.collectAsStateWithLifecycle()
 
+            // Paced chapter-complete interstitial (2.0.2) — fires after every 3rd
+            // chapter reward, 3-min min gap, only-if-ready; skipped for Pro users
+            androidx.compose.runtime.LaunchedEffect(Unit) {
+                viewModel.chapterInterstitialEvent.collect {
+                    LevelPlayAdManager.maybeShowChapterInterstitial(this@MainActivity)
+                }
+            }
+
             // Notification permission (API 33+), requested once after entering the app
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                var notifPermRequested by androidx.compose.runtime.saveable.rememberSaveable {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {                var notifPermRequested by androidx.compose.runtime.saveable.rememberSaveable {
                     mutableStateOf(false)
                 }
                 val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -876,6 +916,18 @@ fun MainContent(
                     manifestReady = manifestReady,
                     onToggleAcademyLanguage = { viewModel.toggleAcademyLanguage() },
                     resolveLectureVideo = { viewModel.lectureMedia(it) },
+                    onLaunchBonusAd = { onLoaded, onFailed, onReward ->
+                        mainActivity?.loadAndShowRewardedAd(
+                            adType = MainActivity.AdType.BONUS_CAPITAL,
+                            onAdLoaded = onLoaded,
+                            onAdFailed = onFailed,
+                            onUserEarnedReward = {
+                                viewModel.earnBrokerageCredits(100)
+                                viewModel.showFeedback("Bonus claimed: +100 Brokerage Credits!")
+                                onReward()
+                            }
+                        ) ?: onFailed("Ad host unavailable")
+                    },
                     onDismiss = { activeQuizLevelId = null },
                     onCompleteStandard = { viewModel.completeTutorial(quiz.id, quiz.rewardAmt) },
                     onCompleteDouble = { viewModel.completeTutorial(quiz.id, quiz.rewardAmt * 2.0) },

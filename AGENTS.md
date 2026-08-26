@@ -101,14 +101,22 @@ The **Architectural Modernization** has been successfully verified:
     *   Migrated to **Moshi Codegen** (reflection-free parsing) to resolve R8/Obfuscation crashes on release builds.
     *   Hardened **ProGuard rules** for the `:shared` module and data packages.
     *   Implemented an **In-App Diagnostic Suite** (Crash Logger + Secret Viewer via long-press on version) for field troubleshooting.
+16. **v2.0.2 — Banner Ads, Interstitial Pacing & Watchlist Fixes:**
+    *   `LevelPlayBanner` composable wired to 10 screens (all gated `!isPremium`).
+    *   `USE_TEST_ADS = BuildConfig.DEBUG` — debug builds use test key `25b63cf85`.
+    *   Paced chapter-complete interstitial (every 3rd reward, 3-min gap, Pro skips).
+    *   Post-video bonus reward card in `LectureScreen`.
+    *   In-App Update API (`app-update-ktx:2.1.0`).
+    *   BuySellBottomSheet MIS dialog fix: `LocalContext` moved to function top scope, drag-to-dismiss on handle bar only, test key corrected.
 
 ---
 
 ## 4. Current Work & Next Milestones
 
-We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, and the **Hyper-Personalization Suite**. The app is now at **v1.8.1 (Build 8)** and ready for production distribution.
+We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, the **Hyper-Personalization Suite**, and **Unity LevelPlay monetization**. The app is now at **v2.0.2 (Build 12)** with live banner ads, paced interstitials, and verified rewarded ad flows.
 
 ### What is Active Right Now (Post-Launch & Multi-Platform Prep)
+*   **v2.0.2 testing on emulator/physical device** — banner ads, interstitial pacing, Watchlist MIS dialog fixes verified.
 *   **KMP Migration:** Moving core entities and repositories to Kotlin Multiplatform (KMP) to support iOS.
 *   **Time-Travel Mode (Backlog):** Historical simulation engine.
 
@@ -177,9 +185,13 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 > natives removed (need mediated adapter) · consent metadata v1
 >
 > **Pending:** ironSource approval email (gates live demand for non-registered
-> devices; test creatives already flow to registered devices) · banners + paced
-> interstitial (backlog) · consent flow (ConsentView follow-up) · post-click
+> devices; test creatives already flow to registered devices) · consent flow
+> (ConsentView follow-up) · native ads (need mediated adapter) · post-click
 > display timeout (SDK quirk, documented)
+>
+> **✅ Done (v2.0.2):** banners (10 screens) · paced chapter-complete interstitial ·
+> debug=test ads (`USE_TEST_ADS = BuildConfig.DEBUG`) · BuySellBottomSheet MIS
+> dialog fix (LocalContext + drag-to-dismiss + test key correction)
 
 ---
 

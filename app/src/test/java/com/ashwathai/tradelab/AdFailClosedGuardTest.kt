@@ -97,7 +97,7 @@ class AdFailClosedGuardTest {
         val cfg = File("src/main/java/com/ashwathai/tradelab/ui/common/AdConfig.kt")
         assertTrue("AdConfig.kt missing", cfg.exists())
         val source = cfg.readText()
-        assertTrue("USE_TEST_ADS must be false for production", source.contains("USE_TEST_ADS = false"))
+        assertTrue("USE_TEST_ADS must derive from BuildConfig.DEBUG (debug=test, release=prod)", source.contains("BuildConfig.DEBUG"))
         assertTrue("rewarded_v2 unit must be wired", source.contains("349kle4725uh1kfa"))
         assertTrue("interstitial unit must be wired", source.contains("0pv0ggz19gmfkp18"))
     }

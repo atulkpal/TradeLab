@@ -249,9 +249,14 @@ fun PortfolioScreen(
                                 modifier = Modifier.stealthBlur()
                             )
                         }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // 2.0.2: banner slot (Pro users skip)
+            if (!stats.isPremium) {
+                LevelPlayBanner(modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = { showLedger = true },
                         modifier = Modifier.fillMaxWidth().height(32.dp),

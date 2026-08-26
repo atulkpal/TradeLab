@@ -360,6 +360,9 @@ fun CommoditiesScreen(
                         }
                     }
                 }
+
+                // 2.0.2: banner on commodities paywall
+                LevelPlayBanner(modifier = Modifier.padding(top = 12.dp))
             }
         } else {
             // Commodities Desk UI (Unlocked)
@@ -611,6 +614,11 @@ fun CommoditiesScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(30.dp))
+
+                // 2.0.2: banner (Pro users skip)
+                if (!isPremium) {
+                    LevelPlayBanner(modifier = Modifier.padding(vertical = 6.dp))
+                }
             }
         }
     }

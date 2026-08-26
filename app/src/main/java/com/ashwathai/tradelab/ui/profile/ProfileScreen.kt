@@ -261,6 +261,11 @@ fun ProfileScreen(
             }
         }
 
+        // 2.0.2: banner slot 1 (Pro users skip)
+        if (!stats.isPremium) {
+            LevelPlayBanner(modifier = Modifier.padding(vertical = 6.dp))
+        }
+
         // 2. Gamification Status Card
         val levelName = when (completedSet.size) {
             0 -> "Level 1: Novice Practitioner"
@@ -898,6 +903,11 @@ fun ProfileScreen(
                 }
             }
             }
+        }
+
+        // 2.0.2: banner slot 2 (Pro users skip)
+        if (!stats.isPremium) {
+            LevelPlayBanner(modifier = Modifier.padding(vertical = 6.dp))
         }
 
         // 3. Theme Settings Card

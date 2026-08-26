@@ -158,10 +158,22 @@ While ads don't serve (LevelPlay pending), these grant rewards WITHOUT an ad:
 **BACKLOG — Guest auth upgrade path (deferred, planned post-2.0.1):**
 - **Firebase Anonymous Auth** (signInAnonymously): replace the SharedPreferences guest flag with a real anonymous Firebase session. Benefits: guest sessions survive reinstalls, guest->registered upgrade preserves data (conversion path), FCM tokens get a uid for notification targeting. Requires enabling Anonymous sign-in in Firebase console. Current SharedPreferences guest flag (2.0.1) is the interim fix for the minimize->login regression.
 
-**BACKLOG — additional ad surfaces (deferred):**
-- **Banners:** new `LevelPlayBannerView.kt` (Compose wrapper; verify 9.5.0 banner API from AAR), graceful no-fill collapse; spots: Portfolio + Watchlist bottoms. Requires `banner_main` ad unit in LevelPlay dashboard (not yet created).
-- **Paced interstitial:** after every 3rd completed knowledge-check (session-counted, ≥5-min gap, only-if-ready) — placement `post_quiz`.
-- **Natives:** still blocked on mediated network adapter (see issue 5).
+**✅ RESOLVED 2026-08-26 — Banners wired (v2.0.2, build 12):**
+- `LevelPlayBanner.kt` composable: adaptive size, `sdkReady` guard, try-catch, zero-height collapse, destroy-on-dispose.
+- Wired to 10 screens: Portfolio, Watchlist, Academy, Commodities, F&O, Charts, Profile — all gated `!isPremium`.
+- Debug builds use test key `25b63cf85` with test banner unit `4fpetq4lhe5lsw3e`.
+- **Known issue:** banner appears small/inconsistent on emulator; needs physical device verification.
+
+**✅ RESOLVED 2026-08-26 — Paced interstitial wired (v2.0.2, build 12):**
+- Chapter-complete interstitial fires after every 3rd chapter reward, 3-min minimum gap, Pro users skip.
+- **Not** `post_quiz` placement — fires from `chapterInterstitialEvent` in `TradingViewModel`.
+
+**Natives:** still blocked on mediated network adapter (see issue 5).
+
+**✅ RESOLVED 2026-08-26 — BuySellBottomSheet MIS dialog fixed (v2.0.2, build 12):**
+- `LocalContext.current` moved from inside `AlertDialog`'s `confirmButton` composable to `BuySellBottomSheet` function top scope.
+- Drag-to-dismiss moved from Card root modifier to handle bar only.
+- Test key corrected from `85460dcd` → `25b63cf85`.
 
 **DoD:** zero AdMob imports · all 9 reward placements + 6 native spots + foreground interstitial on LevelPlay test ads · fallback leaks closed · consent flow live.
 **External dependency:** user creates LevelPlay app `27b051bfd` + ad units in dashboard (names provided by agent); dev runs on LevelPlay test units until then.

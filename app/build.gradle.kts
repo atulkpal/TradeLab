@@ -28,8 +28,8 @@ android {
     applicationId = "com.ashwathai.tradelab"
     minSdk = 24
     targetSdk = 37
-    versionCode = 11
-    versionName = "2.0.1"
+    versionCode = 12
+    versionName = "2.0.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -166,6 +166,7 @@ implementation(libs.play.services.appset)
 implementation(libs.play.services.ads.identifier)
 implementation(libs.play.services.basement)
   implementation(libs.billing.ktx)
+  implementation(libs.app.update.ktx)
 
   implementation(libs.hilt.android)
   "ksp"(libs.hilt.compiler)

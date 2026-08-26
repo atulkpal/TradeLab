@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +39,7 @@ import com.ashwathai.tradelab.ui.ChapterModule
 import com.ashwathai.tradelab.ui.AcademyScoring
 import com.ashwathai.tradelab.ui.PortfolioStats
 import com.ashwathai.tradelab.ui.common.formatCurrencyNoDecimals
+import com.ashwathai.tradelab.ui.common.LevelPlayBanner
 import com.ashwathai.tradelab.ui.common.VideoPlayerView
 import com.ashwathai.tradelab.ui.theme.*
 
@@ -70,6 +72,7 @@ fun LectureScreen(
     resolveLectureVideo: (String) -> LectureMedia = {
         LectureMedia(it, hasHindi = false)
     },
+    onLaunchBonusAd: DoubleRewardAdLauncher = { _, onFailed, _ -> onFailed("Ad host unavailable") },
     onDismiss: () -> Unit,
     onCompleteStandard: () -> Unit,
     onCompleteDouble: () -> Unit,
@@ -84,6 +87,10 @@ fun LectureScreen(
     var showResult by remember { mutableStateOf(false) }
     var quizComplete by remember { mutableStateOf(false) }
     var isAdLoading by remember { mutableStateOf(false) }
+
+    // 2.0.2: post-video bonus rewarded (fail-closed, once per chapter, Pro skips)
+    var bonusClaimed by remember { mutableStateOf(false) }
+    var isBonusLoading by remember { mutableStateOf(false) }
 
     val questions = quiz.quizzes.ifEmpty {
         listOf(com.ashwathai.tradelab.ui.QuizQuestion(quiz.concept, listOf("True", "False"), 0))
@@ -123,7 +130,8 @@ fun LectureScreen(
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
         ) {
@@ -259,6 +267,87 @@ fun LectureScreen(
                                             color = TextMuted,
                                             fontSize = 11.sp
                                         )
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── 2.0.2: post-video bonus rewarded (fail-closed, once per
+                        // chapter, visible when 3+ lectures, active only on last lecture, Pro users skip) ──
+                        if (quiz.lectures.size >= 3 &&
+                            !bonusClaimed && !stats.isPremium
+                        ) {
+                            val isActive = activeLectureIndex == quiz.lectures.lastIndex
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = AccentYellow.copy(alpha = if (isActive) 0.08f else 0.03f)
+                                ),
+                                border = BorderStroke(1.dp, AccentYellow.copy(alpha = if (isActive) 0.4f else 0.15f)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "🎁 CHAPTER BONUS",
+                                        color = AccentYellow.copy(alpha = if (isActive) 1f else 0.5f),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = if (isActive) "Watched every lecture? Claim 100 Brokerage Credits — on the house."
+                                               else "Watch all lectures to unlock +100 Brokerage Credits.",
+                                        color = TextSecondary.copy(alpha = if (isActive) 1f else 0.5f),
+                                        fontSize = 11.sp,
+                                        lineHeight = 15.sp,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Button(
+                                        onClick = {
+                                            isBonusLoading = true
+                                            onLaunchBonusAd(
+                                                { isBonusLoading = false },
+                                                { err ->
+                                                    isBonusLoading = false
+                                                    onFeedback("No ad available right now — try again shortly")
+                                                },
+                                                {
+                                                    isBonusLoading = false
+                                                    bonusClaimed = true
+                                                    onFeedback("Bonus claimed: +100 Brokerage Credits!")
+                                                }
+                                            )
+                                        },
+                                        enabled = isActive && !isBonusLoading,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = AccentYellow,
+                                            disabledContainerColor = AccentYellow.copy(alpha = 0.2f),
+                                            disabledContentColor = TextOnAccent.copy(alpha = 0.4f)
+                                        ),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        if (isBonusLoading) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(14.dp),
+                                                color = TextOnAccent,
+                                                strokeWidth = 2.dp
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("LOADING…", color = TextOnAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        } else {
+                                            Text(
+                                                if (isActive) "WATCH AD — CLAIM 100 BROKERAGE CREDITS" else "COMPLETE ALL LECTURES FIRST",
+                                                color = TextOnAccent,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -748,6 +837,15 @@ fun LectureScreen(
                     }
                     Spacer(modifier = Modifier.height(30.dp))
                 }
+            }
+
+            // ── 2.0.2: bottom banner (scrolls with content, Pro users skip) ──
+            if (!stats.isPremium) {
+                LevelPlayBanner(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                )
             }
         }
     }

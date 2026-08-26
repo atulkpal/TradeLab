@@ -27,6 +27,7 @@ kotlinxCoroutinesAndroid = "1.10.2"
 kotlinxCoroutinesCore = "1.10.2"
 accompanistPermissions = "0.37.3"
 playServicesLocation = "21.3.0"
+appUpdate = "2.1.0"
 cameraCamera2 = "1.5.0"
 cameraLifecycle = "1.5.0"
 cameraView = "1.5.0"
@@ -123,6 +124,7 @@ unity-ads = { group = "com.unity3d.ads", name = "unity-ads", version.ref = "unit
 play-services-appset = { group = "com.google.android.gms", name = "play-services-appset", version.ref = "playServicesAppset" }
 play-services-ads-identifier = { group = "com.google.android.gms", name = "play-services-ads-identifier", version.ref = "playServicesAdsIdentifier" }
 play-services-basement = { group = "com.google.android.gms", name = "play-services-basement", version.ref = "playServicesBasement" }
+app-update-ktx = { group = "com.google.android.play", name = "app-update-ktx", version.ref = "appUpdate" }
 billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }

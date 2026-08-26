@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ashwathai.tradelab.data.StockPrice
 import com.ashwathai.tradelab.ui.TradingViewModel
 import com.ashwathai.tradelab.ui.theme.*
+import com.ashwathai.tradelab.ui.common.*
 
 @Composable
 fun ChartScreen(
@@ -231,6 +232,13 @@ fun ChartScreen(
                 Text("Select a ticker to view detailed charts", color = TextMuted, fontSize = 14.sp)
             }
         }
+
+        // 2.0.2: banner above nav
+        LevelPlayBanner(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        )
     }
 }
 

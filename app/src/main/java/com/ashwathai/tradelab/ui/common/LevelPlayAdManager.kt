@@ -282,4 +282,35 @@ object LevelPlayAdManager {
     }
 
     private const val FOREGROUND_FRESHNESS_MS = 4 * 60 * 60 * 1000L // 4h, legacy window
+
+    // ── Paced chapter-complete interstitial (2.0.2) ──
+    private var chapterCompletionCount = 0
+    private var lastChapterInterstitialAt = 0L
+    private const val CHAPTER_INTERSTITIAL_EVERY = 3
+    private const val CHAPTER_INTERSTITIAL_MIN_GAP_MS = 3 * 60 * 1000L // 3 min
+
+    /**
+     * Shows an interstitial after every 3rd chapter completion (min 3-min gap,
+     * only-if-ready). Natural transition point — never blocks the reward flow
+     * (called AFTER the reward is granted).
+     */
+    fun maybeShowChapterInterstitial(activity: Activity) {
+        if (!AdConfig.interstitialConfigured || !_sdkReady.value) return
+        chapterCompletionCount++
+        if (chapterCompletionCount % CHAPTER_INTERSTITIAL_EVERY != 0) return
+        val now = System.currentTimeMillis()
+        if (now - lastChapterInterstitialAt < CHAPTER_INTERSTITIAL_MIN_GAP_MS) return
+
+        val ad = interstitialAd ?: LevelPlayInterstitialAd(AdConfig.INTERSTITIAL_AD_UNIT_ID).also {
+            interstitialAd = it
+            setupInterstitial()
+        }
+        if (ad.isAdReady) {
+            lastChapterInterstitialAt = now
+            Log.i(TAG, "Chapter interstitial DISPLAYED (completion #$chapterCompletionCount)")
+            ad.showAd(activity, "chapter_complete")
+        } else {
+            ad.loadAd()
+        }
+    }
 }

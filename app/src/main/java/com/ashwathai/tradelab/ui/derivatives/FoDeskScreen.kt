@@ -177,6 +177,11 @@ fun FoDeskScreen(
                     }
                 }
             }
+
+            // 2.0.2: banner on academic gate
+            if (!stats.isPremium) {
+                LevelPlayBanner(modifier = Modifier.padding(top = 12.dp))
+            }
         }
         return
     }
@@ -323,6 +328,11 @@ fun FoDeskScreen(
                             }
                         }
                     }
+                }
+
+                // 2.0.2: banner on F&O paywall gate
+                if (!stats.isPremium) {
+                    LevelPlayBanner(modifier = Modifier.padding(top = 12.dp))
                 }
             }
         }
@@ -931,6 +941,11 @@ fun FoDeskScreen(
                     }
                 }
             }
+        }
+
+        // 2.0.2: banner at bottom of trading desk (Pro users skip)
+        if (!stats.isPremium) {
+            LevelPlayBanner(modifier = Modifier.padding(vertical = 6.dp))
         }
     }
 }
