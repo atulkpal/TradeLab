@@ -113,10 +113,10 @@ The **Architectural Modernization** has been successfully verified:
 
 ## 4. Current Work & Next Milestones
 
-We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, the **Hyper-Personalization Suite**, and **Unity LevelPlay monetization**. The app is now at **v2.0.2 (Build 12)** with live banner ads, paced interstitials, and verified rewarded ad flows.
+We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, the **Hyper-Personalization Suite**, and **Unity LevelPlay monetization**. The app is now at **v2.1.1 (Build 12)** — published to Open Testing (beta) on Play Console.
 
 ### What is Active Right Now (Post-Launch & Multi-Platform Prep)
-*   **v2.0.2 testing on emulator/physical device** — banner ads, interstitial pacing, Watchlist MIS dialog fixes verified.
+*   **v2.1.1 on Open Testing** — banner ads, interstitial pacing, Watchlist MIS dialog fixes verified.
 *   **KMP Migration:** Moving core entities and repositories to Kotlin Multiplatform (KMP) to support iOS.
 *   **Time-Travel Mode (Backlog):** Historical simulation engine.
 
@@ -189,7 +189,7 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 > (ConsentView follow-up) · native ads (need mediated adapter) · post-click
 > display timeout (SDK quirk, documented)
 >
-> **✅ Done (v2.0.2):** banners (10 screens) · paced chapter-complete interstitial ·
+> **✅ Done (v2.1.1):** banners (10 screens) · paced chapter-complete interstitial ·
 > debug=test ads (`USE_TEST_ADS = BuildConfig.DEBUG`) · BuySellBottomSheet MIS
 > dialog fix (LocalContext + drag-to-dismiss + test key correction)
 
