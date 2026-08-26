@@ -18,7 +18,9 @@ object AdConfig {
 
     /** Production app key — TradeLab (grow.unity.com). */
     const val PROD_APP_KEY = "27b051bfd"
-    const val PROD_REWARDED_AD_UNIT_ID = "b1o5nmpzepmzn76f"      // rewarded_main
+    // rewarded_v2 — recreated 2026-08-26 (old rewarded_main b1o5nmpzepmzn76f stuck
+    // un-provisioned server-side after the retry-loop hammering incident)
+    const val PROD_REWARDED_AD_UNIT_ID = "349kle4725uh1kfa"      // rewarded_v2
     const val PROD_INTERSTITIAL_AD_UNIT_ID = "0pv0ggz19gmfkp18"  // interstitial_main
     const val PROD_NATIVE_AD_UNIT_ID = "2r6tdjjzxi0jq4hpd"       // native_main
 

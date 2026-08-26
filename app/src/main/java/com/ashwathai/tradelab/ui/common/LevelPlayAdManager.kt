@@ -132,7 +132,8 @@ object LevelPlayAdManager {
             return
         }
 
-        val placement = adType.lowercase()
+        val placement = AdConfig.REWARDED_PLACEMENT
+        Log.d(TAG, "Rewarded request: unit=${AdConfig.REWARDED_AD_UNIT_ID} placement=$placement")
         rewardedCallbacks = Triple(onAdLoaded, onAdFailed, onUserEarnedReward)
 
         val ad = rewardedAd ?: LevelPlayRewardedAd(AdConfig.REWARDED_AD_UNIT_ID).also {
@@ -149,9 +150,12 @@ object LevelPlayAdManager {
         }
     }
 
+    private fun adInfoTag(adInfo: LevelPlayAdInfo): String =
+        "unit=${adInfo.adUnitName}(${adInfo.adUnitId}) network=${adInfo.adNetwork}"
+
     private val rewardedListener = object : LevelPlayRewardedAdListener {
         override fun onAdLoaded(adInfo: LevelPlayAdInfo) {
-            Log.d(TAG, "Rewarded loaded")
+            Log.d(TAG, "Rewarded loaded | ${adInfoTag(adInfo)}")
             val activity = currentActivity
             val callbacks = rewardedCallbacks
             if (activity == null || callbacks == null) {
@@ -168,23 +172,29 @@ object LevelPlayAdManager {
         }
 
         override fun onAdRewarded(reward: LevelPlayReward, adInfo: LevelPlayAdInfo) {
-            Log.d(TAG, "Reward earned: ${reward.name} x${reward.amount}")
+            Log.i(TAG, "Reward earned: ${reward.name} x${reward.amount} | ${adInfoTag(adInfo)}")
             rewardedRetryCount = 0 // genuine success — restore full retry budget
             rewardedCallbacks?.third?.invoke()
         }
 
-        override fun onAdDisplayed(adInfo: LevelPlayAdInfo) { /* showing */ }
+        override fun onAdDisplayed(adInfo: LevelPlayAdInfo) {
+            Log.i(TAG, "Rewarded DISPLAYED | ${adInfoTag(adInfo)} | revenue=${adInfo.revenue}")
+        }
 
         override fun onAdDisplayFailed(error: LevelPlayAdError, adInfo: LevelPlayAdInfo) {
+            Log.e(TAG, "Rewarded display failed: ${error.errorMessage} | ${adInfoTag(adInfo)}")
             onAdFailedInternal(error.errorMessage)
         }
 
         override fun onAdClosed(adInfo: LevelPlayAdInfo) {
+            Log.d(TAG, "Rewarded closed | ${adInfoTag(adInfo)}")
             rewardedRetryCount = 0 // full cycle completed — restore retry budget
             preloadRewarded()
         }
 
-        override fun onAdClicked(adInfo: LevelPlayAdInfo) { /* analytics follow-up */ }
+        override fun onAdClicked(adInfo: LevelPlayAdInfo) {
+            Log.d(TAG, "Rewarded clicked | ${adInfoTag(adInfo)}")
+        }
         override fun onAdInfoChanged(adInfo: LevelPlayAdInfo) { /* waterfalls */ }
     }
 
@@ -217,15 +227,25 @@ object LevelPlayAdManager {
         if (!AdConfig.interstitialConfigured) return
         interstitialAd = LevelPlayInterstitialAd(AdConfig.INTERSTITIAL_AD_UNIT_ID).apply {
             setListener(object : LevelPlayInterstitialAdListener {
-                override fun onAdLoaded(adInfo: LevelPlayAdInfo) { Log.d(TAG, "Interstitial loaded") }
+                override fun onAdLoaded(adInfo: LevelPlayAdInfo) {
+                    Log.d(TAG, "Interstitial loaded | ${adInfoTag(adInfo)}")
+                }
                 override fun onAdLoadFailed(error: LevelPlayAdError) {
                     Log.e(TAG, "Interstitial load failed: ${error.errorMessage}")
                 }
-                override fun onAdDisplayed(adInfo: LevelPlayAdInfo) {}
-                override fun onAdDisplayFailed(error: LevelPlayAdError, adInfo: LevelPlayAdInfo) {}
-                override fun onAdClicked(adInfo: LevelPlayAdInfo) {}
-                override fun onAdClosed(adInfo: LevelPlayAdInfo) {}
-                override fun onAdInfoChanged(adInfo: LevelPlayAdInfo) {}
+                override fun onAdDisplayed(adInfo: LevelPlayAdInfo) {
+                    Log.i(TAG, "Interstitial DISPLAYED | ${adInfoTag(adInfo)} | revenue=${adInfo.revenue}")
+                }
+                override fun onAdDisplayFailed(error: LevelPlayAdError, adInfo: LevelPlayAdInfo) {
+                    Log.e(TAG, "Interstitial display failed: ${error.errorMessage} | ${adInfoTag(adInfo)}")
+                }
+                override fun onAdClicked(adInfo: LevelPlayAdInfo) {
+                    Log.d(TAG, "Interstitial clicked | ${adInfoTag(adInfo)}")
+                }
+                override fun onAdClosed(adInfo: LevelPlayAdInfo) {
+                    Log.d(TAG, "Interstitial closed | ${adInfoTag(adInfo)}")
+                }
+                override fun onAdInfoChanged(adInfo: LevelPlayAdInfo) { /* waterfalls */ }
             })
             loadAd()
         }
