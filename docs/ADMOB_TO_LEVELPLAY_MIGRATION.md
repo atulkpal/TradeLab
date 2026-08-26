@@ -87,6 +87,47 @@ Pin it with a source-scan test (see TradeLab's `AdFailClosedGuardTest`).
 
 ---
 
+## 4.5 Play Compliance — Data Safety + Privacy Policy (⚠️ EVERY app hits this)
+
+**Guaranteed rejection** if skipped: Google's scanners detect undeclared data
+transmission the moment ad SDKs go live. TradeLab's 2.0.1 was rejected with
+*"Invalid Data safety form — Device Or Other IDs"* despite a perfect app.
+
+### The rule
+**The Data Safety form must match reality, and the privacy policy must match the
+form.** Ad SDKs transmit the **Advertising ID (Device or other IDs)** off-device —
+this MUST be declared as **Collected + Shared** with purposes **Analytics +
+Advertising**. Your privacy policy must **name your ad partners** (Unity Ads /
+ironSource Exchange via LevelPlay) and the Advertising ID explicitly.
+
+### Recommended Data Safety declarations (ad-supported app + Firebase)
+
+| Category | Type | Collected | Shared | Ephemeral | Required/Optional | Purposes |
+|----------|------|-----------|--------|-----------|-------------------|----------|
+| Device or other IDs | Device or other IDs | Yes | **Yes** | No | Required | Analytics, Advertising |
+| App activity | App interactions | Yes | No | No | Required | Analytics |
+| App info & performance | Crash logs | Yes | No | No | Required | Analytics |
+| App info & performance | Diagnostics | Yes | No | No | Required | Analytics |
+| Personal info | Name (leaderboard display name) | Yes | No | No | Optional | App functionality |
+| Financial info | Purchase history (Play Billing) | Yes | No | No | Optional | App functionality |
+
+Plus: encrypted in transit = **Yes** · deletion mechanism = **Yes** (host a
+delete-account page) · Families Policy = **No** (unless child-directed).
+
+### Process
+1. **Update the privacy policy FIRST** — name the ad partners, the Advertising ID
+   (collected + shared, purposes), Crashlytics, FCM; purge the old network's name
+2. Play Console → **App content → Data safety** → walk the wizard with the table
+   above (account-creation methods, deletion URLs, encrypted-in-transit, Families = No)
+3. **Publishing overview → Send for review** — the held update + corrected form go together
+4. Review typically clears in hours–1 day
+
+### Rejection signature (so you recognize it)
+> *"Invalid Data safety form … We detected user data transmitted off devices that
+> you have not disclosed … Device Or Other IDs Data Type"*
+
+---
+
 ## 5. Rollout Sequence
 
 1. Merge to develop → tag (`vX.Y.Z`) + cut `stable` branch (fallback discipline)
