@@ -31,15 +31,17 @@ serve via ironSource Exchange, but fill rates are lower. Adding network adapters
 ### `gradle/libs.versions.toml`
 ```toml
 [versions]
-levelPlay = "9.5.0"
+levelPlay = "9.5.0"            # 9.6.0 available (Aug 2026)
 playServicesAppset = "16.0.0"
 playServicesAdsIdentifier = "18.1.0"
 playServicesBasement = "18.1.0"
-unityAdsAdapter = "4.3.55"    # For Unity Ads demand (demo/test units)
+unityAdsAdapter = "5.12.0"     # MUST be 5.x for LevelPlay 9.x (4.x = obsolete 8.x-era)
+unityAdsSdk = "4.20.0"         # Official pairing for adapter 5.12.0
 
 [libraries]
 levelplay-sdk = { group = "com.unity3d.ads-mediation", name = "mediation-sdk", version.ref = "levelPlay" }
 unityads-adapter = { group = "com.unity3d.ads-mediation", name = "unityads-adapter", version.ref = "unityAdsAdapter" }
+unity-ads = { group = "com.unity3d.ads", name = "unity-ads", version.ref = "unityAdsSdk" }
 play-services-appset = { group = "com.google.android.gms", name = "play-services-appset", version.ref = "playServicesAppset" }
 play-services-ads-identifier = { group = "com.google.android.gms", name = "play-services-ads-identifier", version.ref = "playServicesAdsIdentifier" }
 play-services-basement = { group = "com.google.android.gms", name = "play-services-basement", version.ref = "playServicesBasement" }
@@ -48,11 +50,29 @@ play-services-basement = { group = "com.google.android.gms", name = "play-servic
 ### `app/build.gradle.kts`
 ```kotlin
 implementation(libs.levelplay.sdk)
-implementation(libs.unityads.adapter)          // Required for Unity Ads demand
+implementation(libs.unityads.adapter)
+implementation(libs.unity.ads)   // ⚠️ REQUIRED — see landmine below
 implementation(libs.play.services.appset)
 implementation(libs.play.services.ads.identifier)
 implementation(libs.play.services.basement)
 ```
+
+### 🚨 THE #2 LANDMINE: the adapter does NOT bundle the Unity Ads SDK
+
+`unityads-adapter` (ANY version — verified on 4.3.55 AND 5.12.0) has a **zero-dependency
+POM**. The Unity Ads SDK (`com.unity3d.ads:unity-ads`) must be added **explicitly**.
+
+**Without it:** the app compiles fine, runs fine, init succeeds — but every Unity Ads
+adapter init crashes with `NoClassDefFoundError:
+com.unity3d.ads.IUnityAdsInitializationListener` → **zero Unity Ads demand, forever,
+with no obvious error**. This cost TradeLab ~1 day and was only found via logcat
+`LevelPlaySDK: INTERNAL` lines + APK inspection (zero `com.unity3d.ads` classes).
+
+**Verify after build:** the APK must contain `lib/*/libunitycoherencenative.so`
+(ships only with the Unity Ads SDK) — or inspect dex for `com.unity3d.ads` classes.
+
+**Pairing table** (docs.unity.com → LevelPlay SDK → Android → Mediation networks):
+adapter `5.12.0` ↔ Unity Ads SDK `4.20.0`. Check that page for newer pairings.
 
 ### `app/proguard-rules.pro`
 ```
@@ -60,6 +80,12 @@ implementation(libs.play.services.basement)
 -keep class com.unity3d.** { *; }
 -dontwarn com.ironsource.**
 -dontwarn com.unity3d.**
+
+# Release log hygiene (optional but recommended): strip debug logs, keep warn/error
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+}
 ```
 
 ### `app/src/main/AndroidManifest.xml`
@@ -286,15 +312,51 @@ healed account for real work.
 - [ ] Create ad units under **LevelPlay → Setup → Ad units**: Rewarded + Interstitial + Native
 - [ ] **Activate Unity Ads network** (Setup → Networks → Setup → org API key + core ID from cloud.unity.com → Monetization → Settings → API Management)
 - [ ] Create the Unity Monetization app + placements (`reward` / `foreground`) in cloud.unity.com
+- [ ] **Fill the Unity Ads Game ID + per-format Placement IDs** in the network setup (bidder is a shell without them)
 - [ ] Copy app key + ad unit IDs into product's `AdConfig` (`USE_TEST_ADS = false` — test mode is a dead end)
 - [ ] Register your device's Advertising ID as Test Device (LevelPlay + Unity dashboards)
-- [ ] Deploy **app-ads.txt** (LevelPlay-generated list) to your developer domain root; allow 24-48h for crawling
-- [ ] Add gradle dependencies (SDK + unityads-adapter + play-services) + ProGuard rules + `AD_ID` permission
+- [ ] Deploy **app-ads.txt** (LevelPlay-generated list + `ownerdomain=`) to your developer domain root; Unity verifies within the hour typically, full crawl up to 24-48h
+- [ ] Add gradle dependencies (**mediation-sdk + unityads-adapter 5.x + unity-ads** + play-services) + ProGuard rules + `AD_ID` permission
 - [ ] Call `LevelPlayAdManager.init(context)` in `Application.onCreate`
 - [ ] Wire rewarded call sites through the manager (fail-closed: no ad → no reward)
 - [ ] Test on a real device (emulator may not serve)
 - [ ] Verify with LevelPlay Integration Test Suite
 - [ ] Reply to the two ironSource info-request emails (approval gates ALL serving)
+
+---
+
+## 11. Serving Verification — Logcat Signatures
+
+What a healthy integration logs (grep these — every ad self-attributes):
+
+```
+# Init (healthy):
+I UnityAds: Initializing SDK 4.20.0 ... with game id <GAME_ID> in production mode
+I UnityAds: Initialized successfully
+I UnityAds: Generated a valid token.                     ← per load; bidding alive
+I LevelPlayAdManager: LevelPlay initialized
+
+# Rewarded cycle (healthy):
+D LevelPlayAdManager: Rewarded request: unit=<ID> placement=reward
+D LevelPlayAdManager: Rewarded loaded | unit=<NAME>(<ID>) network=<NETWORK>
+I LevelPlayAdManager: Rewarded DISPLAYED | unit=… network=… revenue=0.0
+I LevelPlayAdManager: Reward earned: <reward> x<N> | unit=… network=…
+D LevelPlayAdManager: Rewarded closed | unit=… network=…
+```
+
+**Red flags:**
+| Log line | Meaning |
+|----------|---------|
+| `NoClassDefFoundError: com.unity3d.ads.*` | unity-ads SDK missing from the build (§2 landmine) |
+| `Rewarded load failed: Invalid ad unit id` | Unit not provisioned server-side yet (new units: **hours**, not minutes) OR account pending OR wrong product section |
+| `Rewarded display failed: Screen visible timeout` | Ad loaded but activity couldn't render — often after clicking inside a previous ad (force-stop clears); watch with real creatives |
+| `Rewarded load skipped (load already in flight)` | Benign — parallelLoad race, in-flight load still delivers |
+
+**Multi-app orgs:** app-ads.txt is domain-scoped (crawl follows each app's own Play
+listing "Website" field) — the same org seller list can be hosted on every app's
+domain. Unity's org-level "Developer Website" field is a crawl hint; set it to the
+primary app's domain. `OwnerDomain` = business domain if you have one, else the
+site's own domain (IAB-sanctioned). Org API Key + Core ID are shared by all apps.
 
 ---
 

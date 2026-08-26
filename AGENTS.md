@@ -161,19 +161,25 @@ To maintain continuous alignment and prevent code-spec drift, all agents and dev
 
 ## Unity LevelPlay Monetization (Epic 26)
 
-> **Status: ✅ Code Complete / ⏳ Awaiting LevelPlay Activation**
-> AdMob banned → migrated to Unity LevelPlay (ironSource). Full integration guide: [`docs/LEVELPLAY_GUIDE.md`](docs/LEVELPLAY_GUIDE.md)
+> **Status: ✅ ADS LIVE — serving verified on device (2026-08-26)**
+> AdMob banned → migrated to Unity LevelPlay (ironSource). Production config live
+> (rewarded_v2 unit, ironSource Exchange serving test creatives to the registered
+> test device; Unity Ads bidder initialized with valid tokens).
 >
-> **Key facts:** appkey `27b051bfd` · SDK 9.5.0 · ironSource Exchange = default demand ·
-> rewarded + interstitial wired · natives removed (need adapter) · fallback leaks closed ·
-> graceful no-ad states · session revocation waves managed via L3 self-heal
+> **📚 Knowledge base (replicate to other apps):**
+> - [`docs/LEVELPLAY_GUIDE.md`](docs/LEVELPLAY_GUIDE.md) — full integration reference (gradle, init, formats, troubleshooting, logcat signatures, multi-app org notes)
+> - [`docs/ADMOB_TO_LEVELPLAY_MIGRATION.md`](docs/ADMOB_TO_LEVELPLAY_MIGRATION.md) — the step-by-step AdMob-removal + LevelPlay-wiring playbook (use for the app that still has AdMob + all future apps)
 >
-> **Pending:** ad unit activation (LevelPlay platform) · test on real device ·
-> native ads (needs mediated network) · consent flow (ConsentView follow-up) ·
-> ⚠️ **3 fail-open ad leaks deferred** (WATCHLIST_CREATE / PORTFOLIO_RESET /
-> PROFILE_LEVERAGE grant rewards without ads — see Epic 26 backlog in
-> `docs/epics_and_sprints.md` before any production rollout) ·
-> banners + paced interstitial backlog (Epic 26)
+> **Key facts:** appkey `27b051bfd` · SDK 9.5.0 · adapter **5.12.0** + explicit
+> **unity-ads 4.20.0** (⚠️ the adapter does NOT bundle the SDK — zero-dep POM;
+> missing it = silent zero Unity Ads demand) · ironSource Exchange = default demand ·
+> rewarded + interstitial wired (fail-closed, guarded by `AdFailClosedGuardTest`) ·
+> natives removed (need mediated adapter) · consent metadata v1
+>
+> **Pending:** ironSource approval email (gates live demand for non-registered
+> devices; test creatives already flow to registered devices) · banners + paced
+> interstitial (backlog) · consent flow (ConsentView follow-up) · post-click
+> display timeout (SDK quirk, documented)
 
 ---
 
