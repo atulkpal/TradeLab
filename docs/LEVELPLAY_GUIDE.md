@@ -4,7 +4,7 @@
 > all Ashwath AI products. Written from hands-on integration experience with TradeLab
 > (Epic 26). Follow this checklist for any new product.
 >
-> **SDK version tested:** 9.5.0 · **Platform:** Android (Jetpack Compose) · **Date:** 2026-08-25
+> **SDK version tested:** 9.5.0 · **Platform:** Android (Jetpack Compose) · **Date:** 2026-08-26
 
 ---
 
@@ -240,29 +240,94 @@ in the LevelPlay dashboard → add the adapter dependency → natives activate.
 
 ---
 
-## 8. Test vs Production
+## 7b. Banner Ads
+
+### `LevelPlayBanner` Composable (TradeLab pattern)
+
+```kotlin
+@Composable
+fun LevelPlayBannerAdView(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val sdkReady by LevelPlayAdManager.sdkReady.collectAsState()
+
+    if (!sdkReady) return  // SDK not ready — zero-height collapse
+
+    Box(modifier = modifier) {
+        AndroidView(
+            factory = { ctx ->
+                LevelPlayBannerAdView(ctx).apply {
+                    setBannerAdListener(object : LevelPlayBannerAdViewListener {
+                        override fun onAdLoaded(adInfo: LevelPlayAdInfo) { /* visible */ }
+                        override fun onAdLoadFailed(error: LevelPlayAdError) { /* hide */ }
+                        override fun onAdDisplayed(adInfo: LevelPlayAdInfo) {}
+                        override fun onAdClicked(adInfo: LevelPlayAdInfo) {}
+                        override fun onAdInfoChanged(adInfo: LevelPlayAdInfo) {}
+                    })
+                    loadAd()
+                }
+            },
+            modifier = if (adFailed) Modifier.height(0.dp) else Modifier.wrapContentHeight()
+        )
+    }
+}
+```
+
+### Best practices
+- **`sdkReady` gate:** never call `loadAd()` before SDK init completes
+- **Zero-height collapse on failure:** `Modifier.height(0.dp)` when ad fails to load — no blank space
+- **`!isPremium` gating:** skip banner entirely for premium users
+- **Destroy on dispose:** call `destroy()` in `DisposableEffect` to prevent memory leaks
+- **Adaptive size:** LevelPlay banners auto-size to container width; use `wrapContentHeight()`
+- **Try-catch all SDK calls:** `LevelPlayBannerAdView` constructor and `loadAd()` can throw on misconfigured units
+
+### Test ad unit for banner
+- Test key `25b63cf85` → banner unit `4fpetq4lhe5lsw3e`
+- Production key `27b051bfd` → banner unit `ptz6e25xm7sud8lo`
+
+### Wired screens (TradeLab v2.1.1)
+Portfolio, Watchlist, Academy, Commodities, F&O, Charts, Profile — all gated `!isPremium`.
+
+---
 
 | Setting | Test Mode | Production |
 |---------|-----------|------------|
-| App Key | Unity demo key `25b63cf85` (their demo app) | Your production key |
-| Ad Units | Unity demo units | Your dashboard units |
-| Ads Serve? | ⚠️ Often NO — demo appkey has package mismatch with your app | ✅ Once account approved |
-| Revenue | Zero (test) | Real |
+| App Key | LevelPlay test key `25b63cf85` (official) | Your production key |
+| Ad Units | LevelPlay test units (paired to test key) | Your dashboard units |
+| Ads Serve? | ✅ On registered test devices | ✅ Once account approved |
+| Revenue | Zero (test creatives) | Real |
 
-### ⚠️ Hard-won lessons (TradeLab, Aug 2026)
-- **Test mode with the demo appkey usually serves NOTHING for your package** — the
-  demo units belong to Unity's demo app; package mismatch → permanent no-fill.
-  Don't burn time debugging test mode; go straight to production key + registered
-  test device.
-- **Approval gates ALL serving — including test ads.** Until the account is
-  approved, requests fail (observed: `626 Invalid ad unit id` with correct, active
-  units). Community reports confirm this consistently.
-- **No Universal Test IDs (unlike AdMob).** Each app needs its own dashboard units.
-  The replacement for "universal test ads" = register your device's Advertising ID
-  as a **Test Device** (both dashboards), then production units serve test
-  creatives to that device post-approval.
-- **Emulator limitation:** rewarded/interstitial demand frequently excludes
-  emulators entirely — always verify on a real device.
+### `USE_TEST_ADS = BuildConfig.DEBUG` (recommended pattern)
+
+The cleanest approach: a single boolean in `AdConfig` that auto-switches based on build type:
+
+```kotlin
+object AdConfig {
+    val USE_TEST_ADS = BuildConfig.DEBUG  // debug = test, release = prod
+
+    val LEVELPLAY_APP_KEY = if (USE_TEST_ADS) "25b63cf85" else "27b051bfd"
+    val REWARDED_AD_UNIT_ID = if (USE_TEST_ADS) "syz3d8ekts22q0or" else "349kle4725uh1kfa"
+    val INTERSTITIAL_AD_UNIT_ID = if (USE_TEST_ADS) "h3xw38h9214adgxo" else "0pv0ggz19gmfkp18"
+    val BANNER_AD_UNIT_ID = if (USE_TEST_ADS) "4fpetq4lhe5lsw3e" else "ptz6e25xm7sud8lo"
+}
+```
+
+**Test ad unit pairing for key `25b63cf85`:**
+
+| Format | Test Ad Unit ID | Production Ad Unit ID |
+|--------|----------------|----------------------|
+| Rewarded | `syz3d8ekts22q0or` | `349kle4725uh1kfa` |
+| Interstitial | `h3xw38h9214adgxo` | `0pv0ggz19gmfkp18` |
+| Banner | `4fpetq4lhe5lsw3e` | `ptz6e25xm7sud8lo` |
+| Native | (blocked — needs mediated adapter) | `2r6tdjjzxi0jq4hpd` |
+
+⚠️ **Ad unit IDs are tied to specific app keys.** The test ad units above are ONLY valid for key `25b63cf85`. Using them with any other key = `626 Invalid ad unit id`.
+
+### Hard-won lessons (TradeLab, Aug 2026)
+- **Test mode works when correctly configured.** The official LevelPlay test key `25b63cf85` with its paired test ad units serves test creatives to registered devices. The old belief that "test mode = permanent no-fill" was caused by using the wrong key (`85460dcd`) with mismatched ad units — not by any inherent test mode limitation.
+- **"626 Invalid ad unit id" does NOT always mean account pending.** It also means key + ad unit mismatch. Always verify your key matches your ad units (use the pairing table above).
+- **No Universal Test IDs (unlike AdMob).** Each app needs its own dashboard units. The replacement = use the LevelPlay test key + its paired test units, then register your device's Advertising ID as a **Test Device** (both dashboards).
+- **Emulator limitation:** rewarded/interstitial demand frequently excludes emulators entirely — always verify on a real device.
+- **Production key + registered test device** is the path for verifying real-world serving pre-approval.
 
 ### Emulator limitation
 Unity Ads frequently **excludes emulators** from ad serving. Rewarded/interstitial
@@ -275,7 +340,7 @@ may return 1024 "no available ad" on emulators even with correct credentials.
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| **626 Invalid ad unit id** | ① Units under wrong product section ("Ads" vs "LevelPlay") ② **Account pending approval — serving backend doesn't provision units** (verified: correct+active units still 626 until approved) ③ ID mismatch ④ propagation (15-30 min after creation) | ① Verify units under LevelPlay → Setup → Ad units ② Wait for approval email ③ Character-check IDs ④ Wait/retry |
+| **626 Invalid ad unit id** | ① Units under wrong product section ("Ads" vs "LevelPlay") ② **Account pending approval — serving backend doesn't provision units** (verified: correct+active units still 626 until approved) ③ ID mismatch ④ propagation (15-30 min after creation) ⑤ **Key + ad unit mismatch** — ad units are tied to specific app keys; using units from one key with another = 626 | ① Verify units under LevelPlay → Setup → Ad units ② Wait for approval email ③ Character-check IDs ④ Wait/retry ⑤ Verify key matches ad units (use pairing table in §8) |
 | **1024 No available ad** | Ad unit valid but no fill (emulator, region, zero demand configured) | Real device; **verify a network is ACTIVATED** (Unity Ads bidder); check Unity Ads adapter loaded |
 | **Adapter load error** | Network adapter dependency missing | Add adapter to gradle (e.g. `unityads-adapter`) |
 | **Init failed** | Network issue or invalid appkey | Retry; check appkey in dashboard |
@@ -361,4 +426,4 @@ site's own domain (IAB-sanctioned). Org API Key + Core ID are shared by all apps
 ---
 
 *Written from TradeLab Epic 26-28 hands-on integration, corrected after live
-dashboard + device verification (2026-08-25). SDK: 9.5.0 (9.6.0 available).*
+dashboard + device verification (2026-08-26). SDK: 9.5.0 (9.6.0 available).*

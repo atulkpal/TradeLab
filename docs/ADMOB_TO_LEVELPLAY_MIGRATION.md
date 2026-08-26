@@ -20,7 +20,14 @@
 | **Activate Unity Ads network** | Setup → Networks → Unity Ads → Setup | Needs **Monetization API Key + Org Core ID** + per-app **Game ID** (create the app in cloud.unity.com Monetization first) + per-format **Placement IDs** (`Rewarded_Android` etc.). Bidder is a shell without these |
 | Info-request emails | Email | Two forms (payment + company). **Approval gates ALL serving — including test ads.** Reply immediately |
 | app-ads.txt | Your developer domain root | Copy the LevelPlay-generated list + `ownerdomain=<your domain>`. Unity verifies fast; full crawl 24-48h |
-| Test device | LevelPlay + Unity dashboards | Register your device's **Advertising ID** on BOTH sides |
+| Test device | LevelPlay + Unity dashboards | Register your device's **Advertising ID** on BOTH sides
+
+**Test ad unit pairing (quick reference):**
+| Format | Test Key `25b63cf85` | Production Key `27b051bfd` |
+|--------|---------------|----------------------|
+| Rewarded | `syz3d8ekts22q0or` | `349kle4725uh1kfa` |
+| Interstitial | `h3xw38h9214adgxo` | `0pv0ggz19gmfkp18` |
+| Banner | `4fpetq4lhe5lsw3e` | `ptz6e25xm7sud8lo` |
 
 ---
 
@@ -50,12 +57,15 @@ Pin it with a source-scan test (see TradeLab's `AdFailClosedGuardTest`).
 ## 2. LevelPlay Integration (reference: LEVELPLAY_GUIDE.md §2/§4/§5)
 
 1. Gradle: mediation-sdk + **unityads-adapter 5.x** + **unity-ads (explicit!)** + play-services trio + ProGuard rules + `AD_ID` permission
-2. `AdConfig`-style single source: app key, ad unit IDs, placements, `USE_TEST_ADS` toggle
+2. `AdConfig`-style single source: app key, ad unit IDs, placements, **`USE_TEST_ADS = BuildConfig.DEBUG`** toggle
+   - Test key `25b63cf85` → rewarded `syz3d8ekts22q0or`, interstitial `h3xw38h9214adgxo`, banner `4fpetq4lhe5lsw3e`
+   - Production key `27b051bfd` → production units from dashboard
 3. Manager facade with the **same public contract your call sites already use** (TradeLab kept `loadAndShowRewardedAd(adType, onAdLoaded, onAdFailed, onUserEarnedReward)` — 10+ call sites untouched)
 4. Init in `Application.onCreate`; UI gates on `sdkReady`
 5. Rewarded: create-once/reuse, listener before load, preload after close, **clear callbacks at cycle end**, `isPlacementCapped` check
 6. Foreground interstitial replaces App-Open (lifecycle observer + freshness window)
 7. **Fail-closed everywhere.** No silent rewards, no fallback grants, no fake ads
+8. **Debug builds auto-use test ads:** `AdConfig.USE_TEST_ADS = BuildConfig.DEBUG` auto-swaps keys + ad units (TradeLab pattern)
 
 ---
 
@@ -72,7 +82,7 @@ Pin it with a source-scan test (see TradeLab's `AdFailClosedGuardTest`).
 | 7 | **Retry loop** (reset counter in the failure path) | Dozens of load/fail cycles per second (looks like invalid traffic) | Reset retry budget only on genuine success |
 | 8 | **Stale callbacks** (not cleared at cycle end) | Spontaneous re-shows; double reward grants | Clear callbacks in `onAdClosed` |
 | 9 | **Emulator exclusion** | No fill on emulators even when everything works | Verify on real devices only |
-| 10 | **Test mode is a dead end** | Demo appkey = package mismatch = permanent no-fill | Production key + registered test devices is the real path |
+| 10 | **Test mode is a dead end** | Demo appkey = package mismatch = permanent no-fill | Production key + registered test devices is the real path, **BUT** LevelPlay test key `25b63cf85` with its paired test units also works on registered devices — verify before assuming dead end |
 
 ---
 
