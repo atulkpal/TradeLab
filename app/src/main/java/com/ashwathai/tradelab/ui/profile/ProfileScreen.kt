@@ -1882,53 +1882,8 @@ fun ProfileScreen(
             }
         }
     } else if (showEditProfileDialog) {
-        var editName by remember { mutableStateOf(userProfile?.userName ?: "") }
-        var editEmail by remember { mutableStateOf(userProfile?.userEmail ?: "") }
-        var editPhone by remember { mutableStateOf(userProfile?.phoneNumber ?: "") }
-
-        AlertDialog(
-            onDismissRequest = { showEditProfileDialog = false },
-            title = { Text("Edit Profile", color = Color.White, fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = editName,
-                        onValueChange = { editName = it },
-                        label = { Text("Name", color = TextMuted) },
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = BrandViolet, unfocusedBorderColor = DarkBorder),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = editEmail,
-                        onValueChange = { editEmail = it },
-                        label = { Text("Email", color = TextMuted) },
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = BrandViolet, unfocusedBorderColor = DarkBorder),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = editPhone,
-                        onValueChange = { editPhone = it },
-                        label = { Text("Phone Number", color = TextMuted) },
-                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = BrandViolet, unfocusedBorderColor = DarkBorder),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    viewModel.updateProfile(editName, editEmail, editPhone)
-                    showEditProfileDialog = false
-                }, colors = ButtonDefaults.buttonColors(containerColor = BrandViolet)) {
-                    Text("Save Changes", color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditProfileDialog = false }) {
-                    Text("Cancel", color = TextMuted)
-                }
-            },
-            containerColor = DarkSurfaceElevated
-        )
+        showEditProfileDialog = false
+        viewModel.triggerEditProfile()
     }
 
     if (adLoadFailedMessage != null) {

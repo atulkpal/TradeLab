@@ -332,7 +332,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                         firebaseAuth.createUserWithEmailAndPassword(emailInput, passwordInput)
                                                             .addOnSuccessListener { authResult ->
                                                                 val displayName = nameInput.ifBlank { emailInput.substringBefore("@") }
-                                                                viewModel.registerOrLogin(displayName, emailInput)
+                                                                viewModel.registerOrLogin(displayName, emailInput, "", "", "EMAIL")
                                                                 isLoading = false
                                                             }
                                                             .addOnFailureListener { e ->
@@ -344,7 +344,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                         firebaseAuth.signInWithEmailAndPassword(emailInput, passwordInput)
                                                             .addOnSuccessListener { authResult ->
                                                                 val displayName = authResult.user?.displayName ?: emailInput.substringBefore("@")
-                                                                viewModel.registerOrLogin(displayName, emailInput)
+                                                                viewModel.registerOrLogin(displayName, emailInput, "", "", "EMAIL")
                                                                 isLoading = false
                                                             }
                                                             .addOnFailureListener { e ->
@@ -439,43 +439,43 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                         request = request
                                                     )
                                                     
-                                                    val credential = result.credential
+val credential = result.credential
                                                     when {
                                                         credential is GoogleIdTokenCredential -> {
                                                             val googleIdToken = credential.idToken
                                                             val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
                                                             firebaseAuth.signInWithCredential(firebaseCredential)
                                                                 .addOnSuccessListener { authResult ->
-                                                                    val user = authResult.user
-                                                                    viewModel.registerOrLogin(user?.displayName ?: "Google User", user?.email ?: "")
-                                                                    isLoading = false
-                                                                }
-                                                                .addOnFailureListener { e ->
-                                                                    android.util.Log.e("AuthScreen", "Firebase Auth with Google failed", e)
-                                                                    errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
-                                                                    isLoading = false
-                                                                }
-                                                        }
-                                                        credential.type == "com.google.android.libraries.identity.googleid.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL" -> {
-                                                            // Fix for Point 3: Explicitly handle the credential type mentioned in the screenshot
-                                                            try {
-                                                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                                                                val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
-                                                                firebaseAuth.signInWithCredential(firebaseCredential)
-                                                                    .addOnSuccessListener { authResult ->
-                                                                        val user = authResult.user
-                                                                        viewModel.registerOrLogin(user?.displayName ?: "Google User", user?.email ?: "")
-                                                                        isLoading = false
-                                                                    }
-                                                                    .addOnFailureListener { e ->
-                                                                        errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
-                                                                        isLoading = false
-                                                                    }
-                                                            } catch (e: Exception) {
-                                                                errorMessage = "Google Token Extraction Failed: ${e.localizedMessage}"
+                                                                val user = authResult.user
+                                                                viewModel.registerOrLogin(user?.displayName ?: "Google User", user?.email ?: "", "", user?.photoUrl?.toString() ?: "", "GOOGLE")
                                                                 isLoading = false
-                                                            }
-                                                        }
+                                                                 }
+                                                                 .addOnFailureListener { e ->
+                                                                     android.util.Log.e("AuthScreen", "Firebase Auth with Google failed", e)
+                                                                     errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
+                                                                     isLoading = false
+                                                                 }
+                                                         }
+                                                         credential.type == "com.google.android.libraries.identity.googleid.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL" -> {
+                                                             // Fix for Point 3: Explicitly handle the credential type mentioned in the screenshot
+                                                             try {
+                                                                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                                                 val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+                                                                 firebaseAuth.signInWithCredential(firebaseCredential)
+                                                                     .addOnSuccessListener { authResult ->
+                                                                         val user = authResult.user
+                                                                         viewModel.registerOrLogin(user?.displayName ?: "Google User", user?.email ?: "", "", user?.photoUrl?.toString() ?: "", "GOOGLE")
+                                                                        isLoading = false
+                                                                     }
+                                                                     .addOnFailureListener { e ->
+                                                                         errorMessage = "Firebase Auth Error: ${e.localizedMessage}"
+                                                                         isLoading = false
+                                                                     }
+                                                             } catch (e: Exception) {
+                                                                 errorMessage = "Google Token Extraction Failed: ${e.localizedMessage}"
+                                                                 isLoading = false
+                                                             }
+                                                         }
                                                         else -> {
                                                             val type = credential.type
                                                             android.util.Log.e("AuthScreen", "Unexpected credential type: $type")
@@ -529,6 +529,8 @@ fun AuthScreen(viewModel: TradingViewModel) {
                             }
                             
                             2 -> { // Phone Auth tab
+                            var selectedCountryCode by remember { mutableStateOf("+91") }
+                            var showCountryPicker by remember { mutableStateOf(false) }
                             Text(
                                 text = "OTP Authentication",
                                 color = TextPrimary,
@@ -539,9 +541,6 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                 
                                 if (!isOtpSent) {
                                     // Point 4: Country Selector UI
-                                    var showCountryPicker by remember { mutableStateOf(false) }
-                                    var selectedCountryCode by remember { mutableStateOf("+91") }
-
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically
@@ -623,19 +622,19 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                         .setTimeout(60L, TimeUnit.SECONDS)
                                                         .setActivity(context as Activity)
                                                         .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-                                                            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                                                                firebaseAuth.signInWithCredential(credential)
-                                                                    .addOnSuccessListener { authResult ->
-                                                                        val user = authResult.user
-                                                                        viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.${phoneInput}@tradelab.com", fullNumber)
-                                                                        isLoading = false
-                                                                        successMessage = "Automatic verification successful!"
-                                                                    }
-                                                                    .addOnFailureListener { e ->
-                                                                        errorMessage = "Sign-In Failed: ${e.localizedMessage}"
-                                                                        isLoading = false
-                                                                    }
-                                                            }
+override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                                                                    firebaseAuth.signInWithCredential(credential)
+                                                                        .addOnSuccessListener { authResult ->
+                                                                            val user = authResult.user
+                                                                            viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.${phoneInput}@tradelab.com", fullNumber, "", "PHONE")
+                                                                            isLoading = false
+                                                                            successMessage = "Automatic verification successful!"
+                                                                        }
+                                                                        .addOnFailureListener { e ->
+                                                                            errorMessage = "Sign-In Failed: ${e.localizedMessage}"
+                                                                            isLoading = false
+                                                                        }
+                                                                }
 
                                                             override fun onVerificationFailed(e: FirebaseException) {
                                                                 android.util.Log.e("AuthScreen", "Phone Auth Verification Failed", e)
@@ -712,7 +711,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                 val auth = firebaseAuth
                                                 if (BuildConfig.DEBUG && (auth == null || otpInput == "123456")) {
                                                     isLoading = false
-                                                    viewModel.registerOrLogin("Phone User", "phone.${phoneInput}@tradelab.com", "+91$phoneInput")
+                                                    viewModel.registerOrLogin("Phone User", "phone.${phoneInput}@tradelab.com", "$selectedCountryCode$phoneInput", "", "PHONE")
                                                 } else if (auth == null) {
                                                     errorMessage = "Phone authentication is not available. Please try again later."
                                                     isLoading = false
@@ -721,7 +720,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                                                     auth.signInWithCredential(credential)
                                                         .addOnSuccessListener { authResult ->
                                                             val user = authResult.user
-                                                            viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.${phoneInput}@tradelab.com", "+91$phoneInput")
+                                                            viewModel.registerOrLogin(user?.displayName ?: "Phone User", user?.email ?: "phone.${phoneInput}@tradelab.com", "$selectedCountryCode$phoneInput", "", "PHONE")
                                                             isLoading = false
                                                         }
                                                         .addOnFailureListener { e ->
@@ -808,7 +807,7 @@ fun AuthScreen(viewModel: TradingViewModel) {
                     onClick = {
                         showSandboxDialog = false
                         sandboxUserToSimulate?.let {
-                            viewModel.registerOrLogin(it.first, it.second)
+                            viewModel.registerOrLogin(it.first, it.second, "", "", "EMAIL")
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = DynamicPrimary),

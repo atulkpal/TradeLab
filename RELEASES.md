@@ -4,6 +4,51 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [2.2.0] - Profile Completion & Login Method Tracking (Internal Testing)
+**Release Date:** August 29, 2026  
+**Version Code:** 13  
+**Status:** 🟡 INTERNAL TESTING
+
+### Summary of Changes
+Profile completion onboarding flow with login-method-aware field locking, smart email opt-in defaults, and bug fixes for phone/Google auth.
+
+### Core Changes
+- **Profile Completion Flow** (`ProfileCompletionScreen.kt`): Post-login onboarding with 7 new fields (DOB, gender, city, referral source, interests, email opt-in). Full-screen destination shared with Profile > Edit.
+- **Login Method Tracking**: New `loginMethod` field ("GOOGLE" | "PHONE" | "EMAIL") in `UserProfile` enabling smart field locking based on verified identity source.
+- **Smart Field Locking**:
+  - Name locked for Google/Email login (verified name)
+  - Phone locked for Phone OTP login (verified number)
+  - Email locked for Google/Email login (verified email)
+  - All editable for legacy users (no loginMethod) and in edit mode
+- **SEBI-Safe Email Opt-In**: Defaults checked for new users ("Stay updated with new features and learning content"); no "tips/advice" language.
+- **Interest Chips**: 7 multi-select chips (Stocks, F&O, MF, IPOs, Technical Analysis, Portfolio, Risk) with wrapping `FlowLayout`.
+- **Dropdowns**: Gender (4 options), Referral Source (8: Instagram, YouTube, Twitter/X, Friends, Google Search, App Store, Podcast, Other).
+- **Birthday Incentive**: "🎁 Get a surprise gift on your birthday!" for DOB field.
+- **Email Opt-In Defaults Checked**: For new users (hasCompletedProfile = false).
+- **Removed top-right "Skip" button** from ProfileCompletionScreen (bottom "Skip for now" remains).
+- **Removed avatar pencil icon** — only fetches Google profile photo on Google login.
+- **AuthScreen**: Passes loginMethod ("GOOGLE"/"PHONE"/"EMAIL") from each auth tab to `registerOrLogin`.
+- **DB Migration v26→v27**: Added `loginMethod` column to `user_profile`.
+
+### Fixed
+- **Phone country code bug**: OTP verify now uses selected country code instead of hardcoded `+91`.
+- **Google photoURL capture**: Now saved to `profilePictureUrl` on Google login.
+- **Firebase signOut()**: Added to `repository.logout()` for proper session termination.
+- **Interests chips clickable**: Moved padding to inner Row, clickable stays on outer Box.
+- **Email opt-in default checked**: For new users (hasCompletedProfile = false).
+
+### Verified
+- `assembleDebug` & `bundleRelease` — BUILD SUCCESSFUL
+- Unit tests pass (LectureScreenTest, AcademyThemeTest, AdFailClosedGuardTest)
+- AAB uploaded to Play Console internal track (versionCode 13)
+- Edit Profile flow verified on emulator (name prefilled, all fields editable, no top skip, no pencil)
+
+### Build Artifacts
+- **Release AAB:** `release-aab-2.2.0-13.aab`
+- **Debug APK:** `debug-2.2.0-13.apk`
+
+---
+
 ## [2.1.1] - Video Learning Update (Open Testing)
 **Release Date:** August 26, 2026  
 **Version Code:** 12  

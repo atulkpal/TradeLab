@@ -3,6 +3,35 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [2.2.0] - Profile Completion & Login Method Tracking - 2026-08-29
+
+### Added
+- **Profile Completion Flow**: Post-login onboarding screen (`ProfileCompletionScreen.kt`) with 7 new fields (DOB, gender, city, referral source, interests, email opt-in).
+- **Login Method Tracking**: New `loginMethod` field ("GOOGLE" | "PHONE" | "EMAIL") stored in `UserProfile` to enable field locking based on verified login.
+- **Smart Field Locking**: 
+  - Name locked for Google/Email login (verified identity)
+  - Phone locked for Phone OTP login (verified number)
+  - Email locked for Google/Email login (verified email)
+  - All fields editable for legacy users (no loginMethod) and in edit mode
+- **SEBI-Safe Email Opt-In**: Defaults checked ("Stay updated with new features and learning content"), no "tips/advice" language.
+- **Interest Chips**: 7 multi-select chips (Stocks, F&O, MF, IPOs, Technical Analysis, Portfolio, Risk) with wrapping `FlowLayout`.
+- **Dropdowns**: Gender (4 options), Referral Source (8 options: Instagram, YouTube, Twitter/X, Friends, Google Search, App Store, Podcast, Other).
+- **Birthday Incentive**: "🎁 Get a surprise gift on your birthday!" for DOB field.
+- **Email Opt-In Defaults Checked**: For new users (hasCompletedProfile = false).
+
+### Changed
+- **Removed top-right "Skip" button** from ProfileCompletionScreen (bottom "Skip for now" remains).
+- **Removed avatar pencil icon** — only fetches Google profile photo on Google login.
+- **AuthScreen**: Passes loginMethod ("GOOGLE"/"PHONE"/"EMAIL") from each auth tab to `registerOrLogin`.
+- **DB Migration v26→v27**: Added `loginMethod` column to `user_profile`.
+
+### Fixed
+- **Phone country code bug**: OTP verify now uses selected country code instead of hardcoded `+91`.
+- **Google photoURL capture**: Now saved to `profilePictureUrl` on Google login.
+- **Firebase signOut()**: Added to `repository.logout()` for proper session termination.
+
+---
+
 ## [2.1.1] - Video Learning Update - 2026-08-26
 
 ### Added

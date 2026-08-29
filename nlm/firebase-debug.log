@@ -1,0 +1,35 @@
+[debug] [2026-08-29T08:57:08.138Z] ----------------------------------------------------------------------
+[debug] [2026-08-29T08:57:08.140Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Atul\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js login --no-localhost
+[debug] [2026-08-29T08:57:08.140Z] CLI Version:   15.24.0
+[debug] [2026-08-29T08:57:08.141Z] Platform:      win32
+[debug] [2026-08-29T08:57:08.141Z] Node Version:  v22.17.1
+[debug] [2026-08-29T08:57:08.141Z] Detected Agent: open_code
+[debug] [2026-08-29T08:57:08.141Z] Time:          Sat Aug 29 2026 14:27:08 GMT+0530 (India Standard Time)
+[debug] [2026-08-29T08:57:08.141Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-29T08:57:08.154Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[error] 
+[error] Error: Cannot run login in non-interactive mode. See login:ci to generate a token for use in non-interactive environments.
+[debug] [2026-08-29T08:57:34.152Z] ----------------------------------------------------------------------
+[debug] [2026-08-29T08:57:34.154Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Atul\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js apps:list --project tradelab-4f858
+[debug] [2026-08-29T08:57:34.154Z] CLI Version:   15.24.0
+[debug] [2026-08-29T08:57:34.155Z] Platform:      win32
+[debug] [2026-08-29T08:57:34.155Z] Node Version:  v22.17.1
+[debug] [2026-08-29T08:57:34.155Z] Detected Agent: open_code
+[debug] [2026-08-29T08:57:34.155Z] Time:          Sat Aug 29 2026 14:27:34 GMT+0530 (India Standard Time)
+[debug] [2026-08-29T08:57:34.155Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-29T08:57:34.165Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-08-29T08:57:34.834Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-29T08:57:34.835Z] > authorizing via signed-in user (ashwathai.dev@gmail.com)
+[debug] [2026-08-29T08:57:34.837Z] Checked if tokens are valid: false, expires at: 1787738446663
+[debug] [2026-08-29T08:57:34.837Z] Checked if tokens are valid: false, expires at: 1787738446663
+[debug] [2026-08-29T08:57:34.837Z] > refreshing access token with scopes: []
+[debug] [2026-08-29T08:57:34.839Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-08-29T08:57:34.839Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-08-29T08:57:35.021Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-08-29T08:57:35.021Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-08-29T08:57:35.027Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/tradelab-4f858:searchApps pageSize=100
+[debug] [2026-08-29T08:57:35.550Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-08-29T08:57:35.551Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-08-29T08:57:35.597Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/tradelab-4f858:searchApps 200

@@ -232,6 +232,9 @@ class TradingViewModel @Inject constructor(
     private val _hasDismissedAuthScreen = MutableStateFlow(false)
     val hasDismissedAuthScreen: StateFlow<Boolean> = _hasDismissedAuthScreen.asStateFlow()
 
+    private val _showProfileCompletion = MutableStateFlow(false)
+    val showProfileCompletion: StateFlow<Boolean> = _showProfileCompletion.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
@@ -1271,20 +1274,66 @@ class TradingViewModel @Inject constructor(
 
     fun simulateRegister(name: String, email: String, phone: String = "") {
         viewModelScope.launch {
-            repository.registerOrLogin(name, email, phone)
+            repository.registerOrLogin(name, email, phone, "", "EMAIL")
             _showRegistrationGate.value = false
             _hasDismissedAuthScreen.value = true
             showFeedback("Welcome, $name! Trial limits unlocked.")
         }
     }
 
-    fun registerOrLogin(name: String, email: String, phone: String = "") {
+    fun registerOrLogin(name: String, email: String, phone: String = "", profilePictureUrl: String = "", loginMethod: String = "") {
         viewModelScope.launch {
-            repository.registerOrLogin(name, email, phone)
+            repository.registerOrLogin(name, email, phone, profilePictureUrl, loginMethod)
             _showRegistrationGate.value = false
             _hasDismissedAuthScreen.value = true
+            // Check if profile needs completion
+            val profile = repository.getUserProfile()
+            if (profile != null && !profile.hasCompletedProfile) {
+                _showProfileCompletion.value = true
+            }
             showFeedback("Welcome to TradeLab, $name!")
         }
+    }
+
+    fun completeProfile(
+        phone: String = "",
+        email: String = "",
+        dateOfBirth: String = "",
+        gender: String = "",
+        city: String = "",
+        referralSource: String = "",
+        interests: String = "",
+        optedIntoEmails: Boolean = false
+    ) {
+        val wasEditMode = _isProfileEditMode.value
+        viewModelScope.launch {
+            repository.completeProfile(
+                phone = phone,
+                email = email,
+                dateOfBirth = dateOfBirth,
+                gender = gender,
+                city = city,
+                referralSource = referralSource,
+                interests = interests,
+                optedIntoEmails = optedIntoEmails
+            )
+            _showProfileCompletion.value = false
+            _isProfileEditMode.value = false
+            showFeedback(if (wasEditMode) "Profile updated!" else "Profile completed! Welcome aboard.")
+        }
+    }
+
+    fun dismissProfileCompletion() {
+        _showProfileCompletion.value = false
+        _isProfileEditMode.value = false
+    }
+
+    private val _isProfileEditMode = MutableStateFlow(false)
+    val isProfileEditMode: StateFlow<Boolean> = _isProfileEditMode.asStateFlow()
+
+    fun triggerEditProfile() {
+        _isProfileEditMode.value = true
+        _showProfileCompletion.value = true
     }
 
     fun updateProfile(name: String, email: String, phone: String) {

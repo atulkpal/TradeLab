@@ -41,7 +41,16 @@ data class UserProfile(
     val claimedMissions: String = "", // Comma-separated mission IDs that have been claimed
     val themeMode: String = "SERIOUS",
     val isStealthMode: Boolean = false,
-    val isZenMode: Boolean = false
+    val isZenMode: Boolean = false,
+    // Profile Completion fields
+    val hasCompletedProfile: Boolean = false,
+    val dateOfBirth: String = "",
+    val gender: String = "",
+    val city: String = "",
+    val referralSource: String = "",
+    val interests: String = "", // Comma-separated
+    val optedIntoEmails: Boolean = false,
+    val loginMethod: String = "" // "GOOGLE" | "PHONE" | "EMAIL"
 )
 
 @Entity(tableName = "holdings", primaryKeys = ["symbol", "isDelivery"])

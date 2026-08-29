@@ -217,6 +217,8 @@ class MainActivity : ComponentActivity() {
             val isZenMode by viewModel.isZenMode.collectAsStateWithLifecycle()
             val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
             val hasDismissedAuthScreen by viewModel.hasDismissedAuthScreen.collectAsStateWithLifecycle()
+            val showProfileCompletion by viewModel.showProfileCompletion.collectAsStateWithLifecycle()
+            val isProfileEditMode by viewModel.isProfileEditMode.collectAsStateWithLifecycle()
             val isInitialized by viewModel.isInitialized.collectAsStateWithLifecycle()
 
             // Paced chapter-complete interstitial (2.0.2) — fires after every 3rd
@@ -257,6 +259,25 @@ class MainActivity : ComponentActivity() {
                     TradeLabLoadingScreen()
                 } else if (userProfile?.isLoggedIn != true && !hasDismissedAuthScreen) {
                     AuthScreen(viewModel = viewModel)
+                } else if (showProfileCompletion) {
+                    com.ashwathai.tradelab.ui.profile.ProfileCompletionScreen(
+                        userProfile = userProfile,
+                        loginMethod = userProfile?.loginMethod ?: "",
+                        isEditMode = isProfileEditMode,
+                        onComplete = { phone, email, dob, gender, city, referral, interests, optIn ->
+                            viewModel.completeProfile(
+                                phone = phone,
+                                email = email,
+                                dateOfBirth = dob,
+                                gender = gender,
+                                city = city,
+                                referralSource = referral,
+                                interests = interests,
+                                optedIntoEmails = optIn
+                            )
+                        },
+                        onSkip = { viewModel.dismissProfileCompletion() }
+                    )
                 } else {
                     MainContent(
                         viewModel = viewModel,

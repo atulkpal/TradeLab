@@ -1,6 +1,7 @@
 package com.ashwathai.tradelab.data
 
 import com.ashwathai.tradelab.BuildConfig
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -118,6 +119,10 @@ class TradingRepository @Inject constructor(
             if (e is SQLiteDatabaseCorruptException) emit(null)
             else throw e
         }
+
+    suspend fun getUserProfile(): UserProfile? = withContext(Dispatchers.IO) {
+        userProfileDao.getUserProfile()
+    }
     val holdings: Flow<List<Holding>> = holdingDao.getAllHoldingsFlow()
     val transactions: Flow<List<Transaction>> = transactionDao.getAllTransactionsFlow()
     val watchlist: Flow<List<WatchlistItem>> = watchlistDao.getWatchlistFlow()
@@ -1939,7 +1944,7 @@ class TradingRepository @Inject constructor(
         return@withContext nextCount >= 7
     }
 
-    suspend fun registerOrLogin(userName: String, userEmail: String, phoneNumber: String = "") = withContext(Dispatchers.IO) {
+    suspend fun registerOrLogin(userName: String, userEmail: String, phoneNumber: String = "", profilePictureUrl: String = "", loginMethod: String = "") = withContext(Dispatchers.IO) {
         val existingProfile = userProfileDao.getUserProfile()
         val uniqueId = existingProfile?.userUniqueId?.ifBlank { UUID.randomUUID().toString().take(8).uppercase() } ?: UUID.randomUUID().toString().take(8).uppercase()
         
@@ -1955,7 +1960,9 @@ class TradingRepository @Inject constructor(
                     userEmail = userEmail,
                     phoneNumber = phoneNumber,
                     userUniqueId = uniqueId,
-                    trialActionsCount = 0
+                    trialActionsCount = 0,
+                    profilePictureUrl = profilePictureUrl,
+                    loginMethod = loginMethod
                 )
             )
         } else {
@@ -1966,7 +1973,9 @@ class TradingRepository @Inject constructor(
                     userEmail = userEmail.ifBlank { existingProfile.userEmail },
                     phoneNumber = phoneNumber.ifBlank { existingProfile.phoneNumber },
                     userUniqueId = uniqueId,
-                    trialActionsCount = 0
+                    trialActionsCount = 0,
+                    profilePictureUrl = profilePictureUrl.ifBlank { existingProfile.profilePictureUrl },
+                    loginMethod = loginMethod.ifBlank { existingProfile.loginMethod }
                 )
             )
         }
@@ -1979,6 +1988,32 @@ class TradingRepository @Inject constructor(
                 userName = name,
                 userEmail = email,
                 phoneNumber = phone
+            )
+        )
+    }
+
+    suspend fun completeProfile(
+        phone: String = "",
+        email: String = "",
+        dateOfBirth: String = "",
+        gender: String = "",
+        city: String = "",
+        referralSource: String = "",
+        interests: String = "",
+        optedIntoEmails: Boolean = false
+    ) = withContext(Dispatchers.IO) {
+        val profile = userProfileDao.getUserProfile() ?: return@withContext
+        userProfileDao.insertProfile(
+            profile.copy(
+                phoneNumber = phone.ifBlank { profile.phoneNumber },
+                userEmail = email.ifBlank { profile.userEmail },
+                dateOfBirth = dateOfBirth,
+                gender = gender,
+                city = city,
+                referralSource = referralSource,
+                interests = interests,
+                optedIntoEmails = optedIntoEmails,
+                hasCompletedProfile = true
             )
         )
     }
@@ -1999,6 +2034,12 @@ class TradingRepository @Inject constructor(
                 isPremium = false
             )
         )
+        // Also sign out from Firebase
+        try {
+            FirebaseAuth.getInstance().signOut()
+        } catch (e: Exception) {
+            android.util.Log.e("TradingRepository", "Firebase signOut failed", e)
+        }
     }
 
     suspend fun earnBrokerageCredits(amount: Int) = withContext(Dispatchers.IO) {
