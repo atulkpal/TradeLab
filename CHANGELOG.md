@@ -3,6 +3,14 @@ All notable changes to the TradeLab project will be documented in this file. Thi
 
 ---
 
+## [2.2.1] - Video Fix & Button Centering - 2026-08-30
+
+### Fixed
+- **112 missing videoUrl fields**: Populated all blank `videoUrl` fields in `academy_data_v2.json` with correct manifest keys. Previously 55% of lectures showed "coming soon" because the manifest lookup was never triggered.
+- **Bonus claim button not centered**: Added `Modifier.fillMaxWidth()` to bonus claim Button in `LectureScreen.kt` so it stretches full-width inside its card.
+
+---
+
 ## [2.2.0] - Profile Completion & Login Method Tracking - 2026-08-29
 
 ### Added

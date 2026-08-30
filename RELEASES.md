@@ -4,6 +4,29 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
+## [2.2.1] - Video Fix & Button Centering (Open Testing)
+**Release Date:** August 30, 2026  
+**Version Code:** 14  
+**Status:** 🟡 OPEN TESTING
+
+### Summary of Changes
+Bugfix release: all 204 academy videos now resolve correctly (no more "coming soon"), and bonus claim button is properly centered.
+
+### Fixed
+- **112 missing videoUrl fields in `academy_data_v2.json`**: Populated all blank `videoUrl` fields with correct manifest keys (`lecture_X_Y_Z_final`). Previously 55% of lectures showed "Video lecture coming soon" because the manifest lookup was never triggered.
+- **Bonus claim button not centered**: Added `Modifier.fillMaxWidth()` to the bonus claim `Button` in `LectureScreen.kt` so it stretches full-width inside its card.
+
+### Verified
+- All 204 `videoUrl` fields match live Firebase manifest entries
+- `assembleDebug` & `bundleRelease` — BUILD SUCCESSFUL
+- AAB uploaded to Open Testing track (versionCode 14)
+
+### Build Artifacts
+- **Release AAB:** `release-aab-2.2.1-14.aab`
+- **Debug APK:** `debug-2.2.1-14.apk`
+
+---
+
 ## [2.2.0] - Profile Completion & Login Method Tracking (Open Testing)
 **Release Date:** August 29, 2026  
 **Version Code:** 13  
