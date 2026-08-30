@@ -4,10 +4,10 @@ This document serves as the authoritative history of all production and candidat
 
 ---
 
-## [2.2.0] - Profile Completion & Login Method Tracking (Internal Testing)
+## [2.2.0] - Profile Completion & Login Method Tracking (Open Testing)
 **Release Date:** August 29, 2026  
 **Version Code:** 13  
-**Status:** 🟡 INTERNAL TESTING
+**Status:** 🟡 OPEN TESTING
 
 ### Summary of Changes
 Profile completion onboarding flow with login-method-aware field locking, smart email opt-in defaults, and bug fixes for phone/Google auth.

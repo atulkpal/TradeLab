@@ -113,10 +113,10 @@ The **Architectural Modernization** has been successfully verified:
 
 ## 4. Current Work & Next Milestones
 
-We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, the **Hyper-Personalization Suite**, **Unity LevelPlay monetization**, and **Profile Completion & Login Method Tracking**. The app is now at **v2.2.0 (Build 13)** — pushed to Internal Testing on Play Console.
+We have successfully completed **Phase 1 (Foundations)**, the **Social Arena**, the **Varsity Academy Expansion**, the **Hyper-Personalization Suite**, **Unity LevelPlay monetization**, and **Profile Completion & Login Method Tracking**. The app is now at **v2.2.0 (Build 13)** — pushed to Open Testing on Play Console.
 
 ### What is Active Right Now (Post-Launch & Multi-Platform Prep)
-*   **v2.2.0 on Internal Testing** — Profile completion flow with login-method-aware field locking, email opt-in defaults checked, phone/Google auth bug fixes.
+*   **v2.2.0 on Open Testing** — Profile completion flow with login-method-aware field locking, email opt-in defaults checked, phone/Google auth bug fixes.
 *   **v2.1.1 on Open Testing** — banner ads, interstitial pacing, Watchlist MIS dialog fixes verified.
 *   **KMP Migration:** Moving core entities and repositories to Kotlin Multiplatform (KMP) to support iOS.
 *   **Time-Travel Mode (Backlog):** Historical simulation engine.

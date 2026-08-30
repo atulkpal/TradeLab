@@ -330,7 +330,8 @@ fun LectureScreen(
                                             disabledContainerColor = AccentYellow.copy(alpha = 0.2f),
                                             disabledContentColor = TextOnAccent.copy(alpha = 0.4f)
                                         ),
-                                        shape = RoundedCornerShape(10.dp)
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
                                         if (isBonusLoading) {
                                             CircularProgressIndicator(
